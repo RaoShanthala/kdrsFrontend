@@ -1,0 +1,84 @@
+<template>
+    <div>
+        <h1 class="mb-3">工事別進捗一覧</h1>
+        <b-table
+        head-variant="light"
+        class="table-sm table-bordered text-nowrap"
+        :items="projData"
+        :fields="projFields"
+        />      
+        <b-row align-h="end"  class="print-hide">
+            <b-button @click="print_page" class="mr-1">ページ印刷</b-button>
+            <b-button to="/menu" variant="info">戻る</b-button>
+        </b-row>
+    </div>
+</template>
+
+<style scoped>
+@media print {
+    .print-hide {
+        display: none;
+    }
+}
+@page {
+  size: auto;
+}
+</style>
+
+<script>
+export default {
+    data() {
+        return {
+            show_button: true,
+            projData: [],
+            projFields: []
+        }
+
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        this.projFetch();
+    },
+    methods: {
+        projFetch() {
+            this.projFields = [
+                {key: 'projCode',      label: '工事コード'},
+                {key: 'projName',      label: '工事名称'},
+                {key: 'startPlanDate', label: '工事着手予定日'},
+                {key: 'endPlanDate',   label: '工事完了予定日'},
+                {key: 'deliPlanDate',  label: '工事納品予定日'},
+                {key: 'startDate',     label: '工事着手日'},
+                {key: 'endDate',       label: '工事完了日'},
+                {key: 'assembly',      label: '仮組立（完了率）'},
+                {key: 'welding',       label: '溶接・本溶接（完了率）'},
+                {key: 'finishing',     label: '仕上げ（完了率）'},
+                {key: 'inspection',    label: '検査（完了率）'}
+            ],
+            this.projData = [
+                {projCode: 'P001', projName: '工事０１', startPlanDate: '2021-01-25', endPlanDate: '2021-02-17', deliPlanDate: '2021-01-25', startDate: '2021-01-25', endDate: '2021-02-17', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P002', projName: '工事０２', startPlanDate: '2021-01-21', endPlanDate: '2021-02-19', deliPlanDate: '2021-01-21', startDate: '2021-01-21', endDate: '2021-02-19', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P003', projName: '工事０３', startPlanDate: '2021-01-21', endPlanDate: '2021-02-13', deliPlanDate: '2021-01-21', startDate: '2021-01-21', endDate: '2021-02-13', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P004', projName: '工事０４', startPlanDate: '2021-01-11', endPlanDate: '2021-02-09', deliPlanDate: '2021-01-11', startDate: '2021-01-11', endDate: '2021-02-09', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P005', projName: '工事０５', startPlanDate: '2021-01-13', endPlanDate: '2021-02-08', deliPlanDate: '2021-01-13', startDate: '2021-01-13', endDate: '2021-02-08', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P006', projName: '工事０６', startPlanDate: '2021-01-18', endPlanDate: '2021-02-12', deliPlanDate: '2021-01-18', startDate: '2021-01-18', endDate: '2021-02-12', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P007', projName: '工事０７', startPlanDate: '2021-01-18', endPlanDate: '2021-03-17', deliPlanDate: '2021-01-18', startDate: '2021-01-18', endDate: '2021-03-17', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P008', projName: '工事０８', startPlanDate: '2021-01-25', endPlanDate: '2021-03-11', deliPlanDate: '2021-01-25', startDate: '2021-01-25', endDate: '2021-03-11', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P009', projName: '工事０９', startPlanDate: '2021-01-09', endPlanDate: '2021-03-17', deliPlanDate: '2021-01-09', startDate: '2021-01-09', endDate: '2021-03-17', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P010', projName: '工事１０', startPlanDate: '2021-01-13', endPlanDate: '2021-03-21', deliPlanDate: '2021-01-13', startDate: '2021-01-13', endDate: '2021-03-21', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P011', projName: '工事１１', startPlanDate: '2021-01-14', endPlanDate: '2021-04-18', deliPlanDate: '2021-01-14', startDate: '2021-01-14', endDate: '2021-04-18', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P012', projName: '工事１２', startPlanDate: '2021-02-13', endPlanDate: '2021-04-19', deliPlanDate: '2021-02-13', startDate: '2021-02-13', endDate: '2021-04-19', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P013', projName: '工事１３', startPlanDate: '2021-03-25', endPlanDate: '2021-04-22', deliPlanDate: '2021-03-25', startDate: '2021-03-25', endDate: '2021-04-22', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P014', projName: '工事１４', startPlanDate: '2021-03-25', endPlanDate: '2021-04-17', deliPlanDate: '2021-03-25', startDate: '2021-03-25', endDate: '2021-04-17', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P015', projName: '工事１５', startPlanDate: '2021-03-25', endPlanDate: '2021-03-28', deliPlanDate: '2021-03-25', startDate: '2021-03-25', endDate: '2021-03-28', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'},
+                {projCode: 'P016', projName: '工事１６', startPlanDate: '2021-03-11', endPlanDate: '2021-03-28', deliPlanDate: '2021-03-25', startDate: '2021-03-21', endDate: '2021-03-28', assembly: '10/50(20%) 01-25 02-01', welding: '10/50(20%) 02-03 02-10', finishing: '10/50(20%) 02-12 02-17', inspection: '10/50(20%) 02-20 03-01'}
+                ]
+        },
+
+        print_page () {
+            window.print();
+        }
+    }
+}
+</script>

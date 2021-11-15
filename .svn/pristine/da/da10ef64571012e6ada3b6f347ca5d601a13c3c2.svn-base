@@ -1,0 +1,128 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+    <b-form inline>
+        <b-form-group label="製品コード" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodCode"/>
+        </b-form-group>
+        <b-form-group label="製品名称" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodName"/>
+        </b-form-group>
+        <b-form-group label="基準日" class="mr-2">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="prodSearchForm.targetDate"/>
+        </b-form-group>
+        <div style="margin-bottom: -2rem">
+        <b-button @click="prodSearch(null)" >検索</b-button>
+        </div>
+    </b-form>
+    </b-card>
+    <div v-if="isLoadingProd" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <div v-if="prodData.length">
+        <b-table
+            head-variant="light"
+            class="table-sm table-bordered text-nowrap"
+            sticky-header="175px"
+            no-border-collapse
+            responsive
+            selected-variant="info"
+            selectable
+            select-mode="single"
+            @row-selected="prodSelect"
+            :items="prodData"
+            :fields="prodFields"/>
+    </div>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+    props: ['projParams'],
+    data() {
+        return {
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                targetDate: '',
+            },
+            prodData: [],
+            prodFields: [],
+            isLoadingProd: false,
+            clickCount: 1
+        }
+    },
+    methods: {
+        async prodSearch(searchMode) {
+            this.prodData = [];
+            this.isLoadingProd = true;
+            if(searchMode) {
+                var payload = {
+                    ...this.projParams.projCode && { projCode:   this.projParams.projCode },
+                    ...this.prodSearchForm.prodCode && { prodCode:   this.prodSearchForm.prodCode } 
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projParams.projCode   && { projCode:   this.projParams.projCode  },
+                    ...this.projParams.projName   && { projName:   this.projParams.projName },
+                    ...this.prodSearchForm.prodCode    && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.prodName    && { prodName:   this.prodSearchForm.prodName },
+                    ...this.prodSearchForm.targetState && {targetState: + this.prodSearchForm.targetState}
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProductMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = response.data.resDt;
+                this.prodFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('prodSearchButton', this.clickCount++);
+            })
+        },
+
+        prodSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProdParams', item[0]);
+            } else {
+                this.$emit('emittedProdParams', []);
+            }
+        },
+
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        }
+    }
+}
+</script>

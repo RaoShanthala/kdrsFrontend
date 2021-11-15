@@ -1,0 +1,762 @@
+<template>
+    <div>
+        <!--h1 class="print-hide">{{ titleProj }}</h1 -->
+        <!--工事進捗一覧-->
+        <div v-if="isShowProjChoice">
+            <b-card bg-variant="light"  :class="classPrintHideProj" height="100px">
+                <b-row class="print-hide">
+                    <b-col class="col-md-10">
+                        <b-form inline class="mt-0">
+                            <b-form-group label="工事コード" class="mr-3">
+                                <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+                            </b-form-group>
+                            <b-form-group label="工事名称" class="mr-3">
+                                <b-form-input id="projName" v-model="projSearchForm.projName"/>
+                            </b-form-group>
+                            <b-form-group class="mt-5 mb-4 mr-3">
+                                <b-form-radio-group v-model="projSearchForm.projStatus" :options="projStatusOptions"/>
+                            </b-form-group>
+                            <b-form-group v-if="projSearchForm.projStatus==1" label="工事着手日From" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="projSearchForm.projStatus==1" label="工事着手日To" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+                            </b-form-group>
+                            <b-form-group  v-if="projSearchForm.projStatus==3" label="工事完了日From" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="projSearchForm.projStatus==3" label="工事完了日To" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+                            </b-form-group>
+                            <b-form-group class="mt-4 mr-1">
+                                <div style="margin-top: 0.4rem;">
+                                    <b-button @click="projSearchClick" class="mr-1">検索</b-button>
+                                    <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                                </div>
+                            </b-form-group>
+                        </b-form>
+                    </b-col>
+                </b-row>
+
+                <div v-if="isShowProjTable" :class="classPrintHideProj">
+                    <b-table head-variant="light"
+                        sticky-header="200px" class="table-sm table-bordered text-nowrap proj-table"
+                        hover
+                        selected-variant="info"
+                        selectable
+                        select-mode="single"
+                        ref="refProjTable"
+                        :striped="striped"
+                        :no-border-collapse="noCollapse"
+                        :items="projData"
+                        :fields="projFields"
+                        @row-clicked="rowClickProjTable"/>
+                        <!-- @row-clicked="rowClickProjTable" @row-selected="rowSelectedProjTable" @row-dblclicked="projDblClick" -->
+                    <b-row align-h="end" class="my-2 print-hide">
+                        <b-col class="col-md-2">
+                            <p class="print-hide ml-1">工事を選択してください</p>
+                        </b-col>
+                        <b-col class="col-md-4"/>
+                        <b-col class="col-md-3">
+                            <p class="mt-0">{{ annotation }}</p>
+                        </b-col>
+                        <b-col class="col-md-1"/>
+                        <b-col class="col-md-2">
+                            <div class="d-flex justify-content-end">
+                                <b-button @click="printProjTable" class="mr-0">印刷</b-button>
+                                <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                            </div>
+                        </b-col>
+                    </b-row>
+                </div>
+
+                <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+                </div>
+            </b-card>
+        </div>
+
+        <!-- h1 v-if="isShowProdChoice" class="print-hide">{{ titleProd }}</h1 -->
+        <!--製品進捗一覧-->
+        <div v-if="isShowProdChoice"  :class="classPrintHideProd">
+            <b-card bg-variant="light">
+                <b-row class="print-hide">
+                    <b-col class="col-md-10">
+                        <b-form inline class="mt-1">
+                            <span class="mr-4 mt-1"><strong>工事コード：</strong>{{ projSelected.projCode }}</span>
+                            <strong>工事名称：</strong>{{ projSelected.projName }}
+                        </b-form>
+                        <b-form inline class="mt-0">
+                            <div style="margin-top: 0.0rem; margin-right:2rem;">
+                                <!-- <b-form-radio-group class="mr-4" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" :options="prodFlagOptions"/> -->
+                                <b-form-radio class="mt-1" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" value="1" >製品</b-form-radio>
+                                <b-form-radio class="mt-2" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" value="0" >部品</b-form-radio>
+                            </div>
+                            <b-form-group :label="labelProdCode" class="mr-2">
+                                <b-form-input v-if="prodSearchForm.prodFlag==1" v-model="prodSearchForm.prodCode"/>
+                                <b-form-input v-else v-model="prodSearchForm.partCode"/>
+                            </b-form-group>
+                            <b-form-group :label="labelProdName" class="mr-2">
+                                <b-form-input v-if="prodSearchForm.prodFlag==1" v-model="prodSearchForm.prodName"/>
+                                <b-form-input v-else v-model="prodSearchForm.partName"/>
+                            </b-form-group>
+                            <b-form-group class="mt-5 mb-4 mr-3">
+                                <b-form-radio-group v-model="prodSearchForm.prodStatus" :options="prodStatusOptions"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodSearchForm.prodStatus==1" :label="labelProdStatus1From" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.startDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodSearchForm.prodStatus==1" :label="labelProdStatus1To" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.endDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodSearchForm.prodStatus==3" :label="labelProdStatus3From" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.startDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodSearchForm.prodStatus==3" :label="labelProdStatus3To" class="mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.endDateComplete"/>
+                            </b-form-group>
+                            <b-form-group class="mt-4 mr-1">
+                                <div style="margin-top: 0.4rem;">
+                                    <b-button @click="prodSearchClick" class="mr-1">検索</b-button>
+                                    <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                                </div>
+                            </b-form-group>
+                        </b-form>
+                    </b-col>
+                </b-row>
+                <!-- div v-if="projSelected && prodData.length" -->
+                <div v-show="isShowProdTable" :class="classPrintHideProd">
+                    <!-- p><strong>製品分類一覧、全製品分類、選択製品分類オプション</strong></p -->
+                    <b-table head-variant="light"
+                        sticky-header="450px"
+                        class="table-sm table-bordered text-nowrap prod-table"
+                        hover v-if="projSelected.projCode && prodData.length"
+                        :striped="striped"
+                        :no-border-collapse="noCollapse"
+                        :items="prodData"
+                        :fields="prodFields"/>
+                    <b-row align-h="end" class="my-2 print-hide">
+                        <b-col class="col-md-6"/>
+                        <b-col class="col-md-3">
+                            <p class="mt-0">{{ annotation }}</p>
+                        </b-col>
+                        <b-col class="col-md-1"/>
+                        <b-col class="col-md-2">
+                            <div class="d-flex justify-content-end">
+                                <b-button @click="printProdTable" class="mr-0">印刷</b-button>
+                                <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                            </div>
+                        </b-col>
+                    </b-row>
+                </div>
+                <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                    <b-spinner class="align-middle"></b-spinner>
+                    <strong>検索中...</strong>
+                </div>
+            </b-card>
+        </div>
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    /* 印刷釦のマージン設定 */
+    .b-table-sticky-header, .table-responsive, [class*=table-responsive-] {
+        margin-bottom: 0.5rem;
+    }
+    .col > p {
+        margin-bottom: 0;
+    }
+    .mb-2, .my-2 {
+        margin-bottom: 0!important;
+    }
+
+    .card-body {
+        padding-top: 0;
+    }
+
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+    .text-right {
+        text-align: right;
+    }
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+import commonMethods from '../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            titleProj: '工事進捗予実一覧',
+            titleProd: '製品進捗予実一覧',
+            annotation: '※上段：予定、下段：実績',
+            striped: true,
+            noCollapse: true,
+            //工事関連データ
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                projStatus: 4,
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+            },
+            projStatusOptions: [
+                { value: 0, text: '工事未着手' },
+                { value: 1, text: '工事着手' },
+                { value: 2, text: '工事未完了' },
+                { value: 3, text: '工事完了' },
+                { value: 4, text: '工事すべて' }
+            ],
+            projData: [],
+            projFields: [],
+            projSelected: {},
+            //製品関連データ
+            // prodSearchForm: {
+            //     prodCode: '',
+            //     prodName: '',
+            //     startDateBegin: '',
+            //     startDateComplete: '',
+            //     endDateComplete: '',
+            //     endtDateBegin: ''
+            // },
+            prodSearchForm: {
+                prodFlag: 1,
+                prodCode: '',
+                prodName: '',
+                partCode: '',
+                partName: '',
+                // targetDate: '',
+                // targetState: '',
+                prodStatus: 4,
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: '',
+            },
+
+            labelProdCode: '製品コード',
+            labelProdName: '製品名称',
+            labelProdStatus1From: "製品着手日From",
+            labelProdStatus1To: "製品着手日To",
+            labelProdStatus3From: "製品完了日From",
+            labelProdStatus3To: "製品完了日To",
+
+            prodStatusOptions: [
+                { value: 0, text: '製品未着手' },
+                { value: 1, text: '製品着手' },
+                { value: 2, text: '製品未完了' },
+                { value: 3, text: '製品完了' },
+                { value: 4, text: '製品すべて' }
+            ],
+            prodData: [],
+            prodFields: [],
+
+            isShowProjChoice: true,
+            isShowProdChoice: false,
+            isShowProjTable: false,
+            isShowProdTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProj: false,
+            isLoadingProd: false,
+            classPrintHideProj: '',
+            classPrintHideProd: '',
+            prevIndex: -1,
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 380 + 'px';
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        prodFlagChange() {
+            if (this.prodSearchForm.prodFlag == 1) {
+                this.labelProdCode = '製品コード';
+                this.labelProdName = '製品名称';
+                for (let i in this.prodStatusOptions) {
+                    this.prodStatusOptions[i].text = '製品' + this.prodStatusOptions[i].text.substr(2);
+                }
+                this.labelProdStatus1From = "製品着手日From";
+                this.labelProdStatus1To = "製品着手日To";
+                this.labelProdStatus3From = "製品完了日From";
+                this.labelProdStatus3To = "製品完了日To";
+            } else {
+                this.labelProdCode = '部品コード';
+                this.labelProdName = '部品名称';
+                for (let i in this.prodStatusOptions) {
+                    this.prodStatusOptions[i].text = '部品' + this.prodStatusOptions[i].text.substr(2);
+                }
+                this.labelProdStatus1From = "部品着手日From";
+                this.labelProdStatus1To = "部品着手日To";
+                this.labelProdStatus3From = "部品完了日From";
+                this.labelProdStatus3To = "部品完了日To";
+            }
+            this.isShowProdTable = false;
+            this.prodData = [];
+            this.message = ''
+            // this.$emit('emitProdFlagChange', this.prodSearchForm.prodFlag);
+        },
+        resetProjSearchForm() {
+            for (let item in this.projSearchForm) {
+                if (item != 'projStatus') {
+                    this.projSearchForm[item] = ''
+                }
+            }
+            this.projSearchForm.projStatus = 4;
+            //this.$store.state.searchForm = this.searchForm
+            this.isShowProjTable = false;
+            this.projData = [];
+            this.isShowProdChoice = false;
+            this.message = ''
+        },
+        resetProdSearchForm() {
+            for (let item in this.prodSearchForm) {
+                if (item != 'prodFlag' && item != 'prodStatus') {
+                    this.prodSearchForm[item] = ''
+                }
+            }
+            this.prodSearchForm.prodStatus = 4;
+            //this.$store.state.searchForm = this.searchForm
+            this.isShowProdTable = false;
+            this.prodData = [];
+            this.message = ''
+        },
+        async projSearchClick() {
+            await this.projSearch();
+            //console.log('projSearch End !');
+            if (this.isShowProjTable != true) {
+                return;
+            }
+
+            this.isLoadingProj = false;
+            // let titleProj = this.titleProj;
+            // let projFields = this.projFields;
+
+            commonMethods.sleep(100, 1, function () {
+                //工事進捗一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+                // let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+                // //入れ子を挿入
+                // let text = document.createTextNode(titleProj);
+                // let tr;
+                // let th;
+
+                // tr = document.createElement('tr');
+                // th = document.createElement('th');
+                // tr.setAttribute('hidden', '');
+                // th.setAttribute('style', 'padding-top: 1em;');
+                // th.setAttribute('colspan', projFields.length);
+                // tr.appendChild(th);
+                // doubleHeadTable.prepend(tr);
+                
+                // tr = document.createElement('tr');
+                // th = document.createElement('th');
+                // tr.setAttribute('hidden', '');
+                // th.appendChild(text);
+                // th.setAttribute('style', 'text-align:center; font-size: 2em;');
+                // th.setAttribute('colspan', projFields.length);
+                // tr.appendChild(th);
+                // doubleHeadTable.prepend(tr);
+
+                // tr = document.createElement('tr');
+                // th = document.createElement('th');
+                // tr.setAttribute('hidden', '');
+                // th.setAttribute('style', 'padding-top: 2em;');
+                // th.setAttribute('colspan', projFields.length);
+                // tr.appendChild(th);
+                // doubleHeadTable.prepend(tr);
+
+                // // 偶数行テキスト右寄せ
+                // let evenRows = [...document.getElementsByClassName('proj-table')[0].children[0].children[1].getElementsByTagName('tr')]
+                //    .filter((element, index) => {
+                //        if(index % 2 == 0) {
+                //            return element;
+                //        }
+                //    }
+                // );
+                // evenRows.forEach(element => element.setAttribute('class', 'text-right'));
+
+                let rows = [...document.getElementsByClassName('proj-table')[0].children[0].children[1].getElementsByTagName('tr')];
+                rows.forEach((elementRow, r) => {
+                    let cols = [...elementRow.getElementsByTagName('td')];
+                    //console.log('cols=' + cols[10].innerHTML);
+                    if(r % 2 == 0) {
+                        // 偶数行の全てを右寄せ
+                        for (let c = 0; c < cols.length; c++) {
+                            cols[c].setAttribute('class', 'text-right');
+                        }
+                        //elementRow[r].setAttribute('class', 'text-right');    <= この指定だと奇数行のカラムごとの右寄せが効かなくなる
+
+                        // 次の処理はOK!
+                        //for(let c in cols) {
+                        //    cols[c].setAttribute('class', 'text-right');
+                        //}
+
+                        // // 次の処理はNG!
+                        // cols.forEach((elementCol, c) => {
+                        //     console.log('even elementCol=' + elementCol + ', c=' + c + ', elementCol.length=' + elementCol.length) ;
+                        //     console.log('even elementCol[c]=' + elementCol[c] + ', c=' + c);
+                        //     // elementCol[c].setAttribute('class', 'text-right');
+                        // })
+                    } else {
+                        // 奇数行の数量から右寄せ
+                        for (let c = 2; c < cols.length; c++) {
+                            //console.log('cols[c]=' + cols[c]);
+                            cols[c].setAttribute('class', 'text-right');
+                        }
+                    }
+                });
+
+                // // 右寄せする項目名をtargetFieldsの配列に指定する
+                // let targetFields = ['procColorNo', 'projCode', 'procName', 'endDate'];
+                // let resDtName2Index = {};       // 項目名からresDtTitleのインデックスを格納した連想配列
+                // //let resDtIndex2Name = {};       // インデックスからresDtTitleの項目名を格納した連想配列
+                // let resDtIndex2layout = {};     // インデックスからresDtの列を左寄せ、または右寄せする値を格納した連想配列
+
+                // resDtName2Index = commonMethods.makeResDtName2Index(this.projFields);
+                // resDtIndex2layout = commonMethods.makeResDtIndex2Layout(targetFields, this.projFields);
+                // for(let i in targetFields) {
+                //     console.log('targetFields[i]=' + targetFields[i] + ', i=' + i);
+                //     // targetFields配列の右寄せする項目名からresDtTitleのインデックスを取得する
+                //     let index = resDtName2Index[targetFields[i]];
+                //     console.log('index=' + index);
+                //     if (index != null) {
+                //         console.log('resDtIndex2layout[index]=' + resDtIndex2layout[index] + ', index=' + index);
+                //     }
+                // }
+            });
+        },
+        async projSearch() {
+            this.message = '';
+            this.isShowProjTable = false;
+            this.isShowProdChoice = false;
+            this.isShowProdTable = false;
+            //this.$refs.refProjTable.selectRow(0);
+            this.projData = [];
+            this.projFields = [];
+            let startDate = '';
+            let endDate = '';
+            this.isLoadingProj = true;
+            if (this.projSearchForm.projStatus == 1) {
+                startDate = this.projSearchForm.startDateBegin
+                endDate = this.projSearchForm.endDateBegin
+            } else if (this.projSearchForm.projStatus == 3) {
+                startDate = this.projSearchForm.startDateComplete
+                endDate = this.projSearchForm.endDateComplete
+            }
+            let payload = {
+                ...this.projSearchForm.projCode && {projCode:        this.projSearchForm.projCode},
+                ...this.projSearchForm.projName && {projName:        this.projSearchForm.projName},
+                targetState:     this.projSearchForm.projStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate}
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjProcPlanActualMany, axiosConfigObject)
+            .then(response => {
+                this.projData = this.remakeResDt(response.data.resDt);
+                this.projFields = this.remakeResDtTitle(response.data.resDtTitle);//, [1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                   this.isShowProjTable = true;
+                }
+                // console.log(response.data.resultMessage);
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                // console.log('projSearch finally Start !');
+                this.isLoadingProj = false;
+            })
+            // this.isShowProjTable = true;
+            this.prodData = [];
+            this.prodFields = [];
+            //this.$refs.refProjTable.selectRow(0);
+        },
+
+        rowClickProjTable(item, index) {
+            // console.log('rowClickProjTable index=' + index + ', this.prevIndex=' + this.prevIndex);
+            // console.log('rowClickProjTable item.projId=' + item.projId);
+            // console.log('rowClickProjTable item.projCode=' + item.projCode);
+            // console.log('rowClickProjTable item.projName=' + item.projName);
+
+            if (index == this.prevIndex) {
+                // 選択されている行がクリックされた場合、選択行が解除されるのでクリアする。
+                this.prevIndex = -1;
+                this.prodData.splice(0);
+                this.prodFields.splice(0);
+                this.projSelected = {};
+                this.isShowProdChoice = false;
+            } else {
+                this.prevIndex = index;
+                if (Number(index) % 2 == 0) {
+                    // 偶数行（偶数行のitemには、projCode、projNameがセットされていないので次の行のprojDataの値を使用する。）
+                    let i = Number(index) + 1;
+                    // console.log('rowClickProjTable Even i=' + i);
+                    // console.log('rowClickProjTable i=' + i + ', this.projData[i].projId=' + this.projData[i].projId);
+                    this.projSelected = this.projData[i];
+                } else {
+                    // 奇数行
+                    // console.log('rowClickProjTable Odd !');
+                    this.projSelected = item;
+                }
+                this.isShowProdChoice = true;
+                this.isShowProdTable = false;
+            }
+        },
+        // rowSelectedProjTable(item) {
+        //     // console.log('rowSelectedProjTable item.length=' + item.length);
+        //     // console.log('rowSelectedProjTable item=' + item);
+        //     if(item[0] != null && item[0].projId != null) {
+        //         // if (this.projSelected != item[0]) {
+        //         //     this.prodData.splice(0);
+        //         //     this.prodFields.splice(0);
+        //         // }
+        //         this.projSelected = item[0];
+        //         console.log('rowSelectedProjTable item[0]=' + item[0]);
+        //         console.log('rowSelectedProjTable item[0].projId=' + item[0].projId);
+        //         this.isShowProdChoice = true;
+        //     } else {
+        //         // this.projSelected = {};
+        //         // this.isShowProdChoice = false;
+        //     }
+        // },
+
+        //async projDblClick(item) {
+        //    //this.title = '製品一覧進捗表示'
+        //    this.projSelected = item;
+        //    await this.prodSearch();
+        //    //this.isShowProjChoice = false
+        //},
+
+        async prodSearchClick() {
+            await this.prodSearch();
+            if (this.isShowProdTable != true) {
+                return;
+            }
+
+            commonMethods.sleep(100, 1, function () {
+                //製品進捗一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+
+                // // 偶数行テキスト右寄せ
+                // let evenRows = [...document.getElementsByClassName('prod-table')[0].children[0].children[1].getElementsByTagName('tr')]
+                //    .filter((element, index) => {
+                //        if(!(index % 2 == 1)) {
+                //            return element;
+                //        }
+                //    }
+                // );
+                // evenRows.forEach(element => element.setAttribute('class', 'text-right'));
+                
+                let rows = [...document.getElementsByClassName('prod-table')[0].children[0].children[1].getElementsByTagName('tr')];
+                rows.forEach((elementRow, r) => {
+                    let cols = [...elementRow.getElementsByTagName('td')];
+                    //console.log('cols=' + cols[10].innerHTML);
+                    if(r % 2 == 0) {
+                        // 偶数行の全てを右寄せ
+                        for (let c = 0; c < cols.length; c++) {
+                            cols[c].setAttribute('class', 'text-right');
+                        }
+                    } else {
+                        // 奇数行の数量から右寄せ
+                        for (let c = 3; c < cols.length; c++) {
+                            //console.log('cols[c]=' + cols[c]);
+                            cols[c].setAttribute('class', 'text-right');
+                        }
+                    }
+                });
+            });
+        },
+
+        async prodSearch() {
+            this.message = '';
+            this.isLoadingProd = true;
+            this.isShowProdTable = false;
+            this.prodData = [];
+            this.prodFields = [];
+            let startDate = ''
+            let endDate = '' 
+
+            if (this.prodSearchForm.prodStatus == 1) {
+                startDate = this.prodSearchForm.startDateBegin
+                endDate = this.prodSearchForm.endDateBegin
+            } else if (this.prodSearchForm.prodStatus == 3) {
+                startDate = this.prodSearchForm.startDateComplete
+                endDate = this.prodSearchForm.endDateComplete
+            }
+            let prodPartCode = this.prodSearchForm.prodFlag == 1 ? this.prodSearchForm.prodCode : this.prodSearchForm.partCode;
+            let prodPartName = this.prodSearchForm.prodFlag == 1 ? this.prodSearchForm.prodName : this.prodSearchForm.partName;
+            let payload = {
+                ...this.projSelected.projId && {projId:         this.projSelected.projId},
+                ...this.prodSearchForm.prodFlag && {prodFlag:   this.prodSearchForm.prodFlag},
+                ...prodPartCode && { prodCode:   prodPartCode },
+                ...prodPartName && { prodName:   prodPartName },
+                targetState: this.prodSearchForm.prodStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate}
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProdProcPlanActualMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = this.remakeResDt(response.data.resDt);
+                this.prodFields = this.remakeResDtTitle(response.data.resDtTitle);
+                //console.log(this.prodData);
+                //this.isShowProdTable = true;
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.isShowProdTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+            })
+        },
+
+        printProjTable () {
+            if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                this.classPrintHideProj = '';
+                this.classPrintHideProd = 'print-hide';
+                let titleProj = this.titleProj;
+                let projFields = this.projFields;
+                commonMethods.printPrepare('proj-table', projFields.length, titleProj, '');
+
+                commonMethods.sleep(100, 1, function () {
+                    // 100ミリ秒*1回、待機後確認メッセージを表示
+                    // if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    commonMethods.printDesingHandler('proj-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('proj-table', false);
+                    // }
+                });
+            }
+        },
+        printProdTable () {
+            if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                this.classPrintHideProj = 'print-hide';
+                this.classPrintHideProd = '　';
+                let titleProd = this.titleProd;
+                let frm = this.projSelected;
+                let prodFields = this.prodFields;
+                commonMethods.printPrepare('prod-table', prodFields.length, titleProd, `工事コード：${frm.projCode}、工事名称：${frm.projName}`);
+
+                commonMethods.sleep(100, 1, function () {
+                    // 100ミリ秒*1回、待機後確認メッセージを表示
+                    // if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    // let text = document.createTextNode(`工事コード：${projSelected.projCode}、工事名称：${projSelected.projName}`);
+                    commonMethods.printDesingHandler('prod-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('prod-table', false);
+                    // }
+                });
+            }
+        },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = [];
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

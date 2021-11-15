@@ -1,0 +1,520 @@
+<template>
+    <!--集計別進捗一覧-->
+    <div>
+        <b-card bg-variant="light">
+            <b-row class="print-hide">
+                <b-col class="col-md-12">
+                    <b-form inline class="mt-1">
+                        <span class="mr-3">
+                            <strong>工事コード：</strong>{{ aggSearchForm.projCode }}
+                        </span>
+                        <strong>工事名称：</strong>{{ aggSearchForm.projName }}
+                    </b-form>
+                    <b-form inline class="mt-1 mb-2">
+                    </b-form>
+                </b-col>
+            </b-row>
+
+            <div v-show="isShowAggTable" :class="classPrintHideAgg">
+                <!-- <div class="table-wrapper"> -->
+                <b-table
+                    id="res-table"
+                    head-variant="light"
+                    sticky-header="400px"
+                    class="table-sm table-bordered text-nowrap agg-table"
+                    :no-border-collapse="noCollapse"
+                    :items="prodData">
+                    <!-- :fields="prodFields"
+                    @row-selected="rowClickAggTable"/> -->
+                    <template slot="thead-top">
+                        <tr>
+                            <th
+                                v-for="item in title[0]"  :rowspan="item[2]=='rowspan'? item[1] : null" :colspan="item[2]=='colspan'? item[1] : null" :key="item[0]+Math.random()">{{item[0]}}
+                            </th>
+                        </tr>
+                        <tr>
+                            <th
+                                v-for="item in title[1]" :key="item[0]+Math.random()">{{item}}
+                            </th>
+                        </tr>
+                    </template>
+                </b-table>
+                <!-- </div> -->
+
+                <b-row align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-10"/>
+                    <b-col class="col-md-2">
+                        <b-container class="d-flex justify-content-end">
+                            <b-button @click="printAggTable" class="mr-0">ページ印刷</b-button>
+                        </b-container>
+                    </b-col>
+                </b-row>
+            </div>
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size: auto;
+        margin-top: 1rem;
+    }
+    .table-wrapper {
+        position: relative;
+        overflow-y: auto;
+        overflow-x: auto;
+        max-height: 400px;
+    }
+
+    #res-table tr th,
+    #res-table tr td {
+        vertical-align: middle;
+        text-align: center;
+        padding: 4px;
+    }
+    /* テーブルのヘッダ行を固定にする位置を4行目と5行目にする（1行目から3行目は印刷用のヘッダが存在する） */
+    #res-table thead tr:nth-child(4) th {
+        position: sticky;
+        top: 0px;
+    }
+    #res-table thead tr:nth-child(5) th {
+        position: sticky;
+        top: 25px;
+    }
+
+</style>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['prodInput', 'classPrintHideAgg', ],
+
+    data() {
+        return {
+            titleProd: '集計別進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //工区関連データ
+            aggSearchForm: {
+                projId: '',
+                projCode: '',
+                projName: '',
+                // aggTypeCode: '',
+            },
+            // aggType: 4,
+            // aggTypeOptions: [
+            //     { value: 0, text: '工区' },
+            //     { value: 1, text: '節' },
+            //     { value: 2, text: 'フロア' },
+            //     { value: 3, text: '部材種別' },
+            //     { value: 4, text: '工事すべて' }
+            // ],
+            title: [],
+            resDtTitle: [],
+            // tableHeight: this.prodSettings?.tableHeight || '400px',
+            // updateData: [],
+            resDt: {},
+            resHd: {},
+
+            prodData: [],
+            // prodFields: [],
+
+            isShowAggTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProd: false,
+            clickCount: 1,
+            sectionRowCnts: [],
+            areaRowCnts: [],
+            memberRowCnts: [],
+            floorRowCnts: []
+        }
+    },
+    // mounted() {
+    //     window.addEventListener('resize', () => {
+    //         this.table_height = window.innerHeight - 380 + 'px';
+    //     })
+    // },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        // console.log("compProdStatus created: ");
+        // console.log("compProdStatus created: projCode=" + this.prodInput.projId);
+        // console.log("compProdStatus created: projName=" + this.prodInput.projName);
+        this.isShowAggTable = false;
+        if (this.prodInput) {
+            let exist = 0;
+            if (this.prodInput.projId) {
+                this.aggSearchForm.projId = this.prodInput.projId;
+                exist++;
+            }  
+            if (this.prodInput.projCode) {
+                this.aggSearchForm.projCode =  this.prodInput.projCode;
+            }
+            if (this.prodInput.projName) {
+                this.aggSearchForm.projName =  this.prodInput.projName;
+            }
+            // if (this.prodInput.aggTypeCode) {
+            //     exist++;    this.aggSearchForm.aggTypeCode =  this.prodInput.aggTypeCode;
+            //     switch (this.prodInput.aggTypeCode) {
+            //         case 'Area':
+            //             this.aggType = 0; break;
+            //         case 'Section':
+            //             this.aggType = 1; break;
+            //         case 'Floor':
+            //             this.aggType = 2; break;
+            //         case 'Member':
+            //             this.aggType = 3; break;
+            //         default:
+            //             this.aggType = 4; break;
+            //     }
+            // }
+            if (exist > 0) {
+                this.aggSearchClick();          
+            }            
+        }    
+    }, 
+    methods: {
+        resetAggSearchForm() {
+            this.aggSearchClick.aggTypeCode = '';
+            //this.$store.state.searchForm = this.searchForm
+        },
+
+        async aggSearchClick() {
+            await this.aggSearch();
+            // console.log('aggSearchClick this.isShowAggTable=' + this.isShowAggTable );
+            if (this.isShowAggTable != true) {
+                return;
+            }
+            let titleProd = this.titleProd;
+            let aggSearchForm = this.aggSearchForm;
+            // let prodFields = this.prodFields;
+            let fieldlength = this.prodData[0].length;
+            // console.log('this.title[0].length=' + this.title[0].length);
+            // console.log('this.title[1].length=' + this.title[1].length);
+            let progressPos = 0;
+            let resDtTitle = this.resDtTitle;
+            for(let name in resDtTitle) {
+                // console.log('resDtTitle[name]=' + resDtTitle[name] + ', name=' + name + ', progressPos=' + progressPos);
+                if (name == 'listProgress') {
+                    break;
+                }
+                progressPos++;
+            }
+            let sectionRows = this.sectionRowCnts;
+            let areaRows = this.areaRowCnts;
+            let memberRows = this.memberRowCnts;
+            let floorRows = this.floorRowCnts;
+            commonMethods.sleep(100, 1, function () {
+                // console.log('length=' + length);
+                //製品一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+                commonMethods.printPrepare('agg-table', fieldlength, titleProd, `工事コード：${aggSearchForm.projCode}、工事名称：${aggSearchForm.projName}`);
+
+                // 右寄せする項目名をtargetFieldsの配列に指定する
+                let targetFields = ['prodTypeWeight', 'prodTypeQuantity', 'compPerSection', 'compPerArea', 'compPerMember', 'compPerFloor'];
+                let resDtIndexRight = [];           // インデックスからresDtの列を右寄せするインデックスを格納した配列
+                resDtIndexRight = commonMethods.makeResDtIndexRight(targetFields, resDtTitle);
+
+                let rows = [...document.getElementsByClassName('agg-table')[0].children[0].children[1].getElementsByTagName('tr')];
+                // rows.forEach((elementRow, r) => {
+                rows.forEach((elementRow) => {
+                    let cols = [...elementRow.getElementsByTagName('td')];
+                    //console.log('cols=' + cols[10].innerHTML);
+                    // 工程内の項目値は全てを右寄せ
+                    for (let c = progressPos; c < cols.length; c++) {
+                        cols[c].setAttribute('class', 'text-right');
+                    }
+                    for(let i in resDtIndexRight) {
+                        let c = resDtIndexRight[i];
+                        cols[c].setAttribute('class', 'text-right');
+                    }
+                });
+
+                //節、工区、部位、階のセル統合
+                let table = document.getElementsByClassName('agg-table')[0].children[0].children[1];
+                function rowSpan(colIndex, rowIndex, rows) {
+                    table.querySelectorAll(`td[aria-colindex='${colIndex}']`)[rowIndex-1].setAttribute('rowspan', rows);
+                    for(let i=0; i<rows-1; i++) {
+                        // rowspanで結合した先頭のセルを除いて残りのセルを削除
+                        table.querySelectorAll(`td[aria-colindex='${colIndex}']`)[rowIndex].remove();
+                    }
+                }
+                // 合計行のセル結合
+                function colSpan(colIndex, rowIndex, cols) {
+                    let cell =table.querySelectorAll(`td[aria-colindex='${colIndex}']`)[rowIndex-1];
+                    cell.setAttribute('colspan', cols);
+                    cell.setAttribute('class', 'text-right');
+                    cell.textContent = '合計';
+                    for(let i=1; i<cols; i++) {
+                        // colspanで結合した先頭のセルを除いて残りのセルを削除
+                        console.log(i)
+                        table.querySelectorAll(`td[aria-colindex='${colIndex+i}']`)[rowIndex-1].remove();
+                    }
+                }
+                // 合計（rowspanより最終行のcolspanを先にする必要がある。rowspanを先にするとrowindexの値はrowspanした値を考慮しなければならない。）
+                let totalFields = ['sectionUnit1', 'compPerFloor', 'sectionUnit2', 'floorUnit2'];
+                let totalColsIndex = commonMethods.makeResDtIndexRight(totalFields, resDtTitle);
+                colSpan(totalColsIndex[0] + 1, rows.length, totalColsIndex[1] - totalColsIndex[0] + 1); // colSpan(1, rows.length, 6);
+                colSpan(totalColsIndex[2] + 1, rows.length, totalColsIndex[3] - totalColsIndex[2] + 1); // colSpan(7, rows.length, 3);
+
+                //節
+                let sectionFields = ['sectionUnit1', 'compPerSection'];
+                let sectionCols = commonMethods.makeResDtIndexRight(sectionFields, resDtTitle);
+                for(let row=0; row<sectionRows.length; row++) {
+                    for(let col=0; col<sectionCols.length; col++) {
+                        rowSpan(sectionCols[col]+1, row+1, sectionRows[row]);
+                    }
+                }
+                //工区
+                let areaFields = ['areaUnit1', 'compPerArea'];
+                let areaCols = commonMethods.makeResDtIndexRight(areaFields, resDtTitle);
+                for(let row=0; row<areaRows.length; row++) {
+                    for(let col=0; col<areaCols.length; col++) {
+                        rowSpan(areaCols[col]+1, row+1, areaRows[row]);
+                    }
+                }
+                //部位
+                let memberFields = ['memberUnit1', 'compPerMember'];
+                let memberCols = commonMethods.makeResDtIndexRight(memberFields, resDtTitle);
+                for(let row=0; row<memberRows.length; row++) {
+                    for(let col=0; col<memberCols.length; col++) {
+                        rowSpan(memberCols[col]+1, row+1, memberRows[row]);
+                    }
+                }
+                //階
+                let floorFields = ['floorUnit1', 'compPerFloor'];
+                let floorCols = commonMethods.makeResDtIndexRight(floorFields, resDtTitle);
+                for(let row=0; row<floorRows.length; row++) {
+                    for(let col=0; col<floorCols.length; col++) {
+                        rowSpan(floorCols[col]+1, row+1, floorRows[row]);
+                    }
+                }
+            });
+        },
+
+        async aggSearch() {
+            this.message = '';
+            this.isLoadingProd = true;
+            this.isShowAggTable = false;
+            this.prodData = [];
+            // this.prodFields = [];
+            let payload = {
+                ...this.aggSearchForm.projId && {projId:          this.aggSearchForm.projId},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProdTypeProcProgAgg, axiosConfigObject)
+            .then(response => {
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.resDt = response.data.resDt;
+                    this.resHd = response.data.resHd;
+                    this.resDtTitle = response.data.resDtTitle;
+                    if(this.resDt.length) {
+                        // ヘッダー行を二段にして、ヘッダ行が一段しかない列はタイトルに一致するデータに列を並び替える。
+                        var tabData = this.createTableData(response.data.resDtTitle, response.data.resDt);
+                        this.title = [tabData[0], tabData[1]];
+                        this.prodData = tabData[2];
+                    }
+                    this.isShowAggTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('emitAggSearchButton', this.clickCount++);
+                if (this.isShowAggTable == true) {
+                    let headerRows = document.getElementById('res-table').getElementsByTagName('thead')[0];
+                    // console.log('headerRows=' + headerRows);
+                    headerRows.removeChild(headerRows.lastChild);
+                }
+            })
+        },
+
+        // rowClickAggTable(item) {
+        //     console.log('rowClickAggTable item=' + item);
+        //     if(item[0]) {
+        //         // console.log('rowClickAggTable item[0].projId=' + item[0].projId);
+        //         // console.log('rowClickAggTable item[0].aggUnitCode=' + item[0].aggUnitCode);
+        //         this.aggSearchForm.aggUnitCode = item[0].aggUnitCode;
+        //         this.aggSearchForm.aggUnitName = item[0].aggUnitName;
+        //         this.$emit('emitAggParams', this.aggSearchForm);
+
+        //     } else {
+        //         // console.log('rowClickAggTable item[0]=' + item[0]);
+        //         this.$emit('emitAggParams', {});
+        //     }
+        // },
+
+        printAggTable () {
+            // this.classPrintHideProd = '';    // プロパティへの設定は親でないと効かない
+            this.$emit('emitAggPrintButton', this.clickCount++);
+
+            //let docTitle = document.title;  // タイトルを退避
+            //document.title = '';          // タイトルを表示しないように漢字スペースをセット（空文字、半角スペースだとUrlがタイトルに入る）
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+
+                    commonMethods.printDesingHandler('agg-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('agg-table', false);
+
+                }
+                //document.title = docTitle;      // タイトルを元に戻す
+            });
+        },
+        // //明細データ再編成関数
+        // remakeResDt(obj) {
+        //     let c = [];
+        //     for (let y in obj) {
+        //         let a = {};
+        //         for(let i in obj[y]) {
+        //             if (obj[y][i] instanceof Array) {
+        //                 for(let n in obj[y][i]) {
+        //                     a[i + n] = obj[y][i][n];
+        //                 }
+        //             } else {
+        //                 a[i] = obj[y][i];
+        //             }
+        //         }
+        //         c.push(a);
+        //     }
+        //     return c;
+        // },
+        // //カラム作成・並べ替え関数
+        // remakeResDtTitle(obj, order) {
+        //     let a = []
+        //     let b = []
+        //     for(let i in obj) {
+        //         if (obj[i] instanceof Array) {
+        //             for(let n in obj[i]) {
+        //                 a.push( {'key': i + n, 'label': obj[i][n]} );
+        //             }
+        //         } else {
+        //             if (i != 'listProgress') {
+        //                 a.push( {'key': i, 'label': obj[i]} );
+        //             } else {
+        //                 a.push( {'key': 'listProgress0', 'label': '工程１'} );
+        //                 a.push( {'key': 'listProgress1', 'label': '工程２'} );
+        //                 a.push( {'key': 'listProgress2', 'label': '工程３'} );
+        //                 a.push( {'key': 'listProgress3', 'label': '工程４'} );
+        //                 a.push( {'key': 'listProgress4', 'label': '工程５'} );
+        //                 /*
+        //                 a['listProgress0'] = '工程１';
+        //                 a['listProgress1'] = '工程２';
+        //                 a['listProgress2'] = '工程３';
+        //                 a['listProgress3'] = '工程４';
+        //                 a['listProgress4'] = '工程５';
+        //                 */
+        //             }
+        //         }
+        //     }
+        //     if(order) {
+        //         for(let i in order) {
+        //             b.push(a[order[i]])
+        //         }
+        //         return b
+        //     }
+        //     return a
+        // },
+        createTableData(resDtTitle, resDt) {
+            //非表示データのキー取得
+            var titleKeys = Object.keys(resDtTitle);
+            var dataKeys = Object.keys(resDt[0]);
+            var difference = dataKeys.filter(x => titleKeys.indexOf(x) === -1);
+            //ヘッダー二段化
+            var headerUp = [];      // 工程以外の漢字項目と工程の漢字項目を格納
+            var headerDown = [];    // 工程内の漢字項目（重量(kg)、完了率、遅延率、重量(kg)）を格納
+            var headerUpName = [];  // 工程以外の項目名を格納
+            Object.entries(resDtTitle).forEach(element => {
+                if(element[0] == 'listProgress') {
+                    element[1].forEach(element => {
+                        var splittedElement = element.trim().split(/\s+/);
+                        // console.log('splittedElement[0]='+ splittedElement[0]);
+                        // splittedElement[0]:工程漢字名称
+                        headerUp.push([splittedElement[0], splittedElement.length - 1, 'colspan']);
+                        for(var i=1; i<splittedElement.length; i++) {
+                            // console.log('splittedElement[i]='+ splittedElement[i]);
+                            // splittedElement[i]:工程内の漢字項目（重量(kg)、完了率、遅延率、重量(kg)）
+                            headerDown.push(splittedElement[i]);
+                        }
+                    });
+                } else {
+                    // console.log('element[0]='+ element[0]+ ', element[1]='+ element[1]);
+                    // element[0]:項目名、element[1]:漢字項目名
+                    headerUpName.push(element[0]);
+                    headerUp.push([element[1], 2, 'rowspan']);
+                }
+            });
+            //テーブルデータ展開
+            var rowData = [];           // １行分のデータを格納
+            var tableData = [];         // 全行を格納
+            var rowDataProgress = [];   // 工程内の項目値を格納
+            let resDtName2Value = {};   // 工程以外の項目名をキーにした値を格納
+            resDt.forEach(element => {
+                if(element.sectionRowCnt) this.sectionRowCnts.push(element.sectionRowCnt);
+                if(element.areaRowCnt) this.areaRowCnts.push(element.areaRowCnt);
+                if(element.memberRowCnt) this.memberRowCnts.push(element.memberRowCnt);
+                if(element.floorRowCnt) this.floorRowCnts.push(element.floorRowCnt);
+                Object.entries(element).forEach(element => {
+                    if(!difference.includes(element[0])) {
+                        if(element[0] == 'listProgress') {
+                            element[1].forEach(element => {
+                                var splittedElement = element.trim().split(/\s+/);
+                                splittedElement.forEach(element => {
+                                    // rowData.push(element);
+                                    // element:工程内の項目値
+                                    rowDataProgress.push(element);
+                                });
+                            });
+                        } else {
+                            // rowData.push(element[1]);
+                            // element[0]: 工程以外の項目名、element[1]:工程以外の項目名の値
+                            resDtName2Value[element[0]] = element[1];
+                        }
+                    }
+                });
+                // 工程以外の項目値をタイトル行の項目順に並び替える
+                for (let i in headerUpName) {
+                    rowData.push(resDtName2Value[headerUpName[i]]);
+                }
+                // 工程内の項目値を順番にセットする
+                for (let i in rowDataProgress) {
+                    rowData.push(rowDataProgress[i]);
+                }
+                tableData.push(rowData);
+                rowData = [];
+                rowDataProgress = [];
+                resDtName2Value = {};
+            });
+            return [headerUp, headerDown, tableData];
+        },
+    }
+}
+</script>

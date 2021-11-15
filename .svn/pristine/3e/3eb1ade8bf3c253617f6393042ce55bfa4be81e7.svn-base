@@ -1,0 +1,172 @@
+<template>
+    <div>
+        <comp-proj-status
+            v-if="isShowProjChoice"
+            v-on:emittedProjParams="emitProjEvent"
+            v-on:projSearchButton="projSearchButtonEvent"/>
+        <comp-prod-status
+            v-if="isShowProdSearch"
+            :proj-params="projSelected"
+            v-on:emittedProdParams="emitProdEvent"
+            v-on:prodSearchButton="prodSearchButtonEvent"/>
+        <!-- comp-prod-status
+            v-if="isShowProdSearch"
+            :proj-params="projSelected"
+            v-on:emittedProdParams="emitProdEvent"
+            v-on:prodSearchButton="prodSearchButtonEvent"/ -->
+
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+@media print {
+    .print-hide {
+        display: none;
+    }
+    .card {
+        border: none;
+    }
+}
+@page {
+      size:auto;
+      margin-top: 1rem;
+}
+</style>
+
+<script>
+//import axios from 'axios'
+//import apiUrls from '../../common/apiUrls'
+//import commonMethods from '../../common/commonMethods'
+import compProjStatus from "@/components/compProjStatus.vue";
+import compProdStatus from "@/components/compProdStatus.vue";
+
+export default {
+    components: {
+        compProjStatus,
+        compProdStatus,
+    },
+    data() {
+        return {
+            // striped: true,
+            // compProdStatus: true,
+            // //工事関連データ
+            // projSearchForm: {
+            //     projCode: '',
+            //     projName: '',
+            //     startDateComplete: '',
+            //     endDateComplete: '',
+            //     startDateBegin: '',
+            //     endDateBegin: '',
+            // },
+            // projStatus: 4,
+            // projStatusOptions: [
+            //     { value: 0, text: '工事未着手' },
+            //     { value: 1, text: '工事着手' },
+            //     { value: 2, text: '工事未完了' },
+            //     { value: 3, text: '工事完了' },
+            //     { value: 4, text: '工事すべて' }
+            // ],
+            // projData: [],
+            // projFields: [],
+            projSelected: '',
+            // //製品関連データ
+            // prodSearchForm: {
+            //     prodCode: '',
+            //     prodName: '',
+            //     startDateBegin: '',
+            //     startDateComplete: '',
+            //     endDateComplete: '',
+            //     endtDateBegin: ''
+            // },
+            // prodStatus: 4,
+            // prodStatusOptions: [
+            //     { value: 0, text: '製品未着手' },
+            //     { value: 1, text: '製品着手' },
+            //     { value: 2, text: '製品未完了' },
+            //     { value: 3, text: '製品完了' },
+            //     { value: 4, text: '製品すべて' }
+            // ],
+            // prodData: [],
+            // prodFields: [],
+            prodSelected: [],
+
+            isShowProjChoice: true,
+            isShowProdChoice: false,
+            isShowProjTable: false,
+            isShowProdTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProj: false,
+            isLoadingProd: false,
+        }
+    },
+/*
+    mounted() {
+        
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 380 + 'px';
+        })
+        window.addEventListener('beforeprint', () => {
+            if(document.getElementsByClassName('proj-table').length) {
+                let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+                doubleHeadTable.children[0].removeAttribute('hidden');
+                doubleHeadTable.children[1].removeAttribute('hidden');
+            }
+            if(document.getElementsByClassName('prod-table').length) {
+                let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+                doubleHeadTable.children[0].removeAttribute('hidden');
+                doubleHeadTable.children[1].removeAttribute('hidden');
+                doubleHeadTable.children[2].removeAttribute('hidden');
+            }
+        })
+        window.addEventListener('afterprint', () => {
+            if(document.getElementsByClassName('proj-table').length) {
+                let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+                doubleHeadTable.children[0].setAttribute('hidden', '');
+                doubleHeadTable.children[1].setAttribute('hidden', '');
+            }
+            if(document.getElementsByClassName('prod-table').length) {
+                let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+                doubleHeadTable.children[0].setAttribute('hidden', '');
+                doubleHeadTable.children[1].setAttribute('hidden', '');
+                doubleHeadTable.children[2].setAttribute('hidden', '');
+            }
+        })
+    },
+ */
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        emitProjEvent(value) {
+            console.log('emitProjEvent value=' + value + ', value[0]=' + value[0]);
+            console.log('emitProjEvent value.projCode=' + value.projCode);
+            console.log('emitProjEvent value.projName=' + value.projName);
+            console.log('emitProjEvent value.projId=' + value.projId);
+            this.projSelected = value;
+            this.isShowProdSearch = true;
+        },
+        emitProdEvent(value) {
+            console.log('emitProdEvent value=' + value + ', value[0]=' + value[0]);
+            console.log('emitProdEvent value.projCode=' + value.projCode);
+            console.log('emitProdEvent value.projName=' + value.projName);
+            this.prodSelected = value;
+        },
+        projSearchButtonEvent(value) {
+            console.log('projSearchButtonEvent value=' + value + ', value[0]=' + value[0]);
+            console.log('projSearchButtonEvent value.projCode=' + value.projCode);
+            console.log('projSearchButtonEvent value.projName=' + value.projName);
+             this.projSearchButtonCount = value;
+        },
+        prodSearchButtonEvent(value) {
+            console.log('prodSearchButtonEvent value=' + value + ', value[0]=' + value[0]);
+            console.log('prodSearchButtonEvent value.projCode=' + value.projCode);
+            console.log('prodSearchButtonEvent value.projName=' + value.projName);
+             this.prodSearchButtonCount = value;
+        },
+    }
+}
+</script>

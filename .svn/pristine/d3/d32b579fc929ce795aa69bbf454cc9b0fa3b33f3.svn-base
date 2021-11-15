@@ -1,0 +1,378 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+    <b-form inline class="mb-1">
+        <b-form-group label="製品コード" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodCode"/>
+        </b-form-group>
+        <b-form-group label="製品名称" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodName"/>
+        </b-form-group>
+        <b-form-group label="基準日" class="mr-2">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="prodSearchForm.targetDate"/>
+        </b-form-group>
+        <div style="margin-bottom: -2rem">
+        <b-button @click="prodSearch(null)" >検索</b-button>
+        </div>
+    </b-form>
+    <div v-if="prodData.length">
+        <p class="my-4">ダブルクリックで日付をコピー（Ctrl+C）してペスト（Ctrl+V）</p>
+    
+        <b-table
+            id="res-table"
+            head-variant="light"
+            class="table-sm table-bordered text-nowrap"
+            :sticky-header="tableHeight"
+            no-border-collapse
+            responsive
+            :items="prodData">
+             <template slot="thead-top">
+                <tr>
+                    <th class="text-center"
+                    v-for="item in resDtTitle[0]"  :rowspan="item[2]=='rowspan'? item[1] : null" :colspan="item[2]=='colspan'? item[1] : null" :key="item[0]+Math.random()">{{item[0]}}
+                    </th>
+                </tr>
+                <tr>
+                    <th class="text-center"
+                    v-for="item in resDtTitle[1]" :key="item[0]+Math.random()">{{item}}
+                    </th>
+                </tr>
+            </template>
+            <template #cell(6)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[6]=='****-**-**'?'':data.item[6]" @change="updateItem"/>
+            </template>
+            <template #cell(7)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[7]=='****-**-**'?'':data.item[7]" @change="updateItem"/>
+            </template>
+            <template #cell(8)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[8]=='****-**-**'?'':data.item[8]" @change="updateItem"/>
+            </template>
+            <template #cell(9)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[9]=='****-**-**'?'':data.item[9]" @change="updateItem"/>
+            </template>
+            <template #cell(10)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[10]=='****-**-**'?'':data.item[10]" @change="updateItem"/>
+            </template>
+            <template #cell(11)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[11]=='****-**-**'?'':data.item[11]" @change="updateItem"/>
+            </template>
+            <template #cell(12)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[12]=='****-**-**'?'':data.item[12]" @change="updateItem"/>
+            </template>
+            <template #cell(13)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[13]=='****-**-**'?'':data.item[13]" @change="updateItem"/>
+            </template>
+            <template #cell(14)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[14]=='****-**-**'?'':data.item[14]" @change="updateItem"/>
+            </template>
+            <template #cell(15)="data">
+                <b-form-input :style="inputStyle" type="date" max="9999-12-31" :value="data.item[15]=='****-**-**'?'':data.item[15]" @change="updateItem"/>
+            </template>
+        </b-table>
+        <!--
+        <b-table-simple small caption-top responsive class="text-nowrap" id="res-table">
+        <caption>製品工程一覧表</caption>
+        <b-thead head-variant="light">
+             <b-tr>
+            <b-th style="border:1.2px solid #000000;"
+            class="text-center"
+            v-for="item in resDtTitle[0]"  :rowspan="item[2]=='rowspan'? item[1] : null" :colspan="item[2]=='colspan'? item[1] : null" :key="item[0]+Math.random()">{{item[0]}}</b-th>
+            </b-tr>
+            <b-tr>
+            <b-th style="border:1.2px solid #000000;"
+            class="text-center"
+            v-for="item in resDtTitle[1]" :key="item[0]+Math.random()">{{item}}</b-th>
+            </b-tr>
+        </b-thead>
+        <b-tbody style="border:1.2px solid #000000;">
+            <b-tr v-for="(line) in prodData" :key="line[0]">
+            <b-td v-for="(item, itemIndex) in line" :key="item+Math.random()" style="border:1.2px solid #000000;">
+                <div v-if="updateColumns.includes(itemIndex)"><b-input type="date" :value="item=='****-**-**'?'':item" max="9999-12-31" @change="updateItem"/></div>
+                <div v-if="!updateColumns.includes(itemIndex)">{{item}}</div>
+            </b-td>
+            </b-tr>
+        </b-tbody>
+        <b-tfoot>
+            <b-tr style="border:1.2px solid #000000;">
+            <b-td :colspan="prodData[0].length" variant="secondary">
+                合計: <b>{{prodData.length}}</b>
+            </b-td>
+            </b-tr>
+        </b-tfoot>
+        </b-table-simple>-->
+        <b-button v-if="prodData.length" @click="update">更新</b-button>
+    </div>
+    </b-card>
+    <div v-if="isLoadingProd" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+</div>
+</template>
+
+<script>
+import commonMethods from '../common/commonMethods';
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+    props: ['prodSettings', 'projParams'],
+    data() {
+        return {
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                targetDate: '',
+            },
+            message: '',
+            updateData: [],
+            resDt: {},
+            backupData: [],
+            updateColumns: [6,7,8,9,10,11,12,13,14,15],
+            resDtTitle: [],
+            tableHeight: this.prodSettings && this.prodSettings.tableHeight || '400px',
+            prodData: [],
+            prodFields: [],
+            isLoadingProd: false,
+            clickCount: 1,
+            inputStyle: 'width:170px',
+         }
+    },
+    methods: {
+        async prodSearch(searchMode) {
+            this.prodData = [];
+            this.isLoadingProd = true;
+            this.message = '';
+            if(searchMode) {
+                var payload = {
+                    ...this.projParams.projCode && { projCode:   this.projParams.projCode },
+                    ...this.prodSearchForm.prodCode && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projParams.projCode   && { projCode:   this.projParams.projCode  },
+                    ...this.projParams.projName   && { projName:   this.projParams.projName },
+                    ...this.prodSearchForm.prodCode    && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.prodName    && { prodName:   this.prodSearchForm.prodName },
+                    ...this.prodSearchForm.targetState && {targetState: + this.prodSearchForm.targetState},
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.registerProdProcPlan, axiosConfigObject)
+            .then(response => {
+                //this.prodData = response.data.resDt;
+                //this.prodFields = this.createFields(response.data.resDtTitle);
+                this.resDt = response.data.resDt;
+                var tabData = this.createTableData(response.data.resDtTitle, response.data.resDt);
+                this.resDtTitle = [tabData[0], tabData[1]];
+                this.prodData = tabData[2];
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('prodSearchButton', this.clickCount++);
+                this.backupData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+                this.updateData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+
+                //ダブルクリックで日付をコピペ
+                let dateInputs = document.getElementById('res-table').querySelectorAll('[type="date"]');
+                dateInputs.forEach(element => {
+                    // ダブルクリックイベントを登録し、それが発火した時に入力タイプを一旦TEXTに変える
+                    element.addEventListener('dblclick', () => {
+                        element.type = 'text';
+                        // .select()（選択状態）メソッドが直ぐに動かないのでタイムアウトを設定
+                        setTimeout(() => {
+                            element.select();
+                        })
+                    });
+                    // フォカストイベントで入力タイプをDATEに戻す
+                    element.addEventListener('focusout', () => {
+                        element.type = 'date';
+                    });
+                });
+                let headerRows = document.getElementById('res-table').getElementsByTagName('thead')[0];
+                headerRows.removeChild(headerRows.lastChild);
+            })
+        },
+
+        prodSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProdParams', item[0]);
+            } else {
+                this.$emit('emittedProdParams', {});
+            }
+        },
+
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        },
+
+        createTableData(resDtTitle, resDt) {
+            //非表示データのキー取得
+            var titleKeys = Object.keys(resDtTitle);
+            var dataKeys = Object.keys(resDt[0]);
+            var difference = dataKeys.filter(x => titleKeys.indexOf(x) === -1);
+            //ヘッダー二段化
+            var headerUp = [];
+            var headerDown = [];
+            Object.entries(resDtTitle).forEach(element => {
+                if(element[0] == 'listProgress') {
+                element[1].forEach(element => {
+                    var splittedElement = element.trim().split(/\s+/);
+                    headerUp.push([splittedElement[0], splittedElement.length - 1, 'colspan']);
+                    for(var i=1; i<splittedElement.length; i++) {
+                    headerDown.push(splittedElement[i]);
+                    }
+                });
+                } else {
+                    headerUp.push([element[1],2, 'rowspan']);
+                }
+            });
+            //テーブルデータ展開
+            var tableData = [];
+            var rowData = [];
+            resDt.forEach(element => {
+                Object.entries(element).forEach(element => {
+                    if(!difference.includes(element[0])) {
+                    if(element[0] == 'listProgress') {
+                        element[1].forEach(element => {
+                        var splittedElement = element.trim().split(/\s+/);
+                        splittedElement.forEach(element => {
+                            rowData.push(element);
+                        });
+                        });
+                    } else {
+                        rowData.push(element[1]);
+                    }
+                    }
+                });
+                tableData.push(rowData);
+                rowData = [];
+            });
+            return [headerUp, headerDown, tableData];
+        },
+
+        extractTableData(data) {
+            //const data = [...document.querySelectorAll('.form-control')].map(element => element.value);
+            let chunkSize = 10;
+            let res = [];
+            for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                res.push(chunk);
+            }
+            return res;
+        },
+
+        updateItem() {
+            //console.log(event);
+            //this.updateData = this.extractTableData();
+            //let updateDataPrev = this.updateData;
+            this.updateData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+            //this.findDiff(updateDataPrev, this.updateData);
+            //console.log(this.findDiff(updateDataPrev, this.updateData));
+            //this.curDate = this.findDiff(updateDataPrev, this.updateData) || this.curDate;
+        
+            //this.curDate = event;
+            //console.log(this.curDate);
+            //console.log(lineIndex, itemIndex);
+            //console.log(this.extractTableData());
+            //this.dataInput[lineIndex][5] = date;
+            //this.dataInput[lineIndex][itemIndex] = date;
+            //let refVal = 'ref' + lineIndex + itemIndex;
+            //this.$refs[refVal][0].focus();
+            //console.log(this.$refs[refVal][0]);
+            //this.updateData = [...document.querySelectorAll('.form-control')].map(element => element.value);
+            /*
+            itemIndex = this.updateColumns.indexOf(itemIndex);
+            this.updateData[lineIndex][itemIndex] = date;
+            console.log(this.updateData);
+            if(itemIndex == 6) { this.dataInput[lineIndex][4] = date; }
+            this.dataInput[lineIndex][5] = date;*/
+            //console.log(upd);
+        },
+
+        update() {
+            let listProcCode = this.resDt[0].listProcCode;
+            let listprodId = this.resDt.map(element => element.prodId);
+            let upData = this.extractTableData(this.updateData);
+            let bkData = this.extractTableData(this.backupData);
+
+            let payload = {
+                reqHd: {
+                    projId: this.projParams.projId
+                },
+                reqDt: []
+            };
+
+            let index = -1;
+            for(let i=0; i<listprodId.length; i++) {
+                for(let j=0; j<listProcCode.length; j++) {
+                    if(upData[i][j*2] !== bkData[i][j*2] || upData[i][j*2+1] !== bkData[i][j*2+1]) {
+                        index ++;
+                        payload.reqDt[index] = {};
+                        payload.reqDt[index].prodId = listprodId[i];
+                        payload.reqDt[index].listProgress = [];
+                        payload.reqDt[index].listProgress.push({
+                            procCode: listProcCode[j],
+                            startPlanDate: upData[i][j*2],
+                            endPlanDate: upData[i][j*2+1]
+                        });
+                    }
+                }
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                }
+            }
+
+            axios.post(apiUrls.updateProdProcPlan, payload, axiosConfigObject)
+                    .then((response) => {
+                        if(response.data.resultCode != '000') {
+                            this.message = commonMethods.getResponseMessage(response);
+                        }
+                        else {
+                            alert(response.data.resultMessage)
+                            //this.$store.state.responseData = ''
+                        }
+                    })
+                    .catch(error => {
+                        this.message = commonMethods.getErrorMessage(error);
+                    })
+                    .finally(() => {
+                        this.prodSearch(null);
+                    })
+        }
+    }
+}
+</script>

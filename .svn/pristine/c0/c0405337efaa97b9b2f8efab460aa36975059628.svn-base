@@ -1,0 +1,189 @@
+<template>
+    <div>
+        <h1>製品/工程作成</h1>
+
+        <b-button id="search_project_button" v-b-modal.search_project_modal v-if="project_button_show">物件検索</b-button>
+        
+        <b-modal
+        id="search_project_modal"
+        title="物件検索"
+        @ok="search_project">
+             <b-form>
+                <label for="proj_code">物件コード</label>
+                <b-form-input id="proj_code" v-model="proj_code"/>
+                <label for="proj_name">物件名称</label>
+                <b-form-input id="proj_name" v-model="proj_name"/>
+            </b-form>
+        </b-modal>
+    
+        <b-table v-if="project_fetched"
+            :items="pt_project"
+            :fields="pt_project_fields">
+        </b-table>
+
+        <div v-if="project_fetched">
+            <b-button @click="search_product">製品検索</b-button>
+        </div>
+
+        <div v-if="project_fetched && product_fetched">
+            <b-card border-variant="info">
+            <div class="text-right">
+                <b-button v-if="products_show" size="sm" id="products_show_button" variant="primary" @click="products_show=false">非表示</b-button>
+                <b-button v-else size="sm" id="products_show_button" variant="primary" @click="show">表示</b-button>
+            </div>
+            <b-collapse v-model="products_show">
+                <b-table
+                    :items="products"
+                    :fields="fields"
+                    hover
+                    selectable
+                    sticky-header
+                    head-variant="light"
+                    @row-selected="on_row_selected"
+                    ref="product_table_ref">
+                    <template #cell(selected)="{ rowSelected }">
+                        <template v-if="rowSelected">
+                            <span aria-hidden="true">&check;</span>
+                            <span class="sr-only">Selected</span>
+                        </template>
+                        <template v-else>
+                            <span aria-hidden="true">&nbsp;</span>
+                            <span class="sr-only">Not selected</span>
+                        </template>
+                    </template>
+                </b-table>
+                <div class="text-right">
+                  <b-button size="sm"  class="mr-1" variant="primary" @click="selectAllRows">全選択</b-button>
+                  <b-button size="sm" variant="primary" @click="clearSelected">選択解除</b-button>
+                </div>
+            </b-collapse>
+            </b-card>
+            <b-button :disabled=!prod_id[0] @click="create_project">作成</b-button>
+        </div>
+
+        <b-alert variant="success" :show="create_show">
+            <b>製品/工程</b> <br>
+            物件ID： {{proj_id}} <br>
+            工程コード： {{proc_code_selected}} <br>
+            製品ID：{{prod_id}} 
+        </b-alert>
+
+        <div class="text-right">
+        <b-button v-if="create_show" class="mr-1" @click="on_return" >戻る</b-button>
+        <b-button to="/menu" variant="info">戻る</b-button>
+        </div>
+
+    </div>
+</template> 
+
+<style scoped>
+    #search_project_button, #products_show_button {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<script>
+export default {
+    data() {
+        return {
+            fields: [],
+            products: null,
+            pt_project_fields: [],
+            pt_project: [],
+            prod_id: [],
+            proc_code_selected: 'PC001',
+            proc_codes: ['PC001', 'PC002', 'PC003', 'PC004'],
+            proj_code: 'PP0001',
+            proj_name: '物件1',
+            proj_id: 'PJ0001',
+            products_show: false,
+            project_fetched: false,
+            product_fetched: false,
+            create_show: false,
+            project_button_show: true
+        }
+    },
+    methods: {
+        search_project() {
+            this.pt_project_fields = [
+                {key: 'proj_id', label: '物件ID'},
+                {key: 'proj_code', label: '物件コード'},
+                {key: 'proj_name', label: '物件名称'},
+                {key: 'cust_id', label: '取引先ID'}
+            ],
+            this.pt_project = [
+                {proj_id: '0001', proj_code: this.proj_code, proj_name: this.proj_name, cust_id: 'C0001'}
+            ],
+            this.project_fetched = true
+            this.product_fetched = false
+            this.create_show = false
+        },
+        search_product() {
+            this.fields = [
+                {key: 'selected',       label: '選択'},
+                {key:'prod_id',         label: '製品ID'}, 
+                {key:'prod_code',       label: '製品コード'}, 
+                {key:'prod_name',       label: '製品名称' }, 
+                {key:'quantity',        label: '数量' }, 
+                {key:'start_plan_date', label: '開始日' }, 
+                {key:'end_plan_date',   label: '完了日',}
+            ]
+            this.products = [
+                {is_active: false, prod_id: 'PR001', prod_code: 'C0001', prod_name: '製品１', quantity: 25, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR002', prod_code: 'C0002', prod_name: '製品２', quantity: 11, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR003', prod_code: 'C0003', prod_name: '製品３', quantity: 1, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR004', prod_code: 'C0004', prod_name: '製品４', quantity: 8, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR005', prod_code: 'C0005', prod_name: '製品５', quantity: 7, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR006', prod_code: 'C0006', prod_name: '製品６', quantity: 13, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR007', prod_code: 'C0007', prod_name: '製品７', quantity: 20, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR008', prod_code: 'C0008', prod_name: '製品８', quantity: 9, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR009', prod_code: 'C0009', prod_name: '製品９', quantity: 5, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'},
+                {is_active: false, prod_id: 'PR010', prod_code: 'C0010', prod_name: '製品１０', quantity: 13, start_plan_date: '2020-12-30', end_plan_date: '2021-12-10'}
+            ]
+            this.product_fetched = true
+            this.products_show = true
+        },
+        on_row_selected(items) {
+            this.prod_id = []
+            for(let item of items) {
+                this.prod_id.push(item.prod_id)
+                }
+            //this.prod_id = items
+        },
+        selectAllRows() {
+        this.$refs.product_table_ref.selectAllRows()
+        },
+        clearSelected() {
+        this.$refs.product_table_ref.clearSelected()
+        },
+        show() {
+            if (this.products) {
+                this.products_show = true
+            }
+        },
+        create_project() {
+            this.create_show = true
+            this.project_fetched = false
+            this.project_button_show = false
+        },
+        on_return() {
+            //this.$router.go('/project')
+            this.fields = []
+            this.products = null
+            this.pt_project_fields = []
+            this.pt_project = []
+            this.prod_id = []
+            this.proc_code_selected = 'PC001'
+            this.proc_codes = ['PC001', 'PC002', 'PC003', 'PC004']
+            this.proj_code = 'PP0001'
+            this.proj_name = '物件1'
+            this.proj_id = 'PJ0001'
+            this.products_show = false
+            this.project_fetched = false
+            this.product_fetched = false
+            this.create_show = false
+            this.project_button_show = true
+        }
+    }
+}
+</script>

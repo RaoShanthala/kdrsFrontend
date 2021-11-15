@@ -1,0 +1,84 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 17 (0x11)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=JP, ST=Toyama, O=Arche Information Inc., CN=arche1.co.jp
+        Validity
+            Not Before: May  7 10:47:45 2021 GMT
+            Not After : May  5 10:47:45 2031 GMT
+        Subject: C=JP, ST=Toyama, L=Himi, O=kitaniCO.,LTD., CN=kitani55.co.jp
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:a9:3c:3c:4c:01:af:21:f9:b0:da:af:09:b4:43:
+                    e4:3e:26:5d:d8:d0:14:b6:84:46:a3:51:93:d6:c5:
+                    77:5d:20:ab:c6:ad:76:76:67:a0:3c:11:74:90:61:
+                    26:0f:e9:c2:23:93:a8:8c:6f:f7:77:bc:4b:4f:55:
+                    cd:ff:c5:62:5f:d3:a4:8b:fd:ba:fd:eb:e1:82:c0:
+                    dc:4b:eb:b7:de:dd:0d:da:bb:d4:3c:25:c6:f5:ee:
+                    15:68:b0:e4:31:84:bf:c5:f3:eb:49:36:3e:35:a9:
+                    05:3f:46:e0:aa:a4:d2:c2:2c:e0:55:8b:27:ab:01:
+                    67:e4:a5:f8:f7:cc:35:22:a1:53:26:0a:4e:d7:7f:
+                    96:2d:9d:8e:8a:24:2a:0b:1a:bb:f3:d0:68:45:3d:
+                    9b:90:4a:00:67:c7:fe:db:85:21:8f:94:89:9d:7f:
+                    35:0c:1f:70:f1:a8:53:4c:0f:e7:9d:16:f7:20:45:
+                    9f:02:80:59:aa:33:1d:c5:21:70:83:f7:e8:24:f1:
+                    03:14:2a:ce:1b:da:64:f4:08:60:a8:c3:dc:b5:76:
+                    48:94:03:c9:e7:ad:82:fc:05:6d:e7:8c:39:58:b0:
+                    f7:53:cb:f7:52:5c:86:9b:c3:a4:34:b9:af:30:2f:
+                    9e:04:f8:e6:c8:52:99:db:3c:79:ad:1f:c0:c5:0c:
+                    93:f7
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Key Identifier: 
+                0A:C2:2F:D1:C8:31:48:CD:6C:E9:FF:20:72:3C:01:10:AE:8C:33:F2
+            X509v3 Authority Key Identifier: 
+                keyid:E6:0E:B7:E3:F4:36:88:29:94:3C:67:8C:55:99:9F:0F:70:27:97:FA
+
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Key Usage: 
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment
+            X509v3 Subject Alternative Name: 
+                DNS:ec2-18-180-43-143.ap-northeast-1.compute.amazonaws.com, DNS:localhost
+    Signature Algorithm: sha256WithRSAEncryption
+         60:57:e2:11:31:2b:9c:47:29:9a:cb:28:5b:c7:25:e9:96:fb:
+         1c:76:3d:81:0e:9d:5c:3d:af:7a:b1:d4:b9:d9:0a:e9:c1:54:
+         9d:88:47:be:ed:fe:b6:02:ef:94:76:4e:fc:a3:62:f7:d5:99:
+         7d:8a:ab:fa:d0:0c:98:ba:6d:8f:1d:dd:79:01:35:91:22:d1:
+         db:0f:7b:29:69:42:ba:da:26:fd:90:7e:e2:8c:7b:52:e9:42:
+         a1:b7:cb:75:df:46:f7:bc:71:bf:37:ba:60:5e:37:35:97:da:
+         97:96:db:d6:8b:08:07:ef:1f:5e:fc:6a:72:0e:a2:85:be:10:
+         c9:de:7e:dc:fb:7a:ad:eb:d0:06:0b:df:09:3e:9f:b4:2c:14:
+         ac:b0:d3:fa:f1:7c:c0:40:f9:dc:cc:2a:07:be:17:5f:9c:9e:
+         ea:d0:ce:7b:92:fa:13:f8:00:da:05:ac:0e:1d:40:05:0e:8d:
+         ab:f7:a5:8e:ba:1d:6d:9a:50:48:98:75:f0:12:18:b9:10:fb:
+         8d:47:2f:8b:28:6c:8a:1c:92:fc:6c:27:fa:54:46:04:32:0e:
+         fc:97:f5:9b:d1:b8:60:12:2f:a0:eb:1e:4a:27:b2:96:22:3d:
+         31:98:03:ea:23:e5:c0:84:41:e7:5f:db:ca:e2:cd:9d:45:a1:
+         de:4f:af:47
+-----BEGIN CERTIFICATE-----
+MIID3TCCAsWgAwIBAgIBETANBgkqhkiG9w0BAQsFADBWMQswCQYDVQQGEwJKUDEP
+MA0GA1UECAwGVG95YW1hMR8wHQYDVQQKDBZBcmNoZSBJbmZvcm1hdGlvbiBJbmMu
+MRUwEwYDVQQDDAxhcmNoZTEuY28uanAwHhcNMjEwNTA3MTA0NzQ1WhcNMzEwNTA1
+MTA0NzQ1WjBfMQswCQYDVQQGEwJKUDEPMA0GA1UECAwGVG95YW1hMQ0wCwYDVQQH
+DARIaW1pMRcwFQYDVQQKDA5raXRhbmlDTy4sTFRELjEXMBUGA1UEAwwOa2l0YW5p
+NTUuY28uanAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpPDxMAa8h
++bDarwm0Q+Q+Jl3Y0BS2hEajUZPWxXddIKvGrXZ2Z6A8EXSQYSYP6cIjk6iMb/d3
+vEtPVc3/xWJf06SL/br96+GCwNxL67fe3Q3au9Q8Jcb17hVosOQxhL/F8+tJNj41
+qQU/RuCqpNLCLOBViyerAWfkpfj3zDUioVMmCk7Xf5YtnY6KJCoLGrvz0GhFPZuQ
+SgBnx/7bhSGPlImdfzUMH3DxqFNMD+edFvcgRZ8CgFmqMx3FIXCD9+gk8QMUKs4b
+2mT0CGCow9y1dkiUA8nnrYL8BW3njDlYsPdTy/dSXIabw6Q0ua8wL54E+ObIUpnb
+PHmtH8DFDJP3AgMBAAGjgawwgakwHQYDVR0OBBYEFArCL9HIMUjNbOn/IHI8ARCu
+jDPyMB8GA1UdIwQYMBaAFOYOt+P0NogplDxnjFWZnw9wJ5f6MAwGA1UdEwEB/wQC
+MAAwCwYDVR0PBAQDAgTwMEwGA1UdEQRFMEOCNmVjMi0xOC0xODAtNDMtMTQzLmFw
+LW5vcnRoZWFzdC0xLmNvbXB1dGUuYW1hem9uYXdzLmNvbYIJbG9jYWxob3N0MA0G
+CSqGSIb3DQEBCwUAA4IBAQBgV+IRMSucRymayyhbxyXplvscdj2BDp1cPa96sdS5
+2QrpwVSdiEe+7f62Au+Udk78o2L31Zl9iqv60AyYum2PHd15ATWRItHbD3spaUK6
+2ib9kH7ijHtS6UKht8t130b3vHG/N7pgXjc1l9qXltvWiwgH7x9e/GpyDqKFvhDJ
+3n7c+3qt69AGC98JPp+0LBSssNP68XzAQPnczCoHvhdfnJ7q0M57kvoT+ADaBawO
+HUAFDo2r96WOuh1tmlBImHXwEhi5EPuNRy+LKGyKHJL8bCf6VEYEMg78l/Wb0bhg
+Ei+g6x5KJ7KWIj0xmAPqI+XAhEHnX9vK4s2dRaHeT69H
+-----END CERTIFICATE-----

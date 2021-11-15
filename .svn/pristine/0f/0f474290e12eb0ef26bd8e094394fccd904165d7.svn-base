@@ -1,0 +1,398 @@
+<template>
+    <div>
+        <b-card bg-variant="light">
+            <b-form>
+                <b-container>
+                    <br />
+                     <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="製品コード" label-for="input-prod-code" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-type-prod-code" v-model="view.prodCode"></b-form-input>
+                                 <div><p style="color: #ff0000;" id="prodCodeError"></p> </div>
+                            </b-form-group>
+                        </b-col>  
+                        <b-col class="col-md-5">
+                            <b-form-group label="製品名称" label-for="input-prod-name" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-prod-name" v-model="view.prodName"></b-form-input>
+                                 <div><p style="color: #ff0000;" id="prodNameError"></p> </div>
+                            </b-form-group>
+                        </b-col>    
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="工区" label-for="input-koku" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-koku" v-model="view.koku" @blur="handleBlur"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="フロア" label-for="input-floor" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-floor" v-model="view.floor" @blur="handleBlur"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="部材種類" label-for="input-guzai" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-guzai" v-model="view.guzai" @blur="handleBlur"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="製品分類コード" label-for="input-prod-type-code" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-type-prod-code" v-model="view.prodTypeCode" ></b-form-input>
+                            </b-form-group>
+                        </b-col>  
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="製品GUID" label-for="input-guid" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-guid" v-model="view.guid"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="重量" label-for="input-weight" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-weight" v-model="view.weight" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row> 
+                    <br/>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="製品個別管理" label-for="input-prod-seq-mng" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-select v-model="selected" :options="options" :disabled=true ></b-form-select>
+                            </b-form-group>
+                        </b-col> 
+                        <b-col class="col-md-5">
+                             <b-form-group label="数量" label-for="input-quantity" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-quantity" v-model="view.quantity" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row> 
+                    <br/>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="開始数量" label-for="input-start-quantity" llabel-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-start-quantity" v-model="view.startQuantity" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了数量" label-for="input-end-quantity" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-end-quantity" v-model="view.endQuantity" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br/>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="中止数量" label-for="input-abort-quantity" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-abort-quantity" v-model="view.abortQuantity" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="不良数量" label-for="input-fail-quantity" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-fail-quantity" v-model="view.failQuantity" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br/>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="着手予定日" label-for="input-start-plan-date" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-date-start" type="date" v-model="view.startPlanDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="着手日" label-for="input-start-date" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-start-date" type="date" v-model="view.startDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row> 
+                    <br />
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了予定日" label-for="input-end-plan-date" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-end-plan-date" type="date" v-model="view.endPlanDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了日" label-for="input-end-date" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-end-date" type="date" v-model="view.endDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br />
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="開始工程コード" label-for="input-start-proc-code" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-select v-model="view.startProcCode"  :options="procCodeOptions">
+                                    <template v-slot:first>
+                                        <option value="" disabled> 選択してください </option>
+                                    </template>
+                                </b-form-select>
+                                <div><p style="color: #ff0000;" id="startProcCodeError"></p> </div>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="終了工程コード" label-for="input-end-proc-code" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-select v-model="view.endProcCode" :options="procCodeOptions">
+                                  <template v-slot:first>
+                                      <option value="" disabled> 選択してください </option>
+                                  </template>
+                                </b-form-select>
+                                <div><p style="color: #ff0000;" id="endProcCodeError"></p> </div>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br />   
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="標準製品ID" label-for="input-std-prod-id" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-std-prod-id" v-model="view.stdProdId" @keypress="isNumber($event)"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        
+                    </b-form-row>
+                </b-container>
+            </b-form>
+        </b-card>
+
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+        <div class="text-right mt-1">
+            <b-button @click="registerProduct" class="mr-1">登録</b-button>
+        </div>
+    </div>
+</template>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            message: "",
+            text1: "",
+            text2: "",
+            text3: "",
+            text4: "",
+            project:[],
+            processData:[],
+            keysAllowed: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            prodCodePresent:true,
+            prodNamePresent:true,
+            startProcCodePresent : true,
+            endProcCodePresent : true,
+            selected: 0,
+            options: [
+                { value: '0', text: '数量管理' },
+                { value: '1', text: '個別管理' },
+            ],
+            procCodeOptions: [],
+            view: {
+                prodCode: "",
+                koku:'',
+                floor:'',
+                guzai:'',
+                prodName: "",
+                prodTypeCode: "",   
+                quantity: "",
+                guid:"",
+                weight: "",
+                startQuantity: "",
+                endQuantity: "",
+                abortQuantity: "",
+                failQuantity: "",
+                startPlanDate: "",
+                endPlanDate: "",
+                startDate: "",
+                endDate: "",
+                startProcCode: "",
+                endProcCode: "",
+                stdProdId: "",
+                importNo: "",
+                prodSeqMng: "",
+                maxProdIdSeq: "",
+            },
+        };    
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        if(this.$store.state.responseData) {
+            this.project = this.$store.state.responseData        
+        } 
+          //this is done for 戻るbutton
+        this.getData()
+    },    
+ 
+    methods: {
+        async getData(){
+            await this.getProcessList()
+        },
+
+        handleBlur(){
+           this.view.prodTypeCode = this.view.koku + "-" + this.view.floor + "_" + this.view.guzai ; 
+        },
+
+        isNumber(evt) {    
+            if (!this.keysAllowed.includes(evt.key)) {
+                evt.preventDefault()
+            } else {
+              return true;
+            }
+        },
+    
+        async getProcessList(){
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }
+            await axios.get(apiUrls.processList, axiosConfigObject)
+            .then(response => {    
+                console.log(response.data.resDt);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.processData = response.data.resDt;
+                    for(var i = 0; i < this.processData.length; i++) {          
+                      this.procCodeOptions.push({text:this.processData[i].procName, value:this.processData[i].procCode});                             
+                    }
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })        
+        },
+        
+        getNow() {
+            let today = new Date(Date.now());
+            //return today.toISOString().slice(0, 10);
+            let diff = today.getTimezoneOffset() * 60 * 1000;    // -540 * 60 * 1000 = -32400000 (ミリ秒)
+            let localToday = new Date(today - diff);
+            return localToday.toISOString().slice(0, 10)
+        },
+
+        checkInput() {
+            if (!this.view.prodCode) {
+                this.text1 = "製品コードを入力してください";
+                this.prodCodePresent = false;
+            } else{
+                this.text1 = "";
+                this.prodCodePresent = true; 
+            }
+            document.getElementById("prodCodeError").innerHTML = this.text1;
+
+            if (!this.view.prodName) {
+                this.prodNamePresent = false;
+                this.text2 = "製品名称を入力してください";       
+            } else {
+                this.text2 = "";
+                this.prodNamePresent = true; 
+            } 
+            document.getElementById("prodNameError").innerHTML = this.text2;
+
+            if (!this.view.startProcCode) {
+                this.text3 = "開始工程コードを選択してください";
+                this.startProcCodePresent = false;
+            } else {
+                this.text3 = "";
+                this.startProcCodePresent = true; 
+            }    
+            document.getElementById("startProcCodeError").innerHTML = this.text3;
+
+            if (!this.view.endProcCode) {
+                this.text4 = "終了工程コードを選択してください";
+                this.endProcCodePresent = false;
+            } else {
+                this.text4 = "";
+                this.endProcCodePresent = true; 
+            } 
+            document.getElementById("endProcCodeError").innerHTML = this.text4;
+        },
+
+        registerProduct() {
+            this.message = "";
+            this.checkInput();   
+            if (this.prodNamePresent == true && this.startProcCodePresent == true && this.endProcCodePresent == true) {
+                
+                if (confirm("登録しますか？")) {
+                   /* if(this.view.koku){
+                     this.view.prodCode = this.view.koku;
+                   }
+                   if(this.view.floor){
+                     this.view.prodCode =  this.view.prodCode + "-" + this.view.floor;
+                   }
+                   if(this.view.guzai){
+                    this.view.prodCode =  this.view.prodCode + this.view.guzai;
+                   }
+                   if (this.view.prodCode) {
+                       this.view.prodCode =  this.view.prodCode + "-1"
+                   }*/
+                    console.log (this.view.prodCode);  
+                    //基本リクエストを作成する
+                    let payload = {
+                        transId: "",
+                        resultCode: null,
+                        resultMessage: null,
+                        user: null,
+                        terminal: null,
+                        reqDateTime: null,
+                        resDateTime: null,
+                        reqHd: {
+                            projId: this.project.projId,
+                            prodCode: this.view.prodCode,
+                            prodName: this.view.prodName,
+                            prodTypeCode: this.view.prodTypeCode,   
+                            quantity: this.view.quantity,
+                            weight: this.view.weight,
+                            prodGuid : this.view.guid,
+                            startQuantity: this.view.startQuantity,
+                            endQuantity: this.view.endQuantity,
+                            abortQuantity: this.view.abortQuantity,
+                            failQuantity: this.view.failQuantity,
+                            startPlanDate: this.view.startPlanDate,
+                            endPlanDate: this.view.endPlanDate,
+                            startDate: this.view.startDate,
+                            endDate: this.view.endDate,
+                            startProcCode: this.view.startProcCode,
+                            endProcCode: this.view.endProcCode,
+                            stdProdId: this.view.stdProdId,
+                            importNo: this.project.importNo,
+                            prodSeqMng : this.selected,
+                            maxProdIdSeq: 0
+                        },
+                    };
+
+                    let axiosConfigObject = {
+                        headers: {
+                            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                            "Content-Type": "application/json",
+                        },
+                    };
+                    axios
+                    .post(apiUrls.registerProduct, payload, axiosConfigObject)
+                    .then((response) => {
+                        if (response.data.resultCode != "000") {
+                            this.message = commonMethods.getResponseMessage(response);
+                        } else {
+                            alert(response.data.resultMessage);
+                            this.$store.state.responseData = this.project;
+                            //this.$router.push('productsearch')
+                            commonMethods.clickMenuBack();
+                        }
+                    })
+                    .catch((error) => {
+                        this.message = commonMethods.getErrorMessage(error);
+                    });
+                } 
+            } /*else {
+                alert('どれか１つでもfalseがあったときにどうするの？？？');
+            }*/
+        },
+    },
+};
+</script>

@@ -1,0 +1,29 @@
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+Vue.use(Vuex)
+
+const store = new Vuex.Store({
+  state: {
+    loginData: {
+      id:          '',
+      username:    '',
+      email:       '',
+      roles:       [],
+      accessToken: ''
+    },
+    searchForm: '',
+    updateUser: '',
+    responseData: ''
+  },
+  rolesResDt:        [],
+  roleLevelsResDt:   [],
+
+  //getters: {
+    //getLoginData: state => {return state.logindata},
+    //getRolesResDt: rolesResDt => {return rolesResDt},
+    //getRoleLevelsResDt: roleLevelsResDt => {return roleLevelsResDt}
+  //}
+})
+
+export default store

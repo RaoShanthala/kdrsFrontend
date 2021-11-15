@@ -1,0 +1,528 @@
+<template>
+  <div>
+    <h1 class="md-4">Tekla CSV ファイルのアップロード</h1>
+    <div v-if = "isShowNotImportProjButton" class="text-right mt-1">
+      <b-button @click="checkingNotImportProj">未取込工事の確認</b-button>
+    </div>
+    <div v-if="isCheckingNotImportProj" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>確認中...</strong>
+    </div>
+    <b-card v-if = "isShowImportFile" bg-variant="light" >
+      <b-form-group label="Tekla CSVファイル:" label-cols-sm="2">
+        <b-form-file
+          id="file-default"
+          v-model="selectedFile"
+          :state="Boolean(selectedFile)"
+          placeholder="ここをクリックしてファイルを選択するか、ここにファイルをドロップしてください。"
+          drop-placeholder="Drop file here..."
+          :file-name-formatter="formatNames"
+        ></b-form-file>
+        <!-- div class="mt-3">Selected file: {{ selectedFile ? selectedFile.name : '' }}</div -->
+      </b-form-group>
+    </b-card >
+
+    <!--div class="text-right mt-1">
+      <b-button variant="info" to ="/menu">戻る</b-button>
+    </div -->
+
+    <div v-if="isShowCsvFileContent">
+      <!-- b-card bg-variant="light" -->
+        <b-form inline>
+          <b-table
+            head-variant="light"
+            sticky-header="600px"
+            class="table-sm table-bordered text-nowrap"
+            hover
+            responsive
+            :items="csvDt"
+            :fields="csvHd"
+            :outlined="outlined"
+            :striped="striped"
+            :bordered="bordered"
+            :no-border-collapse="noCollapse"
+          >
+          </b-table>
+        </b-form>
+      <!-- /b-card -->
+    </div>
+<!--
+      :borderless="borderless"
+      :outlined="outlined"
+      :dark="dark"
+      :small="small"
+      :fixed="fixed"
+      :foot-clone="footClone"
+-->
+    <div  v-if="isShowCsvFileContent" class="text-right mt-1">
+      <b-button :disabled="isDisableUpLoadFile" @click="uploadFile">アップロード</b-button>
+    </div>
+    <div v-if="isUpLoadingFile" class="text-center text-danger my-2">
+      <b-spinner class="align-middle"></b-spinner>
+      <strong>アップロード中...</strong>
+    </div>
+
+    <!-- div v-if="isShowRegisterProduct"-->
+    <div v-show="isShowRegisterProduct">
+      <!-- b-card bg-variant="light" -->
+        <b-form inline>
+          <b-table
+            head-variant="light"
+            sticky-header="100px"
+            class="table-sm table-bordered text-nowrap"
+            hover
+            responsive
+            selectable
+            ref="importProjTable"
+            select-mode="multi"
+            :items="uploadResDt"
+            :fields="uploadResHd"
+            :outlined="outlined"
+            :bordered="bordered"
+            :no-border-collapse="noCollapse"
+            @row-selected="importProjSelect"
+          >
+          </b-table>
+          <div class="mb-3">Selected: <strong>{{ importProjSelectedShow }}</strong></div>
+        </b-form>
+      <!-- /b-card -->
+    </div>
+    <!--div v-if="isShowRegisterProduct" class="text-right mt-1" -->
+    <div v-show="isShowRegisterProduct" class="text-right mt-1">
+      <b-button :disabled="isDisableRegisterProduct" @click="registerProduct">データ登録</b-button>
+    </div>
+    <div v-if="isRegistering" class="text-center text-danger my-2">
+      <b-spinner class="align-middle"></b-spinner>
+      <strong>データ登録中...</strong>
+    </div>
+
+    <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+
+    <div v-if="isShowRegisterResult">
+      <!-- b-card bg-variant="light" -->
+        <b-form inline>
+          <b-table
+            head-variant="light"
+            sticky-header="100px"
+            class="table-sm table-bordered text-nowrap"
+            hover
+            responsive
+            :fields="registerResultHd"
+            :items="registerResultDt"
+            :outlined="outlined"
+            :bordered="bordered"
+            :no-border-collapse="noCollapse"
+          >
+          </b-table>
+        </b-form>
+      <!-- /b-card -->
+    </div>    
+  </div>
+</template>
+<!--
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 5px;
+}
+.form-inline label {
+    justify-content: left;
+}
+.text-right {
+  margin-bottom: 1rem;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+</style>
+-->
+<!--
+<style>
+label > input {
+  display: none;
+}
+
+label {
+  padding: 0 1rem;
+  border: solid 1px #888;
+} 
+
+label::after {
+  content: '+';
+  font-size: 1rem;
+  color: #888;
+  padding-left: 1rem;
+}
+</style>
+-->
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+
+export default {
+  data: function() {
+    return {
+      striped: true,    // 横縞模様にする
+      bordered: true,   // 縦境界線を表示する
+      noCollapse: true, // テーブル境界線の折りたたみのデフォルトを無効にする
+      //borderless: false,
+      outlined: true,
+      //small: false,
+      //hover: false,
+      //dark: false,
+      //fixed: false,
+      //footClone: false,
+      //headVariant: null,
+      //tableVariant: '',
+
+      //upload: {
+      //    fileName: ''
+      //},
+      message: "",
+      targetFile: null,
+      selectedFile: null,
+
+      csvHd: [],
+      csvDt: [],
+      uploadResHd: [],
+      uploadResDt: [],
+      importProjSelected: [],
+      importProjSelectedShow: [],
+      registerResultHd: [],
+      registerResultDt: [],
+
+      isShowNotImportProjButton: true,  //未取込工事の確認
+      isShowImportFile: true,           //取込ファイルの選択
+      isShowCsvFileContent: false,      //CSVファイルの内容
+      isShowRegisterProduct: false,     //データ登録
+      isShowRegisterResult: false,      //データ登録結果
+
+      isCheckingNotImportProj: false,   //未取込工事の確認中
+      isUpLoadingFile: false,           //アップロード中
+      isRegistering: false,             //データ登録中
+
+      isDisableUpLoadFile: true,        //アップロード
+      isDisableRegisterProduct: true,   //データ登録
+    };
+  },
+  methods: {
+    async checkingNotImportProj() {
+      this.isShowImportFile = false;        //取込ファイルの選択
+      this.isCheckingNotImportProj = true;  //未取込工事の確認中
+
+      let payload = {
+                //earchMode: searchMode,
+      }
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json'
+        }
+        , params:  payload
+      };
+      this.message = '';
+      await axios
+        .get(apiUrls.checkNotImpProj, axiosConfigObject)
+        .then(response => {
+            this.message = response.data.success;
+
+            if (response.data.resultCode != '000') {
+              this.message = response.data.resultCode + ':' + response.data.resultMessage
+              alert(this.message);
+              this.isShowRegisterProduct = false;     //データ登録
+              this.isShowImportFile = true;           //取込ファイルの選択
+              return;
+            }
+
+            this.uploadResHd.push( {'key': 'seqNo', 'label': 'No'} );
+            //this.uploadResHd.push( {'key': 'projId', 'label': '工事ID'} );
+            this.uploadResHd.push( {'key': 'projCode', 'label': '工事コード'} );
+            this.uploadResHd.push( {'key': 'projName', 'label': '工事名称'} );
+            this.uploadResHd.push( {'key': 'importNo', 'label': '取込回'} );
+            this.uploadResHd.push( {'key': 'result', 'label': '取込状態'} );
+
+            this.uploadResDt = response.data.resDt;
+            for(let i in this.uploadResDt) {
+                this.uploadResDt[i].seqNo = Number(i) + 1;
+            }
+            this.isShowRegisterProduct = true;        //データ登録
+            this.isDisableRegisterProduct = false;    //データ登録
+        })
+        .catch(error => {
+            //this.message = error.response.data.errors;
+            this.message = error
+            alert('エラーが発生しました。');
+        })
+        .finally(() => {
+            this.isCheckingNotImportProj = false;     //未取込工事の確認中
+            // 工事が1件のとき、その工事を選択
+            if (this.uploadResDt.length == 1) {
+              //console.log('A this.$refs.importProjTable=' + this.$refs.importProjTable);
+              this.$refs.importProjTable.selectRow(0);
+            }
+        });
+    },
+    formatNames(files) {
+      //console.log('files[0].name :' + files[0].name);
+      //console.log('this.targetFile :' + this.targetFile);
+
+      // アップロードのボタンをクリックしてpostすると、responseが返ってきてからこのメソッドが実行されてしまうので次の処理を追加。
+      // postした後、this.targetFile = ''を実行していたのが原因！
+      //if (this.targetFile != null) {
+      //  console.log('this.targetFile.name :' + this.targetFile.name);
+      //  if (files[0].name == this.targetFile.name) { 
+      //    return files.length === 1 ? files[0].name : `${files.length} files selected`
+      //  }
+      //} 
+
+      this.message = '';
+      this.isShowNotImportProjButton = false;   //未取込工事の確認
+      this.targetFile = files[0];
+      const reader = new FileReader();
+      //this.upload.fileName = this.targetFile.name;
+
+      const loadFunc = () => {
+        // sliceで配列のインデックス0以降のすべての要素を削除クリア
+        this.csvHd.splice(0);
+        this.csvDt.splice(0);
+        //console.log('fileChange() loadFunc !');
+        const lines = reader.result.split("\n");
+        let i = 0;
+        lines.forEach(element => {
+          const workerData = element.split(",");
+          //console.log('workerData.length = ' + workerData.length  + ', workerData[0]' + workerData[0]);
+          if (i == 0) {
+            for(let n in workerData) {
+            //  //this.fields[0] = obj[n];
+            //  this.fields[n] = "製品_" + n;
+            //  fields[n] = "obj_" + n;
+              this.csvHd.push( {'key': n, 'label': workerData[n]} );
+              //this.csvHd[n] = workerData[n];
+            }
+          } else {
+            //console.log('worker = ' + workerData[0] + ', ' + workerData[1]);
+            //let worker = {};  // 連想配列
+            let worker = [];  // 配列
+            for(let n in workerData) {
+              //console.log('key = ' + this.fields[n] + ', label = ' + workerData[n]);
+              //worker.push( {'key': fields[n], 'label': workerData[n]} );
+              worker[n] = workerData[n];
+            }
+            this.csvDt.push(worker);
+          }
+          i++;
+        });
+      };
+      reader.onload = loadFunc;
+      //reader.readAsBinaryString(targetFile);    // defaultはUTF8
+      reader.readAsText(this.targetFile, "Shift-JIS");
+      this.isShowCsvFileContent = true;   //CSVファイルの内容
+      this.isDisableUpLoadFile = false;   //アップロード
+      this.isShowRegisterProduct = false; //データ登録
+      this.isShowRegisterResult = false;  //データ登録結果
+      //console.log('files.length=' + files.length + ', files[0].name=' + files[0].name);
+      return files.length === 1 ? files[0].name : `${files.length} files selected`
+    },
+    async uploadFile() {
+      if (confirm('選択したファイルをアップロードしますが、よろしいですか？') == false) {
+        return;
+      }
+      this.isUpLoadingFile = true;              //アップロード中
+      let data = new FormData();
+      data.append("file", this.targetFile);
+      data.append("filename", this.targetFile.name);
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          //'Content-Type': 'application/json'
+          //'Content-Type': 'false'
+          'Content-Type': 'multipart/form-data'
+        }
+        //, params:  payload
+      };
+      this.message = '';
+
+      await axios
+        .post(apiUrls.uploadTeklaData, data, axiosConfigObject)
+        .then(response => {
+            this.message = response.data.success;
+            //this.targetFile = "";   // この処理を実行するとthis.targetFileのコピー元であるfiles[0]が変更されて、formatNames()メソッドが実行されてしまう。
+
+            if (response.data.resultCode != '000') {
+              this.message = response.data.resultCode + ':' + response.data.resultMessage
+              alert(this.message);
+              return;
+            }
+            this.uploadResHd.push( {'key': 'seqNo', 'label': 'No'} );
+            //this.uploadResHd.push( {'key': 'projId', 'label': '工事ID'} );
+            this.uploadResHd.push( {'key': 'projCode', 'label': '工事コード'} );
+            this.uploadResHd.push( {'key': 'projName', 'label': '工事名称'} );
+            this.uploadResHd.push( {'key': 'importNo', 'label': '取込回'} );
+            this.uploadResHd.push( {'key': 'result', 'label': '取込状態'} );
+
+            this.uploadResDt = response.data.resDt;
+            // response.dataは、Json形式の文字列がオブジェクトに変換されていたので、次の処理は不要になった。
+            //let obj = JSON.parse(response.data);
+            //console.log('13 this.uploadResDt[0].projId=' + this.uploadResDt[0].projId);
+            //console.log('13 this.uploadResDt[0].projCode=' + this.uploadResDt[0].projCode);
+            for(let i in this.uploadResDt) {
+              this.uploadResDt[i].seqNo = Number(i) + 1;
+            }
+            //this.message = response.data.resultCode + ':' + response.data.resultMessage
+            //alert(this.message);
+
+            // 'ファイルを選択'のクリア
+            //this.view = false;
+            //this.$nextTick(function() {
+            //  this.view = true;
+            //})
+            this.isShowRegisterProduct = true;        //データ登録
+            this.isDisableUpLoadFile = true;          //アップロード
+            this.isDisableRegisterProduct = false;    //データ登録
+        })
+        .catch(error => {
+            //this.message = error.response.data.errors;
+            this.message = error
+            alert('エラーが発生しました。');
+        })
+        .finally(() => {
+            this.isUpLoadingFile = false;             //アップロード中
+            //this.isShowCsvFileContent = true;
+            // 工事が1件のとき、その工事を選択
+            if (this.uploadResDt.length == 1) {
+              this.$refs.importProjTable.selectRow(0);
+            }
+        });
+    },
+    // 選択した行を取得して配列にセット
+    importProjSelect(items) {
+      //console.log('importProjSelect');
+      let res = [], resShow = []
+      for(let i in items) {
+          res.push(items[i]);
+          resShow.push(items[i].seqNo);
+      }
+      this.importProjSelected = res;
+      this.importProjSelectedShow = resShow;
+    },
+
+    async registerProduct() {
+      if (this.importProjSelected.length == 0) {
+        alert('行を選択してください。');
+        return;
+      }
+      if (confirm('アップロードしたデータを取り込みますが、よろしいですか？') == false) {
+        return;
+      }
+      this.isRegistering = true;          //データ登録中
+      this.message = '';
+      // sliceで配列のインデックス0以降のすべての要素を削除クリア
+      this.registerResultHd.splice(0);
+      this.registerResultDt.splice(0);
+      this.registerResultHd.push( {'key': 'seqNo', 'label': 'No'} );
+      this.registerResultHd.push( {'key': 'projCode', 'label': '工事コード'} );
+      this.registerResultHd.push( {'key': 'code', 'label': 'エラーコード'} );
+      this.registerResultHd.push( {'key': 'message', 'label': 'エラーメッセージ'} );
+
+      let success = true;
+      //let r = 0;
+      for(let i in this.importProjSelected) {
+         let selected = this.importProjSelected[i];
+         let uploadingResDt;
+         for (let n in this.uploadResDt) {
+            if (this.uploadResDt[n].seqNo == selected.seqNo) {
+              uploadingResDt = this.uploadResDt[n];
+            }
+         }
+         let ret = await this.postRegisterProduct(selected.seqNo, selected.projCode, uploadingResDt);
+         //r = Number(r) + 1;
+         if (ret == false) { success = false; }
+      }
+      this.isRegistering = false;           //データ登録中
+      this.isDisableRegisterProduct = true; //データ登録
+
+      // 工事が2件以上のとき、
+      if (this.uploadResDt.length >= 2) {
+        this.isShowRegisterResult = true;   //データ登録結果
+        if (success == true) {
+          this.message = '全ての取込処理が正常に終了しました。';
+        } else {
+          this.message = '取込処理でエラーが発生しました。';
+        }
+        alert(this.message);
+      }
+    },
+
+    async postRegisterProduct(seqNo, projCode, uploadingResDt) {
+      //console.log('projId=' + projId + ',projCode=' + projCode);
+      uploadingResDt.result = '処理中';
+      // 再描画させるため、sliceでシャローコピー後その値を設定する。
+      this.uploadResDt = this.uploadResDt.slice();
+
+      let payload = {
+              transId: '',
+              resultCode: null,
+              resultMessage: null,
+              user: null,
+              terminal: null,
+              reqDateTime: null,
+              resDateTime: null,
+              reqHd: {
+                  //projId:      projId,
+                  projCode:    projCode
+              }
+      }
+      let axiosConfigObject = {
+        headers: {
+            Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+            'Content-Type': 'application/json',
+        }
+      }
+      return await axios
+      .post(apiUrls.importProduct, payload, axiosConfigObject)
+        .then(response => {
+          //this.registerResultDt[0].code = response.data.resultCode;
+          //this.registerResultDt[0].message = response.data.resultMessage;
+          this.registerResultDt.push({
+            seqNo:    seqNo,
+            projCode: projCode,
+            code:     response.data.resultCode,
+            message:  response.data.resultMessage
+          });
+          if (this.uploadResDt.length == 1) {
+            this.message = response.data.resultCode + ':' + response.data.resultMessage;
+            alert(this.message);
+          }
+          if(response.data.resultCode == '000') {
+            uploadingResDt.result = '取込完了';
+            return true;
+          } else {
+            uploadingResDt.result = 'エラー（' + response.data.resultCode + ')';
+            return false;
+          }
+        })
+        .catch(error => {
+          //this.registerResultDt[0].code = 'Exception';
+          //this.registerResultDt[0].message = error.response.message;
+          this.registerResultDt.push({
+            code:     'Exception',
+            message:  error.response.message
+          });
+          //console.log('error.response.status=' + error.response.status);
+          if (this.uploadResDt.length == 1) {
+            this.message = '例外エラー（' + error.response.status + ')';
+            alert(this.message);
+          }
+          uploadingResDt.result = '例外エラー（' + error.response.status + ')';
+          return false;
+        })
+        .finally(() => {
+          // 再描画させるため、sliceでシャローコピー後その値を設定する。
+          this.uploadResDt = this.uploadResDt.slice();
+        })
+    }
+  }
+};
+</script>

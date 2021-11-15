@@ -1,0 +1,372 @@
+<template>
+    <div>     
+        <comp-proj-status
+            v-if="isShowProjChoice"
+            :class-print-hide-proj="classPrintHideProj"
+            v-on:emitProjSelect="emittedProjSelectedEvent"
+            v-on:emitProjSearchButton="emittedProjSearchButtonEvent"
+            v-on:emitProjPrintButton="emittedProjPrintButtonEvent"/>
+
+        <b-card v-if="isShowSearchForm" bg-variant="light" :class="classPrintHideProd">
+            <div class="print-hide">
+                <b-form inline class="mt-1">
+                    <span class="mr-3">
+                        <strong>工事コード：</strong>{{ projCode }}
+                    </span>
+                    <strong>工事名称：</strong>{{ projName }}
+                </b-form>
+                <b-form inline class="mt-0 mr-1">
+                    <b-form-group class="mt-5 mb-4 ml-3">
+                        <b-form-radio-group v-model="targetGroup" :options="targetGroupOptions"/>
+                    </b-form-group>
+                    <b-form-group label="対象期間From" class="mt-0 ml-5">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="targetDateFrom"/>
+                    </b-form-group>
+                    <b-form-group label="対象期間To" class="mt-0 ml-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="targetDateTo"/>
+                    </b-form-group>
+                    <b-form-group class="mt-4 ml-5">
+                        <b-button @click="projProgressSearchClick" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                    </b-form-group>
+                </b-form>
+                <!-- <b-form inline class="mt-1 mb-2">
+                </b-form> -->
+            </div>
+            <div v-if="isShowProjProgressTable" >
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap proj-progress-table"
+                    :sticky-header="tableHeight"
+                    no-border-collapse
+                    responsive
+                    striped
+                    :items="projProgressData"
+                    :fields="projProgressFields"/>
+                <!-- <div class="d-flex justify-content-end">
+                    <b-button @click="printProjTable" class="mr-0 print-hide">印刷</b-button>
+                </div> -->
+                <b-row v-show="projProgressData.length" align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-10">
+                        <p class="ml-1">※1、対象は製品のみです（部品は対象外）。</p>
+                        <p class="ml-1">※2、検索結果のタイトルが日付、週日付（月曜日）、または年月の列の値がブランクの行は、数量管理の製品で工程ごとの全数量が完了していない数量が集計されます。全数量が完了すると全数量が完了した日付で該当する行に集計されます。</p>
+                    </b-col>
+                    <b-col class="col-md-2">
+                        <div class="d-flex justify-content-end">
+                            <b-button @click="printProjTable" class="mr-0 print-hide">印刷</b-button>
+                        </div>
+                    </b-col>
+                </b-row>
+            </div>
+        </b-card>
+        <div v-if="isLoadingProjProgress" class="text-center text-danger my-2">
+            <b-spinner class="align-middle"></b-spinner>
+            <strong>検索中...</strong>
+        </div>
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '@/common/apiUrls'
+import commonMethods from '@/common/commonMethods'
+import compProjStatus from "@/components/compProjStatus.vue";
+
+export default {
+    components: {
+        compProjStatus
+    },
+    data() {
+        return {
+            table_height: window.innerHeight - 380 + 'px',
+            projSelected: {},
+            isShowProjChoice: true,
+            isShowSearchForm: false,
+            isShowProjProgressTable: false,
+            isLoadingProjProgress: false,
+            projHideClass: '',
+            classPrintHideProj: '',
+            classPrintHideProd: '',
+            titleProj: '進捗登録実績',
+            projId: '',
+            projCode: '',
+            projName: '',
+            projProgressData: [],
+            projProgressFields: [],
+            resDtTitle: {},
+            tableHeight: '300px',
+            message:'',
+            targetGroup: 1,
+            targetGroupOptions: [
+                { value: 1, text: '日単位' },
+                { value: 2, text: '週単位' },
+                { value: 3, text: '月単位' },
+            ],
+            targetDateFrom: '',
+            targetDateTo: '',
+        }
+    },
+    watch:{
+        projSelected: function(newValue) {
+            // console.log('projSelected newValue.projId=' + newValue.projId);
+            this.projId = newValue.projId;
+            this.projCode = newValue.projCode;
+            this.projName = newValue.projName;
+            this.isShowProjProgressTable = false;
+            this.message = '';
+            if(newValue.projId) {
+                // this.projProgressSearch();
+                // this.projProgressSearchClick();
+                // this.isShowProdChoice = false;
+                //this.clearData(['prodSeq', 'procList']);
+                this.resetProdSearchForm();
+                setTimeout(()=>this.isShowProdChoice = true, 100);
+            } else {
+                this.isShowProdChoice = false;
+                this.isShowSearchForm = false;
+                //this.clearData(['prodSeq', 'procList']);
+            }
+        },
+        projSearchButtonCount: function() {
+            // console.log('projSearchButtonCount !');
+            //this.clearData(['prodSeq', 'procList']);
+            this.projSelected = {};
+        },
+    },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        resetProdSearchForm() {
+            this.targetDateFrom = '';
+            this.targetDateTo= '';
+            this.projProgressData = [];
+            this.message = '';
+        },
+        emittedProjSearchButtonEvent(value) {
+            this.projSearchButtonCount = value;
+            this.isShowProdChoice = false;
+            this.projSelected = {};
+        },
+        emittedProdSearchButtonEvent(value) {
+            this.prodSearchButtonCount = value;
+        },
+        emittedProjSelectedEvent(value) {
+             if(value.projId) {
+                if (value.projId != this.projSelected.projId) {
+                    // 工事コンポーネントの工事が選択されている状態で別の工事が選択された場合、
+                    // 製品コンポーネントのisShowProdChoiceをfalseにしてからtrueにすることで製品コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、製品コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowSearchForm = false;
+                }
+                this.projSelected = value;
+                setTimeout(()=>this.isShowSearchForm = true, 100);
+            } else {
+                this.isShowSearchForm = false;
+                this.message = '';
+            }
+        },
+        emittedProdSelectedEvent(value) {
+            this.prodSelected = value;
+        },
+        emittedProjPrintButtonEvent(value) {
+            this.projSearchButtonCount = value;
+            this.classPrintHideProd = 'print-hide';
+            this.classPrintHideProj = '';
+        },
+        emittedProdPrintButtonEvent(value) {
+            this.prodSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideProd = '';
+        },
+
+        async projProgressSearchClick() {
+            await this.projProgressSearch();
+            // console.log('projProgressSearchClick this.isShowSearchForm=' + this.isShowSearchForm );
+            if (this.isShowProjProgressTable != true) {
+                return;
+            }
+
+            let resDtTitle = this.resDtTitle;
+            commonMethods.sleep(100, 1, function () {
+                // console.log('length=' + length);
+                //製品一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+
+                let rows = [...document.getElementsByClassName('proj-progress-table')[0].children[0].children[1].getElementsByTagName('tr')];
+                let table = document.getElementsByClassName('proj-progress-table')[0].children[0].children[1];
+
+                // 合計行のセル結合
+                function colSpan(colIndex, rowIndex, cols) {
+                    // console.log('colIndex=' + colIndex +', rowIndex=' + rowIndex + ', cols=' + cols);
+                    let cell =table.querySelectorAll(`td[aria-colindex='${colIndex}']`)[rowIndex-1];
+                    cell.setAttribute('colspan', cols);
+                    cell.setAttribute('class', 'text-right');
+                    cell.textContent = '合計';
+                    for(let i=1; i<cols; i++) {
+                        // colspanで結合した先頭のセルを除いて残りのセルを削除
+                        // console.log(i)
+                        table.querySelectorAll(`td[aria-colindex='${colIndex+i}']`)[rowIndex-1].remove();
+                    }
+                }
+                // 合計（rowspanより最終行のcolspanを先にする必要がある。rowspanを先にするとrowindexの値はrowspanの行を考慮しなければならない。）
+                // let totalFields = ['sectionUnit1', 'compPerFloor', 'sectionUnit2', 'floorUnit2'];
+                let totalFields = ['endDate', 'listProgress'];
+                // let totalFields = ['listProgress'];
+                // console.log('resDtTitle=' + resDtTitle);
+                let totalColsIndex = commonMethods.makeResDtIndexRight(totalFields, resDtTitle);
+                colSpan(totalColsIndex[0] + 1, rows.length, totalColsIndex[1] - totalColsIndex[0]);
+                // colSpan(1, rows.length, totalColsIndex[0]);
+            });
+        },
+        async projProgressSearch() {
+            this.projProgressData = [];
+            this.isLoadingProjProgress = true;
+            // this.isShowSearchForm = false;
+            this.isShowProjProgressTable = false;
+
+            this.message = '';
+
+            let payload = {
+                    ...this.projId          && { projId:            this.projId },
+                    ...this.targetGroup     && { targetGroup:       this.targetGroup },
+                    ...this.targetDateFrom  && { targetDateFrom:    this.targetDateFrom },
+                    ...this.targetDateTo    && { targetDateTo:      this.targetDateTo },
+                }
+             
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjProgressResultMany, axiosConfigObject)
+            .then(response => {
+                // this.projProgressData = response.data.resDt;
+                // // this.projName = this.projProgressData[0].projName;
+                // this.projProgressFields = this.createFields(response.data.resDtTitle);
+                this.resDtTitle = response.data.resDtTitle;
+                this.projProgressData = this.remakeResDt(response.data.resDt);
+                this.projProgressFields = this.remakeResDtTitle(response.data.resDtTitle);
+
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                 } else {
+                    this.isShowProjProgressTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProjProgress = false;                 
+            })
+        },
+
+        printProjTable () {
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideProd = '';
+            // commonMethods.printPrepare('proj-progress-table', this.projProgressFields.length, this.titleProj, this.projName);
+            commonMethods.printPrepare('proj-progress-table', this.projProgressFields.length, this.titleProj, `工事コード：${this.projCode}、工事名称：${this.projName}`);
+            commonMethods.sleep(100, 1, function () {
+              // 100ミリ秒*1回、待機後確認メッセージを表示
+              if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                  commonMethods.printDesingHandler('proj-progress-table', true);
+                  window.print();
+                  commonMethods.printDesingHandler('proj-progress-table', false);
+              }
+            });
+        },
+
+        // createFields(obj, order) {
+        //     let a = [];
+        //     let b = [];
+        //     for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+        //     if(order) {
+        //         for(let i in order) { b.push(a[order[i]]); }
+        //         return b;
+        //     }
+        //     if(this.maintenanceMode) {
+        //         a.push( {'key': 'update', 'label': '', 'required': 'true' } )
+        //     }
+        //     return a;
+        // },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = [];
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

@@ -1,0 +1,288 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+
+        <!--工事検索-->
+        <div v-if="!(this.isShowProjScreen )">
+            <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="工事コード" class="mr-2">
+                <b-form-input v-model="projSearchForm.projCode"/>
+                </b-form-group>
+                <b-form-group label="工事名称" class="mr-2">
+                <b-form-input v-model="projSearchForm.projName"/>
+                </b-form-group>
+                <div  id="flexButton">
+                <!--b-button class="mr-3" @click="projSearchScreen" >工事検索</b-button-->
+                <b-button @click="projCheck">検索</b-button>
+                <b-button variant="primary" @click="resetProjForm">クリア</b-button>
+                </div>
+            </b-form>
+            </b-card>
+
+            <div class="text-right mt-1">
+                <b-button @click="registerProject" class="mr-1">新規</b-button>
+                <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+            </div>
+            <div v-if="projSelected.length">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="projSelected"
+                    :fields="projFields">
+                   <template #cell(update)="row">
+                     <b-button size="sm" @click="updateProject(row.item.projId)">更新/削除</b-button>
+                   </template>         
+                </b-table>
+            </div>
+
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </div>
+
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '工事登録・更新・取消',
+           // prodSeqMng: 0, //0:数量管理、1:個別管理
+           // prodModel: 0, //0:パッケージモデル 1:北二モデル
+            //工事関連データ
+            projSearchForm: {
+                projCode: '',
+                projName: ''
+               // targetDate: ''
+            },
+            isShowProjScreen: false,
+            projData: [],
+            projFields: [],
+            projSelectedItem: '',
+            projSelected: [],
+    
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            isLoadingProj: false,
+            isLoadingProd: false,
+            isLoadingProc: false,
+            isLoadingProdSeq: false,
+            doneQty: 0
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+    })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+   
+    methods: {
+        //工事検索処理
+        async projFetch() {
+            this.clearData(['proj']);
+            this.isLoadingProj = true;
+            let payload = {
+                ...this.projSearchForm.projCode   && { projCode:   this.projSearchForm.projCode },
+                ...this.projSearchForm.projName   && { projName:   this.projSearchForm.projName },
+               /* targetState:     this.projStatus + 1,
+                ...this.projSearchForm.targetDate && { targetDate: this.projSearchForm.targetDate } */
+                targetState:  0
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt
+                this.projFields = this.createFields(response.data.resDtTitle)
+             
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+            .finally(() => {
+                console.log(this.projData);
+                this.isLoadingProj = false;
+            })
+        },
+
+        async projCheck() {
+            await this.projFetch();
+            if(this.projData.length > 0) {
+                this.projSelected = this.projData;
+               // this.projSearchForm.projCode = this.projSelected[0].projCode;
+               // this.projSearchForm.projName = this.projSelected[0].projName;
+            } else{
+                this.message = "no data";
+                console.log("no data");
+            }
+        },
+
+        registerProject() {
+            this.$store.state.searchForm = this.searchForm
+            this.$store.state.responseData = ''
+            //this.$router.push('registerproject')
+            commonMethods.clickMenuForward(this.$route.path, 'registerproject');
+        },
+
+        updateProject(item) {
+            console.log('Calling updateProject Method');
+            console.log(item);
+            this.$store.state.searchForm = this.searchForm
+
+            let payload = {
+                projId: item
+            }
+              let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            axios.get(apiUrls.referProjectOne, axiosConfigObject)
+            .then(response => {
+                if(response.data.resultCode != '000') {
+                    console.log(response.data.resultMessage);
+                    this.message = response.data.resultMessage
+                }
+                else {
+                    console.log(response.data);
+                  //  response.data.resHd.projId = item;
+                  //  console.log(response.data.resHd.projId);
+                   // this.$store.state.responseData = response.data;  
+                    this.$store.state.responseData = response.data.resDt;   
+                    console.log("moving to update page");   
+                    //this.$router.push('projectupdate');
+                    commonMethods.clickMenuForward(this.$route.path, 'projectupdate');
+                }
+            })
+          .catch(error => {
+                this.message = error.data;
+            }) 
+           
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.projSelectedItem = item[0];
+            }
+            else {
+                this.projSelectedItem = '';
+            }
+        },
+
+        async projConfirm() {
+            this.projSelected = [this.projSelectedItem];
+            this.title = '製品工程完了登録・取消';
+            this.isShowProjScreen = false;
+            this.projSelectedItem = '';
+            this.projSearchForm.projCode = this.projSelected[0].projCode;
+            this.projSearchForm.projName = this.projSelected[0].projName;
+         },
+
+        back() {
+            this.isShowProjScreen = true;
+           // this.isShowProdScreen = false;
+            this.title = '工事登録・更新・取消';
+            this.clearData(['proj', 'update']);
+        },
+
+        clearData(items) {
+            this.message = '';
+            items.forEach(element => {
+                if(element === 'proj') {
+                   
+                    this.projData = [];
+                    this.projFields = [];
+                    this.projSelectedItem = '';
+                    this.projSelected = [];
+                }
+             
+                if(element === 'update') {
+                    this.projSearchForm = {
+                        projCode: '',
+                        projName: ''
+                    }
+                }
+            });
+        },
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            return a;
+        },
+        resetProjForm() {
+            this.projSearchForm.projCode = '';
+            this.projSearchForm.projName = '';
+        },
+       
+
+    }
+}
+</script>

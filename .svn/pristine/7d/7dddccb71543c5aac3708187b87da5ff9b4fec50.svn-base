@@ -1,0 +1,445 @@
+<template>
+    <div>
+        <comp-proj-status
+            v-if="isShowProjChoice"
+            :class-print-hide-proj="classPrintHideProj"
+            v-on:emitProjParams="emittedProjSelectedEvent"
+            v-on:emitProjSearchButton="emittedProjSearchButtonEvent"
+            v-on:emitProjPrintButton="emittedProjPrintButtonEvent"/>
+
+        <comp-area-status
+            v-if="isShowAreaChoice"
+            :prod-input="areaSearchForm"
+            :class-print-hide-area="classPrintHideArea"
+            v-on:emitChangeAggType="emittedChangeAggType"
+            v-on:emitAreaSelected="emittedAreaSelectedEvent"
+            v-on:emitMemberSelected="emittedMemberSelectedEvent"
+            v-on:emitAreaSearchButton="emittedAreaSearchButtonEvent"
+            v-on:emitMemberSearchButton="emittedMemberSearchButtonEvent"
+            v-on:emitAreaPrintButton="emittedAreaPrintButtonEvent"/>
+
+        <comp-area-member-status
+            v-if="isShowAreaMemberChoice"
+            :prod-input="areaMemberSearchForm"
+            :class-print-hide-area="classPrintHideMember"
+            v-on:emitAreaMemberSearchButton="emittedAreaMemberSearchButtonEvent"
+            v-on:emitAreaMemberSelected="emittedAreaMemberSelectedEvent"
+            v-on:emitAreaPrintButton="emittedAreaMemberPrintButtonEvent"/>
+
+        <comp-area-member-prod-status
+            v-if="isShowProdChoice"
+            :prod-input="prodSearchForm"
+            :class-print-hide-prod="classPrintHideProd"
+            v-on:emitProdSearchButton="emittedProdSearchButtonEvent"
+            v-on:emitProdPrintButton="emittedProdPrintButtonEvent"/>
+
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+//import axios from 'axios'
+//import apiUrls from '../../common/apiUrls'
+//import commonMethods from '../../common/commonMethods'
+import compProjStatus from "@/components/compProjStatus.vue";
+import compAreaStatus from "@/components/compAreaStatus.vue";
+import compAreaMemberStatus from "@/components/compAreaStatus.vue";
+import compAreaMemberProdStatus from "@/components/compAreaMemberProdStatus.vue";
+
+export default {
+    components: {
+        compProjStatus,
+        compAreaStatus,
+        compAreaMemberStatus,
+        compAreaMemberProdStatus,
+    },
+    data() {
+        return {
+            isShowProjChoice: true,
+            isShowAreaChoice: false,
+            isShowAreaMemberChoice: false,
+            isShowProdChoice: false,
+
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+
+            classPrintHideProj: '',
+            classPrintHideArea: '',
+            classPrintHideMember: '',
+            classPrintHideProd: '',
+            //工区データ
+            areaSearchForm: {
+                modeAreaMember: false,
+                projId: '',
+                projCode: '',
+                projName: '',
+                aggTypeCode: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCode2: '',
+                aggUnitCode2: '',
+                aggUnitName2: '',
+            },
+            //部材種類データ
+            memberSearchForm: {
+                modeAreaMember: false,
+                projId: '',
+                projCode: '',
+                projName: '',
+                aggTypeCode: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCode2: '',
+                aggUnitCode2: '',
+                aggUnitName2: '',
+            },
+            //工区部材種類データ
+            areaMemberSearchForm: {
+                modeAreaMember: true,
+                projId: '',
+                projCode: '',
+                projName: '',
+                aggTypeCode: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCode2: '',
+                aggUnitCode2: '',
+                aggUnitName2: '',
+            },
+            //製品検索データ
+            prodSearchForm: {
+                projId: '',
+                projCode: '',
+                projName: '',
+                aggTypeCode: '',
+                // aggTypeName: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCode2: '',
+                aggUnitCode2: '',
+                aggUnitName2: '',
+                aggTypeCodeTitle: '',
+                aggTypeNameTitle: '',
+                aggTypeCodeTitle2: '',
+                aggTypeNameTitle2: '',
+            },            
+            // //工区、部材種類、製品データ
+            // areaMemberProdSearchForm: {
+            //     modeAreaMember: false,
+            //     projId: '',
+            //     projCode: '',
+            //     projName: '',
+            //     aggTypeCode: '',
+            //     aggUnitCode: '',
+            //     aggUnitName: '',
+            //     aggTypeCode2: '',
+            //     aggUnitCode2: '',
+            //     aggUnitName2: '',
+            //     aggTypeCodeTitle: '',
+            //     aggTypeNameTitle: '',
+            //     aggTypeCode2Title: '',
+            //     aggTypeName2Title: '',
+            // },
+            // //部材種類、製品データ
+            // memberProdSearchForm: {
+            //     projId: '',
+            //     projCode: '',
+            //     projName: '',
+            //     aggTypeCode: '',
+            //     aggUnitCode: '',
+            //     aggUnitName: '',
+            //     aggTypeCode2: '',
+            //     aggUnitCode2: '',
+            //     aggUnitName2: '',
+            //     aggTypeCodeTitle: '',
+            //     aggTypeNameTitle: '',
+            //     aggTypeCode2Title: '',
+            //     aggTypeName2Title: '',
+            // },
+        }
+    },
+    // watch:{
+    //     projSelected: function(newValue) {
+    //         console.log('projSelected newValue.projId=' + newValue.projId);
+    //         if(newValue.projId) {
+    //             // this.isShowProdChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //             setTimeout(()=>this.isShowProdChoice = true, 100);
+    //         } else {
+    //             this.isShowProdChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //         }
+    //     },
+    //     projSearchButtonCount: function() {
+    //         console.log('projSearchButtonCount !');
+    //         //this.clearData(['prodSeq', 'procList']);
+    //         this.projSelected = {};
+    //     },
+    // },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        emittedChangeAggType() {
+            this.isShowAreaMemberChoice = false;
+            this.isShowProdChoice = false;
+        },
+        // 検索ボタン
+        emittedProjSearchButtonEvent(value) {
+            console.log('emittedProjSearchButtonEvent value=' + value);
+            this.projSearchButtonCount = value;
+            this.isShowAreaChoice = false;
+            this.isShowAreaMemberChoice = false;
+            this.isShowProdChoice = false;
+            this.areaSearchForm = [];
+            this.areaMemberSearchForm = [];
+            // this.areaMemberProdSearchForm = [];
+            this.memberSearchForm = [];
+            // this.memberProdSearchForm = [];
+            this.prodSearchForm =[];
+        },
+        emittedAreaSearchButtonEvent() {
+            console.log('emittedAreaSearchButtonEvent');
+            this.isShowAreaMemberChoice = false;
+            this.isShowProdChoice = false;
+            // this.areaSearchForm = value;
+            this.areaMemberSearchForm = [];
+        },
+        emittedMemberSearchButtonEvent() {
+            console.log('emittedMemberSearchButtonEvent');
+            this.isShowAreaMemberChoice = false;
+            this.isShowProdChoice = false;
+            // this.memberSearchForm = value;
+            // this.memberProdSearchForm = [];
+            // this.areaMemberProdSearchForm = []; //???
+            this.prodSearchForm = [];
+        },
+        emittedAreaMemberSearchButtonEvent() {
+            console.log('emittedAreaMemberSearchButtonEvent');
+            this.isShowProdChoice = false;
+            // this.areaMemberSearchForm = value;
+            // this.areaMemberProdSearchForm = [];
+            this.prodSearchForm = [];
+        },
+        emittedProdSearchButtonEvent(value) {
+            console.log('emittedProdSearchButtonEvent value=' + value);
+            this.prodSearchButtonCount = value;
+        },
+        // 行選択
+        emittedProjSelectedEvent(value) {
+            console.log('emittedProjSelectedEvent value=' + value);
+            // console.log('emittedProjSelectedEvent value.projId=' + value.projId);
+            // console.log('emittedProjSelectedEvent this.areaSearchForm.projId=' + this.areaSearchForm.projId);
+            // console.log('emittedProjSelectedEvent value.projCode=' + value.projCode);
+            // console.log('emittedProjSelectedEvent value.projName=' + value.projName);
+            if(value.projId) {
+                if (value.projId != this.areaSearchForm.projId) {
+                    // 工事コンポーネントの工事が選択されている状態で別の工事が選択された場合、
+                    // 工区コンポーネントのisShowAreaChoiceをfalseにしてからtrueにすることで工区コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、工区コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowAreaChoice = false;
+                }
+                // this.projSelected = value;
+                this.areaSearchForm.modeAreaMember = false;
+                this.areaSearchForm.projId = value.projId;
+                this.areaSearchForm.projCode = value.projCode;
+                this.areaSearchForm.projName = value.projName;
+                // this.areaSearchForm.aggTypeCode = 'Area';
+                this.areaSearchForm.aggTypeCode = '';
+                this.isShowAreaMemberChoice = false;
+                this.isShowProdChoice = false;
+
+                setTimeout(()=>this.isShowAreaChoice = true, 100);
+            } else {
+                // this.projSelected = value;
+                this.areaSearchForm = [];
+                // this.areaMemberProdSearchForm = [];
+                this.memberSearchForm = [];
+                // this.memberProdSearchForm = [];
+                this.prodSearchForm = [];
+                this.isShowAreaChoice = false;
+                this.isShowAreaMemberChoice = false;
+                this.isShowProdChoice = false;
+            }
+        },
+        emittedAreaSelectedEvent(value) {
+            if(value.projId) {
+                // 集計分類単位の行が選択された場合
+                console.log('emittedAreaSelectedEvent value=' + value);
+                // console.log('emittedAreaSelectedEvent value.projId=' + value.projId);
+                // console.log('emittedAreaSelectedEvent value.aggTypeCode=' + value.aggTypeCode);
+                // console.log('emittedAreaSelectedEvent value.aggUnitCode=' + value.aggUnitCode);
+                // console.log('emittedAreaSelectedEvent value.aggUnitName=' + value.aggUnitName);
+                // console.log('emittedAreaSelectedEvent areaSearchForm.projId=' + this.areaSearchForm.projId);
+                // console.log('emittedAreaSelectedEvent areaSearchForm.projCode=' + this.areaSearchForm.projCode);
+                // console.log('emittedAreaSelectedEvent areaSearchForm.projName=' + this.areaSearchForm.projName);
+                // console.log('emittedAreaSelectedEvent areaSearchForm.aggUnitCode=' + this.areaSearchForm.aggUnitCode);
+                if (value.aggUnitCode != this.areaSearchForm.aggUnitCode) {
+                    // 工区コンポーネントの工区が選択されている状態で別の工区が選択された場合、
+                    // 工区コンポーネントのisShowProdChoiceをfalseにしてからtrueにすることで製品コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、製品コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowAreaMemberChoice = false;
+                }
+                this.areaMemberSearchForm.modeAreaMember = true;
+                this.areaMemberSearchForm.projId = value.projId;
+                this.areaMemberSearchForm.projCode = value.projCode;
+                this.areaMemberSearchForm.projName = value.projName;
+                this.areaMemberSearchForm.aggTypeCode = value.aggTypeCode;
+                this.areaMemberSearchForm.aggUnitCode = value.aggUnitCode;
+                this.areaMemberSearchForm.aggUnitName = value.aggUnitName;
+                this.areaMemberSearchForm.aggTypeCode2 = 'Member';
+                // this.memberProdSearchForm = [];
+                this.isShowProdChoice = false;
+                
+                setTimeout(()=>this.isShowAreaMemberChoice = true, 100);
+            } else {
+                this.areaMemberSearchForm = [];
+                this.isShowAreaMemberChoice = false;
+                this.prodSearchForm = [];
+                this.isShowProdChoice = false;
+            }
+        },
+        emittedMemberSelectedEvent(value) {
+            console.log('emittedMemberSelectedEvent value=' + value);
+            if(value.projId) {
+                // 集計分類：部材種類で行が選択された場合
+                if (value.aggUnitCode != this.areaSearchForm.aggUnitCode) {
+                    // 工区コンポーネントの工区が選択されている状態で別の工区が選択された場合、
+                    // 工区コンポーネントのisShowProdChoiceをfalseにしてからtrueにすることで製品コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、製品コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowProdChoice = false;
+                }
+                // this.memberProdSearchForm.modeAreaMember = false;
+                // this.memberProdSearchForm.projId = value.projId;
+                // this.memberProdSearchForm.projCode = value.projCode;
+                // this.memberProdSearchForm.projName = value.projName;
+                // this.memberProdSearchForm.aggTypeCode = value.aggTypeCode;
+                // this.memberProdSearchForm.aggUnitCode = value.aggUnitCode;
+                // this.memberProdSearchForm.aggUnitName = value.aggUnitName;
+                // this.memberProdSearchForm.aggTypeCode2 = '';
+                // this.memberProdSearchForm.aggUnitCode2 = '';
+                // this.memberProdSearchForm.aggUnitName2 = '';
+                this.prodSearchForm.projId = value.projId;
+                this.prodSearchForm.projCode = value.projCode;
+                this.prodSearchForm.projName = value.projName;
+                this.prodSearchForm.aggTypeCode = value.aggTypeCode;
+                this.prodSearchForm.aggUnitCode = value.aggUnitCode;
+                this.prodSearchForm.aggUnitName = value.aggUnitName;
+                this.prodSearchForm.aggTypeCode2 = '';
+                this.prodSearchForm.aggUnitCode2 = '';
+                this.prodSearchForm.aggUnitName2 = '';
+                setTimeout(()=>this.isShowProdChoice = true, 100);
+            // }
+            } else {
+                // this.memberProdSearchForm = [];
+                this.prodSearchForm = [];
+                this.isShowProdChoice = false;
+            }
+        },
+        emittedAreaMemberSelectedEvent(value) {
+            console.log('emittedAreaMemberSelectedEvent value=' + value);
+            if(value.projId) {
+                // 工区別の部材種類の行が選択された場合
+                // console.log('emittedAreaMemberSelectedEvent value.projId=' + value.projId);
+                // console.log('emittedAreaMemberSelectedEvent value.aggTypeCode=' + value.aggTypeCode);
+                // console.log('emittedAreaMemberSelectedEvent value.aggUnitCode=' + value.aggUnitCode);
+                // console.log('emittedAreaMemberSelectedEvent value.aggUnitName=' + value.aggUnitName);
+                // console.log('emittedAreaMemberSelectedEvent value.aggTypeCode2=' + value.aggTypeCode2);
+                // console.log('emittedAreaMemberSelectedEvent value.aggUnitCode2=' + value.aggUnitCode2);
+                // console.log('emittedAreaMemberSelectedEvent areaMemberSearchForm.projId=' + this.areaMemberSearchForm.projId);
+                // console.log('emittedAreaMemberSelectedEvent areaMemberSearchForm.projCode=' + this.areaMemberSearchForm.projCode);
+                // console.log('emittedAreaMemberSelectedEvent areaMemberSearchForm.projName=' + this.areaMemberSearchForm.projName);
+                if (value.aggUnitCode2 != this.areaMemberSearchForm.aggUnitCode2) {
+                    // 工区コンポーネントの工区が選択されている状態で別の工区が選択された場合、
+                    // 工区コンポーネントのisShowProdChoiceをfalseにしてからtrueにすることで製品コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、製品コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowProdChoice = false;
+                }
+                // this.areaMemberProdSearchForm.projId = this.areaMemberSearchForm.projId;
+                // this.areaMemberProdSearchForm.projCode = this.areaMemberSearchForm.projCode;
+                // this.areaMemberProdSearchForm.projName = this.areaMemberSearchForm.projName;
+                // this.areaMemberProdSearchForm.aggTypeCode = this.areaMemberSearchForm.aggTypeCode;
+                // this.areaMemberProdSearchForm.aggUnitCode = this.areaMemberSearchForm.aggUnitCode;
+                // this.areaMemberProdSearchForm.aggUnitName = this.areaMemberSearchForm.aggUnitName;
+                // this.areaMemberProdSearchForm.aggTypeCode2 = value.aggTypeCode2;
+                // this.areaMemberProdSearchForm.aggUnitCode2 = value.aggUnitCode2;
+                // this.areaMemberProdSearchForm.aggUnitName2 = value.aggUnitName2;
+                this.prodSearchForm.projId = this.areaMemberSearchForm.projId;
+                this.prodSearchForm.projCode = this.areaMemberSearchForm.projCode;
+                this.prodSearchForm.projName = this.areaMemberSearchForm.projName;
+                this.prodSearchForm.aggTypeCode = this.areaMemberSearchForm.aggTypeCode;
+                this.prodSearchForm.aggUnitCode = this.areaMemberSearchForm.aggUnitCode;
+                this.prodSearchForm.aggUnitName = this.areaMemberSearchForm.aggUnitName;
+                this.prodSearchForm.aggTypeCode2 = value.aggTypeCode2;
+                this.prodSearchForm.aggUnitCode2 = value.aggUnitCode2;
+                this.prodSearchForm.aggUnitName2 = value.aggUnitName2;
+                setTimeout(()=>this.isShowProdChoice = true, 100);
+            } else {
+                // this.areaMemberProdSearchForm = [];
+                this.prodSearchForm = [];
+                this.isShowProdChoice = false;
+            }
+        },
+        // emittedProdSelectedEvent(value) {
+        //     console.log('emittedProdSelectedEvent value.prodCode=' + value.prodCode);
+        //     console.log('emittedProdSelectedEvent value.prodName=' + value.prodName);
+        //     this.prodSelected = value;
+        // },
+        // 印刷ボタン
+        emittedProjPrintButtonEvent(value) {
+            // console.log('emittedProjPrintButtonEvent value=' + value);
+            // console.log('emittedProjPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = '';
+            this.classPrintHideArea = 'print-hide';
+            this.classPrintHideMember = 'print-hide';
+            this.classPrintHideProd = 'print-hide';
+        },
+        emittedAreaPrintButtonEvent(value) {
+            // console.log('emittedAreaPrintButtonEvent value=' + value);
+            // console.log('emittedAreaPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideArea = '';
+            this.classPrintHideMember = 'print-hide';
+            this.classPrintHideProd = 'print-hide';
+        },
+        emittedAreaMemberPrintButtonEvent(value) {
+            // console.log('emittedAreaMemberPrintButtonEvent value=' + value);
+            // console.log('emittedAreaMemberPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideArea = 'print-hide';
+            this.classPrintHideMember = '';
+            this.classPrintHideProd = 'print-hide';
+        },
+        emittedProdPrintButtonEvent(value) {
+            // console.log('emittedProdPrintButtonEvent value=' + value);
+            // console.log('emittedProdPrintButtonEvent this.classPrintHideProd=' + this.classPrintHideProd);
+            this.prodSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideArea = 'print-hide';
+            this.classPrintHideMember = 'print-hide';
+            this.classPrintHideProd = '';
+        },
+    }
+}
+</script>

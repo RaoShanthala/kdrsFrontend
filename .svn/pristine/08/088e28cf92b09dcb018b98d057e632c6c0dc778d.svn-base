@@ -1,0 +1,81 @@
+<template>
+    <div>
+        <comp-proj-search
+            :proj-settings="projSettings"
+            v-on:emittedProjParams="emitProjEvent"
+            v-on:projSearchButton="projSearchButtonEvent"
+            v-on:emitSelctedProjId = "emitSelctedProjId"/>
+      
+        <comp-prod-proc-plan-search
+            v-if="isShowProdProcPlanSearch && projSelected.projId"
+            :proj-params="projSelected"
+            :show-data="showData"/>
+    </div>
+</template>
+
+<script>
+import compProjSearch from "@/components/compProjSearch.vue";
+import compProdProcPlanSearch from "@/components/compProdProcPlanSearch.vue";
+import commonMethods from '../common/commonMethods';
+export default {
+    components: {
+        compProjSearch,
+        compProdProcPlanSearch
+    },
+    data() {
+        return {
+            projSettings: { maintenanceMode: true },
+            projSelected: {},
+            isShowProdProcPlanSearch: false,
+            projSearchButtonCount: 0,
+            showData : false,
+            currentMenuName:'',
+        }
+    },
+    watch:{
+        projSelected: function(newValue) {
+            if(newValue.projId) {
+                this.isShowProdProcPlanSearch = false;
+                //this.clearData(['prodSeq', 'procList']);
+                setTimeout(()=>this.isShowProdProcPlanSearch = true, 1);
+            } else {
+                this.isShowProdProcPlanSearch = false;
+                //this.clearData(['prodSeq', 'procList']);
+            }
+        },
+        projSearchButtonCount: function() {
+            //this.clearData(['prodSeq', 'procList']);
+            this.projSelected = {};
+        },
+    },
+
+    methods: {
+        emitProjEvent(value) {
+            this.projSelected = value;
+        },
+        projSearchButtonEvent(value) {
+            this.projSearchButtonCount = value;
+        },
+        
+        async emitSelctedProjId(data){
+           let oldSelctedProjId = data.oldProjId;
+           this.projSelected  = data.newProjId;
+
+           if (!this.projSelected ){
+               this.showData = false;
+           }else{
+             this.currentMenuName = commonMethods.getCurrentMenu();  
+             var showProd = commonMethods.loadCommonArea(this.currentMenuName + '_ShowProduct');
+             commonMethods.deleteCommonArea(this.currentMenuName + '_ShowProduct');
+             if (oldSelctedProjId && oldSelctedProjId != this.projSelected ){
+                 showProd = false;
+             }
+             if (!(showProd == null) && showProd == true && this.projSelected  ){
+                this.showData = true;             
+             }   
+           } 
+        },        
+
+    }
+}
+</script>

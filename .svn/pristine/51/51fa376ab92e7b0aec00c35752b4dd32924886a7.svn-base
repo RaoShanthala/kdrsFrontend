@@ -1,0 +1,55 @@
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+import Login    from '../views/Login.vue'
+import Menu     from '../views/Menu.vue'
+//ユーザメンテ画面
+import Users    from '../views/UserMaintenance.vue'
+import Update   from '../views/UserUpdate.vue'
+import Register from '../views/UserRegister.vue'
+//製品工程完了登録・取消画面
+import Process from '../views/ProcessMaintenance.vue'
+//製品/工程作成画面
+import ProdProc from '../views/ProdProcMaintenance.vue'
+//工事メンテ画面
+import Projects from '../views/ProjectMaintenance.vue'
+import RegisterProject from '../views/ProjectRegister.vue'
+import ProjectUpdate from '../views/ProjectUpdate.vue'
+//製品メンテ画面
+import Products from '../views/ProductMaintenance.vue'
+import ProductSearch from '../views/ProductSearch.vue'
+import RegisterProduct from '../views/ProductRegister.vue'
+//物件一覧進捗表示
+import Status from '../views/ProjectStatus.vue'
+//データ一覧表
+import ProjectTable from '../views/ProjectTable.vue'
+import ProductTable from '../views/ProductTable.vue'
+//Teklaデータ登録
+import ImportTekla from '../views/ImportTekla.vue'
+
+Vue.use(VueRouter)
+
+const routes = [
+  {path: '/',         name: 'Login',    component: Login},
+  {path: '/menu',     name: 'Menu',     component: Menu},
+  {path: '/users',    name: 'Users',    component: Users},
+  {path: '/update',   name: 'Update',   component: Update},
+  {path: '/projects',  name: 'Projects',  component: Projects},
+  {path: '/register', name: 'Register', component: Register},
+  {path: '/prodproc', name: 'ProdProc', component: ProdProc},
+  {path: '/projects',  name: 'Projects',  component: Projects},
+  {path: '/projectupdate',   name: 'ProjectUpdate',   component: ProjectUpdate},
+  {path: '/process',  name: 'Process',  component: Process},
+  {path: '/projectstatus',  name: 'Status',  component: Status},
+  {path: '/projecttable',  name: 'ProjectTable',  component: ProjectTable},
+  {path: '/producttable',  name: 'ProductTable',  component: ProductTable},
+  {path: '/productsearch',  name: 'ProductSearch',  component: ProductSearch},
+  {path: '/importtekla',  name: 'ImportTekla',  component: ImportTekla},
+  {path: '/registerproject',  name: 'RegisterProject',  component: RegisterProject},
+  {path: '/registerproduct',  name: 'RegisterProduct',  component: RegisterProduct},
+  {path: '/products',  name: 'Products',  component: Products}
+]
+
+const router = new VueRouter({ routes })
+
+export default router

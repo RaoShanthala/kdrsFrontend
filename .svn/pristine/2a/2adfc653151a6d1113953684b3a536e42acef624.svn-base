@@ -1,0 +1,800 @@
+<template>
+    <div>
+        <!--工事検索-->
+        <div v-if="!(this.isShowProjScreen )">
+            <b-card bg-variant="light">
+                <b-form inline>
+                     <b-form-group label="集計分類名称" class="mr-2">
+                        <b-form-input v-model="aggregateSearchForm.aggTypeName"/>
+                     </b-form-group>
+                     <div  id="flexButton">
+                        <b-button @click="aggregateCheck" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetForm">クリア</b-button> 
+                     </div>
+                </b-form>       
+                <div class="text-right mt-1">
+                    <!--b-button @click="registerAggType" class="mr-1">新規</b-button -->
+                    <b-button  v-b-modal.std_agg_type @click="showTypeRegisterModal">新規</b-button>
+                    <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+                </div> 
+                <br />
+                <div v-if="aggSelected.length">
+                    <b-table
+                        head-variant="light"
+                        sticky-header = "200px"
+                        class="table-sm table-bordered text-nowrap"
+                        hover 
+                        selectable 
+                        selected-variant="info"
+                        select-mode="single" 
+                        striped 
+                        no-border-collapse
+                        :items="aggSelected"
+                        :fields="aggFields"
+                        ref="aggTable"
+                        @row-selected="rowClickGetDetails" >
+                        <template #cell(update)="row">
+                            <!--b-button size="sm" v-b-modal.std_agg_type  @click="showTypeUpdateModal(row.item.aggTypeCode, row.item.aggTypeName)">更新/削除</b-button-->
+                            <b-link class="button" v-b-modal.std_agg_type v-on:click="showTypeUpdateModal(row.item.aggTypeCode, row.item.aggTypeName)">更新/削除</b-link>
+                        </template>  
+                    </b-table>               
+                </div>
+                <div v-if="isLoadingData" class="text-center text-danger my-2">
+                   <b-spinner class="align-middle"></b-spinner>
+                   <strong>検索中...</strong>
+                </div>
+            </b-card>       
+        </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+        
+        <div v-if="isShowAggUnit"  >
+            <b-card bg-variant="light">
+                <b-row>
+                </b-row >
+                <b-row>    
+                    <b-col >
+                        <b-form inline class="mt-1">
+                           <span class="mr-4 mt-1"><strong>集計分類コード：</strong>{{ this.aggCodeSelected }}</span>
+                           <strong>集計分類名称：</strong>{{ this.aggNameSelected }}
+                        </b-form>
+                        <div class="text-right mt-1">
+                           <b-button v-b-modal.std_agg_unit @click="showUnitRegisterModal" class="mr-1">新規</b-button>
+                        </div>  
+                    </b-col>  
+                </b-row>
+                <br/>
+                <div v-if="aggUnitData.length" > 
+                    <b-table
+                        head-variant="light" 
+                        sticky-header = "200px" 
+                        class="table-sm table-bordered text-nowrap"
+                        hover 
+                        striped
+                        no-border-collapse
+                        :items="aggUnitData" 
+                        :fields="aggUnitFields">
+                        <template #cell(update)="row">
+                            <!--b-button size="sm" v-b-modal.std_agg_unit @click="showUnitUpdateModal(row.item.aggUnitCode, row.item.aggUnitName)">更新/削除</b-button-->
+                            <b-link class="button" v-b-modal.std_agg_unit v-on:click="showUnitUpdateModal(row.item.aggUnitCode, row.item.aggUnitName)">更新/削除</b-link>
+                        </template>  
+                    </b-table>
+                </div>        
+            </b-card>         
+        </div>
+
+        <div v-if="this.modalShow">
+           <b-modal
+              id="std_agg_type"
+              v-bind:title= "this.titleStgAggType"
+              hide-footer>
+              <b-form>
+                 <label for="aggTypeCode">製品分類コード</label>
+                 <div v-if="aggStgTypeRegister">
+                      <b-form-input id="aggTypeCode" v-model="aggTypeCode" list="codeList"/>  
+                      <b-form-datalist id="codeList" :options="options" />
+                 </div>
+                 <div v-else>
+                    <b-form-input id="aggTypeCode" v-model="aggTypeCode" disabled/>
+                 </div>      
+                 <div><p style="color: #ff0000;" id="aggTypeCodeError"></p> </div> 
+                 <label for="aggTypeName">集計分類名称</label>
+                <b-form-input id="aggTypeName" v-model="aggTypeName"/>
+                <div><p style="color: #ff0000;" id="aggTypeNameError"></p> </div>  
+
+                <div v-if="aggStgTypeRegister"  style="float: right;">
+                  <b-button class="mr-1" @click="closeTypeModal">Cancel</b-button>  
+                  <b-button class="mr-1" @click="registerStdAggTypeData">登録 </b-button>
+                </div>
+                <div v-else  style="float: right;">
+                  <b-button class="mr-1" @click="closeTypeModal">Cancel</b-button>
+                  <b-button  @click="updateStdAggTypeData" class="mr-1">更新</b-button>
+                  <b-button  @click="deleteStdAggTypeData" class="mr-1">削除</b-button>
+                </div>   
+
+                <b-alert class="mt-4" v-if="messageReg" show variant="danger">{{ messageReg }}</b-alert>
+                        
+              </b-form>
+            </b-modal>
+        </div>
+
+        <div v-if="this.unitModalShow">
+           <b-modal
+              id="std_agg_unit"
+              v-bind:title= "this.titleStgAggUnit"
+              height=auto
+              hide-footer>
+              <b-form>
+                 <div class="d-block text-center"> 
+                   <label style="padding-right:25px;">  集計分類コード：{{this.aggCodeSelected }}  </label>     
+                   <label> 集計分類名称： {{ this.aggNameSelected}}    </label>  
+                 </div>  
+                 <br/>        
+                 <label for="aggUnitCode">集計単位コード</label>
+                 <div v-if="aggStgUnitRegister">
+                    <b-form-input id="aggUnitCode" v-model="aggUnitCode"/>
+                 </div>
+                 <div v-else>
+                    <b-form-input id="aggUnitCode" v-model="aggUnitCode" disabled/>
+                 </div>      
+                 <div><p style="color: #ff0000;" id="aggUnitCodeError"></p> </div> 
+                 <label for="aggUnitName">集計単位名称</label>
+                <b-form-input id="aggUnitName" v-model="aggUnitName"/>
+                <div><p style="color: #ff0000;" id="aggUnitNameError"></p> </div>
+                 <br/>      
+                <div v-if="aggStgUnitRegister"  style="float: right;">
+                  <b-button class="mr-1" @click="closeUnitModal">Cancel</b-button>  
+                  <b-button class="mr-1" @click="registerStdAggUnitData">登録 </b-button>
+                </div>
+                <div v-else  style="float: right;">
+                  <b-button class="mr-1" @click="closeUnitModal">Cancel</b-button>
+                  <b-button  @click="updateStdAggUnitData" class="mr-1">更新</b-button>
+                  <b-button  @click="deleteStdAggUnitData" class="mr-1">削除</b-button>
+                </div>  
+                <b-alert class="mt-4" v-if="messageReg" show variant="danger">{{ messageReg }}</b-alert>
+                               
+              </b-form>
+            </b-modal>
+        </div>
+
+    </div>     
+</template>
+
+<style scoped>
+#flexButton {
+    margin-bottom: -2rem;
+}
+
+.button {
+  font: 11px Arial;
+  text-decoration: none;
+  background-color: #7E7E7E; /* #817d7d; */
+  color: #FFFFFF;
+  padding: 4px 20px 4px 20px;
+  border-top: 1px solid #CCCCCC;
+  border-right: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  border-left: 1px solid #CCCCCC;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '標準集計分類検索',
+            titleType : '標準集計単位',
+            titleStgAggType : '製品分類登録',
+            titleStgAggUnit : '製品単位登録',
+            aggStgTypeRegister : false,
+            //工事関連データ
+            aggregateSearchForm: {
+                projCode: '',
+                aggTypeCode: ''
+            },
+            isShowProjScreen: false,
+            aggFields: [],
+            aggSelectedItem: '',
+            aggSelected: [],
+            aggData:'',
+            aggCodeSelected:'',
+            aggNameSelected:'',
+            isShowAggUnit: false,
+            modalShow: false,
+            unitModalShow: false,
+            aggUnitData: [],
+            aggUnitFields: [],
+            aggTypeCode:'',
+            aggTypeName:'',
+            aggUnitCode:'',
+            aggUnitName:'',
+            text1: "",
+            text2:"",
+            aggTypeCodePresent:false,
+            aggTypeNamePresent:false,
+            aggUnitCodePresent:false,
+            aggUnitNamePresent:false,
+            message: '',
+            messageReg :'',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            isLoadingData: false,
+            options: []
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        this.getOptions();
+    },
+   
+    methods: {
+        //工事検索処理
+        async aggregateFetch() {
+            this.isLoadingData = true;
+            this.aggData= '';
+            this.aggFields = [];
+            this.aggSelected = [];
+            this.message = '';
+            let payload = {
+                ...this.aggregateSearchForm.aggTypeName   && { aggTypeName:   this.aggregateSearchForm.aggTypeName},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referStdAggTypeMany, axiosConfigObject).then(response => {
+                this.aggData = response.data.resDt;
+                console.log("Respose DATA ---------------- ");
+                console.log(response.data);
+                this.aggFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingData = false;
+            })
+        },
+
+        async getOptions() {
+            this.options = [];
+            let payload = {
+              aggTypeName:  '',
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referStdAggTypeMany, axiosConfigObject).then(response => {      
+                console.log("Respose DATA ---------------- ");
+                console.log(response.data);
+                if(response.data.resultCode == '000') {
+                   this.aggData = response.data.resDt;
+                   for(var i = 0; i < this.aggData.length; i++){          
+                       this.options.push(this.aggData[i].aggTypeCode);                             
+                   } 
+                   this.aggData='';
+                }
+            });               
+        },
+
+        showTypeRegisterModal(){
+            this.aggTypeCode = '';
+            this.aggTypeName = '';
+            this.modalShow = true;
+            this.messageReg = '';
+            this.aggStgTypeRegister = true;
+            this.titleStgAggType = '製品分類登録';
+        },
+
+        showTypeUpdateModal(code, name){
+            this.aggStgTypeRegister = false;
+            this.messageReg = '';
+            this.titleStgAggType = '製品分類更新・削除';
+            this.modalShow = true;
+            this.aggTypeCode = code;
+            this.aggTypeName = name;
+        },
+
+        closeTypeModal(){
+            this.modalShow = false;
+        },
+
+        showUnitRegisterModal(){
+            this.unitModalShow = true;
+            this.messageReg = '';
+            this.aggStgUnitRegister = true;
+            this.aggUnitCode = '';
+            this.aggUnitName = '';
+            this.titleStgAggUnit = '製品単位登録';
+        },
+
+        showUnitUpdateModal(code, name){
+            console.log (" showUnitUpdateModal " + code +" name == " + name + " this.aggNameSelected " + this.aggNameSelected);
+            this.unitModalShow = true;
+            this.messageReg = '';
+            this.aggStgUnitRegister = false; 
+            this.aggUnitCode = code;
+            this.aggUnitName = name;
+            this.titleStgAggUnit = '製品単位更新・削除';       
+        },
+
+        closeUnitModal(){
+            this.unitModalShow = false;
+        },
+
+        async aggregateCheck() {
+            await this.aggregateFetch();
+            if(this.aggData.length > 0) {
+                this.aggSelected = this.aggData;
+            } else {
+                this.message = "no data";
+                console.log("no data");
+            }
+        },
+
+        registerAggUnit(){
+            var data = {
+               aggTypeCode: this.aggCodeSelected,
+               aggTypeName: this.aggNameSelected
+            }
+            this.$store.state.responseData = data;
+            commonMethods.saveCommonArea('AggTypeName', this.aggregateSearchForm.aggTypeName);
+            commonMethods.saveCommonArea('SelectedAggTypeCode', this.aggCodeSelected);
+            commonMethods.saveCommonArea('SelectedAggTypeName', this.aggNameSelected);
+            //this.$router.push('registerstdprod')
+            commonMethods.clickMenuForward(this.$route.path, 'registerstdaggunit');
+        },
+
+        async rowClickGetDetails(code) {
+            this.aggCodeSelected = '';
+            this.aggNameSelected = '';
+            this.isShowAggUnit = false;
+          if(code[0]) {
+            this.aggCodeSelected = code[0].aggTypeCode;
+            this.aggNameSelected = code[0].aggTypeName;
+            this.isShowAggUnit = true;
+            await this.getStdAggUnitData();
+           } else {
+            this.isShowAggUnit = false;
+           }
+           console.log(this.aggCodeSelected);
+        },
+
+        async getStdAggUnitData(){
+            let payload = {
+               aggTypeCode: this.aggCodeSelected
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referStdAggUnitAll, axiosConfigObject).then(response => {
+                this.aggUnitData = response.data.resDt;
+                this.aggUnitFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingData = false;
+            })
+
+        },
+
+        updateStdUnit(code,name){
+            console.log("ITEM == " + code);
+            console.log("name == " + name);
+            commonMethods.saveCommonArea('AggTypeName', this.aggregateSearchForm.aggTypeName);
+            commonMethods.saveCommonArea('SelectedAggTypeCode', this.aggCodeSelected);
+            commonMethods.saveCommonArea('SelectedAggTypeName', this.aggNameSelected);
+            var data = {
+               aggTypeCode: this.aggCodeSelected,
+               aggTypeName: this.aggNameSelected,
+               aggUnitCode: code,
+               aggUnitName: name
+            }
+            this.$store.state.responseData = data;
+            commonMethods.clickMenuForward(this.$route.path, 'updatestdaggunit');
+        },
+
+        back() {
+            this.isShowProjScreen = true;
+            // this.isShowProdScreen = false;
+            // this.title = '工事登録・更新・取消';
+            this.clearData(['proj', 'update']);
+        },
+
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        checkInput() {
+            this.text1 = "";
+            if (!this.aggTypeCode) {
+                this.text1 = "集計分類コードを入力してください";
+                this.aggTypeCodePresent = false;
+            } else{
+                this.text1 = "";
+                this.aggTypeCodePresent = true; 
+            }
+             document.getElementById("aggTypeCodeError").innerHTML = this.text1;
+
+            this.text2 = "";
+            if (!this.aggTypeName) {
+                this.text2 = "集計分類名を入力してください";
+                this.aggTypeNamePresent = false;
+            } else {
+                this.text2 = "";
+                this.aggTypeNamePresent = true; 
+            } 
+            document.getElementById("aggTypeNameError").innerHTML = this.text2;     
+        },
+
+        checkInputUnit() {
+            this.text1 = "";
+            if (!this.aggUnitCode) {
+                this.text1 = "集計単位コードを入力してください";
+                this.aggUnitCodePresent = false;
+            } else{
+                this.text1 = "";
+                this.aggUnitCodePresent = true; 
+            }
+             document.getElementById("aggUnitCodeError").innerHTML = this.text1;
+
+            this.text2 = "";
+            if (!this.aggUnitName) {
+                this.text2 = "集計分類名を入力してください";
+                this.aggUnitNamePresent = false;
+            } else {
+                this.text2 = "";
+                this.aggUnitNamePresent = true; 
+            } 
+            document.getElementById("aggUnitNameError").innerHTML = this.text2;     
+        },
+
+        registerStdAggUnitData(bvModalEvt) {
+            this.messageReg = "";
+            this.checkInputUnit();   
+            if (this.aggUnitCodePresent == true && this.aggUnitNamePresent == true) {
+                if (confirm("登録しますか？")) {
+                   // console.log (this.selected);  
+                    //基本リクエストを作成する
+                    let payload = {
+                        transId: "",
+                        resultCode: null,
+                        resultMessage: null,
+                        user: null,
+                        terminal: null,
+                        reqDateTime: null,
+                        resDateTime: null,
+                        reqHd: {
+                            aggTypeCode: this.aggCodeSelected,
+                            aggUnitCode: this.aggUnitCode,
+                            aggUnitName: this.aggUnitName
+                        },
+                    };
+
+                    let axiosConfigObject = {
+                        headers: {
+                            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                            "Content-Type": "application/json",
+                        },
+                    };
+                    axios
+                    .post(apiUrls.insertStdAggUnit, payload, axiosConfigObject)
+                    .then((response) => {
+                        console.log(response.data);
+                        if (response.data.resultCode != "000") {
+                            this.messageReg = commonMethods.getResponseMessage(response);
+                            bvModalEvt.preventDefault();
+                        } else {
+                            alert(response.data.resultMessage);
+                            this.unitModalShow = false;
+                            this.getStdAggUnitData();
+                            //this.$router.push('productsearch')
+                            //commonMethods.clickMenuBack();
+                        }
+                    })
+                    .catch((error) => {
+                        //this.message = (error.response || {}).data;
+                        //console.log((error.response || {}).data);
+                        this.messageReg = commonMethods.getErrorMessage(error);
+                        bvModalEvt.preventDefault();
+                    });
+                } 
+            } 
+        },
+
+        updateStdAggUnitData(bvModalEvt){
+            this.messageReg = "";
+            this.checkInputUnit()  
+            if (this.aggUnitNamePresent == true) {
+              if (confirm("更新しますか？")) {
+                //基本リクエストを作成する
+                let payload = {
+                    transId: "",
+                    resultCode: null,
+                    resultMessage: null,
+                    user: null,
+                    terminal: null,
+                    reqDateTime: null,
+                    resDateTime: null,
+                    reqHd: {
+                        aggTypeCode: this.aggCodeSelected,
+                        aggUnitCode: this.aggUnitCode,
+                        aggUnitName: this.aggUnitName
+                    },
+                };
+
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                };
+                axios
+                .post(apiUrls.updateStdAggUnit, payload, axiosConfigObject)
+                .then((response) => {
+                    console.log(response.data);
+                    if (response.data.resultCode != "000") {
+                        this.messageReg = commonMethods.getResponseMessage(response);
+                        bvModalEvt.preventDefault();
+                    } else {
+                        alert(response.data.resultMessage);
+                        this.unitModalShow = false;
+                        this.getStdAggUnitData();
+                        //this.$router.push('productsearch')
+                        //commonMethods.clickMenuBack();
+                    }
+                })
+                .catch((error) => {
+                    //this.message = (error.response || {}).data;
+                    //console.log((error.response || {}).data);
+                    this.messageReg = commonMethods.getErrorMessage(error);
+                    bvModalEvt.preventDefault();
+                });
+              } 
+            } 
+        },
+    
+        deleteStdAggUnitData(bvModalEvt){
+            if (confirm('削除しますか？')) {
+                let payload = {
+                    tranId:        '',
+                    resultCode:    null,
+                    resultMessage: null,
+                    user:          null,
+                    terminal:      null,
+                    reqDateTime:   null,
+                    resDateTime:   null,
+                    reqHd: {
+                        aggTypeCode: this.aggCodeSelected,
+                        aggUnitCode: this.aggUnitCode 
+                    }
+                }
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    data:    payload
+                }
+                axios.delete(apiUrls.removeStdAggUnit, axiosConfigObject).then((response) => {
+                    if(response.data.resultCode != '000') {
+                        this.messageReg = commonMethods.getResponseMessage(response);
+                        bvModalEvt.preventDefault();
+                    } else {
+                        alert(response.data.resultMessage)
+                        this.unitModalShow = false;
+                        this.getStdAggUnitData();
+                        //this.$store.state.responseData = ''
+                        //this.$router.push('projects')
+                        // commonMethods.clickMenuBack();
+                    }
+                })
+                .catch(error => {
+                    this.messageReg = commonMethods.getErrorMessage(error);
+                    bvModalEvt.preventDefault();
+                })
+            }
+        },
+
+        registerStdAggTypeData(bvModalEvt) {
+            this.messageReg = '';
+            this.checkInput();   
+            if (this.aggTypeCodePresent == true && this.aggTypeNamePresent == true) {
+                if (confirm("登録しますか？")) {
+                    //基本リクエストを作成する
+                    let payload = {
+                        transId: "",
+                        resultCode: null,
+                        resultMessage: null,
+                        user: null,
+                        terminal: null,
+                        reqDateTime: null,
+                        resDateTime: null,
+                        reqHd: {
+                            aggTypeCode: this.aggTypeCode,
+                            aggTypeName: this.aggTypeName
+                        },
+                    };
+                    let axiosConfigObject = {
+                        headers: {
+                            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                            "Content-Type": "application/json",
+                        },
+                    };
+                    axios
+                    .post(apiUrls.registerStdAggType, payload, axiosConfigObject)
+                    .then((response) => {
+                        console.log(response.data);
+                        if (response.data.resultCode != "000") {
+                            this.messageReg = commonMethods.getResponseMessage(response);
+                            bvModalEvt.preventDefault();
+                        } else {
+                            alert(response.data.resultMessage);
+                            this.modalShow = false;
+                            this.aggregateCheck();
+                            //this.$router.push('productsearch')
+                       //     commonMethods.clickMenuBack();
+                        }
+                    })
+                    .catch((error) => {
+                        //this.message = (error.response || {}).data;
+                        //console.log((error.response || {}).data);
+                        this.messageReg = commonMethods.getErrorMessage(error);
+                       bvModalEvt.preventDefault();
+                    });
+                } 
+            } else{
+                bvModalEvt.preventDefault();
+            }
+        },
+
+        updateStdAggTypeData(bvModalEvt) {
+            this.messageReg = '';
+            this.checkInput();   
+            if (this.aggTypeNamePresent == true) {
+                if (confirm("更新しますか？")) {
+                   //基本リクエストを作成する
+                    let payload = {
+                        transId: "",
+                        resultCode: null,
+                        resultMessage: null,
+                        user: null,
+                        terminal: null,
+                        reqDateTime: null,
+                        resDateTime: null,
+                        reqHd: {
+                            aggTypeCode: this.aggTypeCode,
+                            aggTypeName: this.aggTypeName
+                        },
+                    };
+
+                    let axiosConfigObject = {
+                        headers: {
+                            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                            "Content-Type": "application/json",
+                        },
+                    };
+                    axios
+                    .post(apiUrls.updateStdAggType, payload, axiosConfigObject)
+                    .then((response) => {
+                        console.log(response.data);
+                        if (response.data.resultCode != "000") {
+                            this.messageReg = commonMethods.getResponseMessage(response);
+                            bvModalEvt.preventDefault();
+                        } else {
+                            alert(response.data.resultMessage);
+                            this.modalShow = false;
+                            this.aggregateCheck();
+                            //this.$router.push('productsearch')
+                            // commonMethods.clickMenuBack();
+                        }
+                    })
+                    .catch((error) => {
+                        //this.message = (error.response || {}).data;
+                        //console.log((error.response || {}).data);
+                        this.messageReg = commonMethods.getErrorMessage(error);
+                        bvModalEvt.preventDefault();
+                    });
+                } 
+            } else{
+                bvModalEvt.preventDefault(); 
+            }
+        },
+
+        deleteStdAggTypeData(bvModalEvt) {
+            this.messageReg = '';
+            if (confirm('削除しますか？')) {
+                let payload = {
+                    tranId:        '',
+                    resultCode:    null,
+                    resultMessage: null,
+                    user:          null,
+                    terminal:      null,
+                    reqDateTime:   null,
+                    resDateTime:   null,
+                    reqHd: {
+                        aggTypeCode: this.aggTypeCode
+                    }
+                }
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    data:    payload
+                }   
+                axios.delete(apiUrls.removeStdAggType, axiosConfigObject).then((response) => {
+                    if(response.data.resultCode != '000') {
+                        this.messageReg = commonMethods.getResponseMessage(response);
+                        bvModalEvt.preventDefault();
+                    } else {
+                        alert(response.data.resultMessage)
+                        this.modalShow = false;
+                        this.aggregateCheck();
+                        //this.$router.push('projects')
+                        // commonMethods.clickMenuBack();
+                    }
+                })
+                .catch(error => {
+                    this.messageReg = commonMethods.getErrorMessage(error);
+                    bvModalEvt.preventDefault();
+                })
+            }
+        },
+    
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            return a;
+        },
+        
+        resetForm() {
+            this.aggregateSearchForm.projCode = '';
+            this.aggregateSearchForm.aggTypeCode = '';
+        },
+    }
+}
+</script>

@@ -1,0 +1,415 @@
+<template>
+    <!--工区別進捗一覧-->
+    <div>
+        <b-card v-if="areaSearchForm.projCode" bg-variant="light">
+            <b-row class="print-hide">
+                <!--b-col>
+                    <h4 class="mb-4">{{ titleProd }}</h4>
+                </b-col -->
+                <b-col class="col-md-12">
+                    <b-form inline class="mt-1">
+                        <span class="mr-3">
+                            <strong>工事コード：</strong>{{ areaSearchForm.projCode }}
+                        </span>
+                        <strong>工事名称：</strong>{{ areaSearchForm.projName }}
+                        <div v-show="prodInput.aggTypeCode != ''">
+                            <span class="ml-3 mr-3">
+                                <strong>工区コード：</strong>{{ areaSearchForm.aggUnitCode }}
+                            </span>
+                            <strong>工区名称：</strong>{{ areaSearchForm.aggUnitName }}
+                        </div>
+                    </b-form>
+                    <!-- <b-form inline v-if="areaSearchForm.aggTypeCode" class="mt-1 mb-2"> -->
+                        <b-form inline class="mt-1 mb-2">
+                    </b-form>
+                    <!-- <b-form inline v-else class="mt-1 ml-0"> -->
+                    <b-form inline v-show="prodInput.aggTypeCode == ''" class="mt-1 ml-0">
+                        <strong class="ml-3 mr-4 mt-1">集計分類</strong>
+                        <!-- <b-form-group label="集計分類" class="mt-1 ml-3"> -->
+                            <!-- <b-form-input id="aggTypeCode" v-model="areaSearchForm.aggTypeCode"/> -->
+                            <b-form-radio-group v-model="aggType" :options="aggTypeOptions" v-on:change="onChangeAggType"/>
+                        <!-- </b-form-group> -->
+                        <b-form-group class="mt-0 ml-2 mb-1">
+                            <b-button @click="areaSearchClick" class="mr-1">検索</b-button>
+                            <!-- <b-button variant="outline-primary" @click="resetAreaSearchForm">クリア</b-button> -->
+                        </b-form-group>
+                    </b-form>
+                </b-col>
+            </b-row>
+
+            <!-- div v-if="projSelected && prodData.length" -->
+            <div v-show="isShowAreaTable" :class="classPrintHideArea">
+                <!-- p><strong>製品分類一覧、全製品分類、選択製品分類オプション</strong></p -->
+                <b-table head-variant="light"
+                    sticky-header="200px"
+                    class="table-sm table-bordered text-nowrap area-table"
+                    hover
+                    selected-variant="info"
+                    selectable
+                    select-mode="single"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="prodData"
+                    :fields="prodFields"
+                    @row-selected="rowClickAreaTable"/>
+                <b-row align-h="end" class="my-0 print-hide">
+                    <!-- <b-col v-show="prodInput.aggTypeCode == ''" class="col-md-2"> -->
+                    <b-col v-if="aggType == 0 && !areaSearchForm.modeAreaMember" class="col-md-2">
+                        <p class="print-hide ml-1">工区を選択してください</p>
+                    </b-col>
+                    <b-col v-if="aggType == 3 || areaSearchForm.modeAreaMember" class="col-md-2">
+                        <p class="print-hide ml-1">部材種類を選択してください</p>
+                    </b-col>
+                    <b-col class="col-md-8"/>
+                    <b-col class="col-md-2">
+                        <div class="d-flex justify-content-end">
+                            <b-button @click="printAreaTable" class="mr-0">印刷</b-button>
+                            <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                        </div>
+                    </b-col>
+                </b-row>
+            </div>
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger" class="print-hide">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    /* 印刷釦のマージン設定 */
+    .b-table-sticky-header, .table-responsive, [class*=table-responsive-] {
+        margin-bottom: 0.5rem;
+    }
+    .col > p {
+        margin-bottom: 0.5rem;
+    }
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size: auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['prodInput', 'classPrintHideArea', ],
+
+    data() {
+        return {
+            titleProd: '工区別進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //工区関連データ
+            areaSearchForm: {
+                modeAreaMember: false,
+                projId: '',
+                projCode: '',
+                projName: '',
+                aggTypeCode: '',
+                // aggTypeName: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCode2: '',
+                aggUnitCode2: '',
+                aggUnitName2: '',
+            },
+            aggType: 0,
+            aggTypeOptions: [
+                { value: 0, text: '工区' },
+                // { value: 1, text: '節' },
+                // { value: 2, text: 'フロア' },
+                { value: 3, text: '部材種類' },
+                // { value: 4, text: '工事すべて' }
+            ],
+            aggTypeCodes: ['Area', 'Section', 'Floor', 'Member', 'All'],
+            prodData: [],
+            prodFields: [],
+
+            isShowAreaTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProd: false,
+            clickCount: 1,
+        }
+    },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        console.log("compAreaStatus created: ");
+        console.log("compAreaStatus created: projCode=" + this.prodInput.projId);
+        console.log("compAreaStatus created: projName=" + this.prodInput.projName);
+        console.log("compAreaStatus created: aggTypeCode=" + this.prodInput.aggTypeCode);
+        console.log("compAreaStatus created: aggUnitCode=" + this.prodInput.aggUnitCode);
+        console.log("compAreaStatus created: aggTypeCode2=" + this.prodInput.aggTypeCode2);
+        this.isShowAreaTable = false;
+        if (this.prodInput) {
+            let exist = 0;
+            this.areaSearchForm.modeAreaMember = this.prodInput.modeAreaMember;
+            if (this.prodInput.projId) {
+                this.areaSearchForm.projId = this.prodInput.projId;
+            }  
+            if (this.prodInput.projCode) {
+                this.areaSearchForm.projCode =  this.prodInput.projCode;
+            }
+            if (this.prodInput.projName) {
+                this.areaSearchForm.projName =  this.prodInput.projName;
+            }
+            // if (this.prodInput.aggTypeCode) {
+                // exist++;    
+                this.areaSearchForm.aggTypeCode =  this.prodInput.aggTypeCode;
+                switch (this.prodInput.aggTypeCode) {
+                    case 'Area':
+                        this.aggType = 0; break;
+                    case 'Section':
+                        this.aggType = 1; break;
+                    case 'Floor':
+                        this.aggType = 2; break;
+                    case 'Member':
+                        this.aggType = 3; break;
+                    default:
+                        this.aggType = 0;
+                        this.areaSearchForm.aggTypeCode = 'Area'
+                        break;
+                }
+            // }
+            if (this.prodInput.aggUnitCode) {
+                this.areaSearchForm.aggUnitCode =  this.prodInput.aggUnitCode;
+            }
+            if (this.prodInput.aggUnitName) {
+                this.areaSearchForm.aggUnitName =  this.prodInput.aggUnitName;
+            }
+            if (this.prodInput.aggUnitCode) {
+                this.areaSearchForm.aggUnitCode =  this.prodInput.aggUnitCode;
+            }
+            if (this.prodInput.modeAreaMember && this.prodInput.aggTypeCode2) {
+                this.areaSearchForm.aggTypeCode2 =  this.prodInput.aggTypeCode2;
+                exist++;
+            }
+            if (exist > 0) {
+                this.areaSearchClick();          
+            }            
+        }    
+    }, 
+    methods: {
+        resetAreaSearchForm() {
+            this.areaSearchClick.aggTypeCode = '';
+            //this.$store.state.searchForm = this.searchForm
+        },
+        onChangeAggType(){
+            // console.log('onChangeAggType event=' + event);
+            console.log('onChangeAggType this.aggType=' + this.aggType);
+            this.areaSearchForm.aggTypeCode = this.aggTypeCodes[this.aggType];
+            console.log('onChangeAggType this.aggTypeCodes[this.aggType]=' + this.aggTypeCodes[this.aggType]);
+            this.isShowAreaTable = false;
+            this.$emit('emitChangeAggType', this.aggType);
+        },
+        async areaSearchClick() {
+            await this.areaSearch();
+            // console.log('areaSearchClick this.isShowAreaTable=' + this.isShowAreaTable );
+            if (this.isShowAreaTable != true) {
+                return;
+            }
+            let titleProd = this.titleProd;
+            let areaSearchForm = this.areaSearchForm;
+            let prodFields = this.prodFields;
+            commonMethods.sleep(100, 1, function () {
+                //工区一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+                commonMethods.printPrepare('area-table', prodFields.length, titleProd, `工事コード：${areaSearchForm.projCode}、工事名称：${areaSearchForm.projName}`);
+            });
+        },
+
+        async areaSearch() {
+            this.message = '';
+            this.isLoadingProd = true;
+            this.isShowAreaTable = false;
+console.log('areaSearch this.areaSearchForm.modeAreaMember=' + this.areaSearchForm.modeAreaMember);
+console.log('areaSearch this.areaSearchForm.aggTypeCode2=' + this.areaSearchForm.aggTypeCode2);
+            this.prodData = [];
+            this.prodFields = [];
+            let payload = {
+                ...this.areaSearchForm.projId &&      {projId:      this.areaSearchForm.projId},
+                ...this.areaSearchForm.aggTypeCode && {aggTypeCode: this.areaSearchForm.aggTypeCode},
+                ...(this.areaSearchForm.modeAreaMember && this.areaSearchForm.aggUnitCode) && {aggUnitCode: this.areaSearchForm.aggUnitCode},
+                ...(this.areaSearchForm.modeAreaMember && this.areaSearchForm.aggTypeCode2) && {aggTypeCode2: this.areaSearchForm.aggTypeCode2},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referAggTypeProcProgMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = this.remakeResDt(response.data.resDt);
+                this.prodFields = this.remakeResDtTitle(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.isShowAreaTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                if (this.isShowAreaTable == true) {
+                    if (this.areaSearchForm.modeAreaMember == false) {
+                        if (this.areaSearchForm.aggTypeCode == 'Area') {
+                            this.$emit('emitAreaSearchButton', this.areaSearchForm);
+                        } if (this.areaSearchForm.aggTypeCode == 'Member') {
+                            this.$emit('emitMemberSearchButton', this.areaSearchForm);
+                        }
+                    } else {
+                        this.$emit('emitAreaMemberSearchButton', this.areaSearchForm);
+                    }
+                }
+            })
+        },
+
+        rowClickAreaTable(item) {
+            console.log('rowClickAreaTable item=' + item);
+            if(item[0]) {
+                console.log('rowClickAreaTable item[0].projId=' + item[0].projId);
+                console.log('rowClickAreaTable this.areaSearchForm.projId=' + this.areaSearchForm.projId);
+                console.log('rowClickAreaTable item[0].aggUnitCode=' + item[0].aggUnitCode);
+                console.log('rowClickAreaTable areaSearchForm.aggTypeCode=' + this.areaSearchForm.aggTypeCode);
+                console.log('rowClickAreaTable areaSearchForm.modeAreaMember=' + this.areaSearchForm.modeAreaMember);
+
+                if (this.areaSearchForm.aggTypeCode == 'Area') {
+                    if (this.areaSearchForm.modeAreaMember == false) {
+                        this.areaSearchForm.aggUnitCode = item[0].aggUnitCode;
+                        this.areaSearchForm.aggUnitName = item[0].aggUnitName;
+                        this.$emit('emitAreaSelected', this.areaSearchForm);
+                    } else {
+                        this.areaSearchForm.aggUnitCode2 = item[0].aggUnitCode;
+                        this.areaSearchForm.aggUnitName2 = item[0].aggUnitName;
+                        this.$emit('emitAreaMemberSelected', this.areaSearchForm);
+                    }
+                } else if (this.areaSearchForm.aggTypeCode == 'Member') {
+                        this.areaSearchForm.aggUnitCode = item[0].aggUnitCode;
+                        this.areaSearchForm.aggUnitName = item[0].aggUnitName;
+                        this.$emit('emitMemberSelected', this.areaSearchForm);
+                }
+            } else {
+                if (this.areaSearchForm.aggTypeCode == 'Area') {
+                    if (this.areaSearchForm.modeAreaMember == false) {
+                        this.$emit('emitAreaSelected', []);
+                    } else {
+                        this.$emit('emitAreaMemberSelected', []);
+                    }
+                } else if (this.areaSearchForm.aggTypeCode == 'Member') {
+                        this.$emit('emitMemberSelected', []);
+                }
+            }
+        },
+
+        printAreaTable () {
+            // this.classPrintHideProd = '';    // プロパティへの設定は親でないと効かない
+            this.$emit('emitAreaPrintButton', this.clickCount++);
+
+            //let docTitle = document.title;  // タイトルを退避
+            //document.title = '';          // タイトルを表示しないように漢字スペースをセット（空文字、半角スペースだとUrlがタイトルに入る）
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+
+                    // if(document.getElementsByClassName('area-table').length) {
+                    //     let doubleHeadTable = document.getElementsByClassName('area-table')[0].children[0].children[0];
+                    //     // for (let i=0; i < doubleHeadTable.children.length; i++) {
+                    //     //     doubleHeadTable.children[i].removeAttribute('hidden');
+                    //     // }
+                    //     doubleHeadTable.children[0].removeAttribute('hidden');
+                    //     doubleHeadTable.children[1].removeAttribute('hidden');
+                    //     doubleHeadTable.children[2].removeAttribute('hidden');
+                    // }
+                    commonMethods.printDesingHandler('area-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('area-table', false);
+
+                    // if(document.getElementsByClassName('area-table').length) {
+                    //     let doubleHeadTable = document.getElementsByClassName('area-table')[0].children[0].children[0];
+                    //     // for (let i=0; i < doubleHeadTable.children.length; i++) {
+                    //     //     doubleHeadTable.children[i].setAttribute('hidden', '');    
+                    //     // }
+                    //     doubleHeadTable.children[0].setAttribute('hidden', '');
+                    //     doubleHeadTable.children[1].setAttribute('hidden', '');
+                    //     doubleHeadTable.children[2].setAttribute('hidden', '');
+                    // }                    
+                }
+                //document.title = docTitle;      // タイトルを元に戻す
+            });
+        },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = {};
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

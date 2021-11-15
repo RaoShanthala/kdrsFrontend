@@ -1,0 +1,233 @@
+<template>
+    <div id="menu-element" class="mt-4">
+    <!--b-card -->
+    <b-container class="d-flex justify-content-center">
+        <b-row>
+            <!-- b-col class="col-md-1"/ -->
+            <b-col class="col-md-3">
+                <b-container class="d-flex justify-content-center">
+                    <b-button-group vertical>
+                        <b-button @click="clickMenuForward('/importtekla')" class="mb-3">{{findRouteTitle('/importtekla')}}</b-button>
+                        <br><br><br><br><br><br><br>
+                        <b-button @click="clickMenuForward('/exporttekla')" class="mb-3">{{findRouteTitle('/exporttekla')}}</b-button>
+                    </b-button-group>
+                </b-container>
+            </b-col>
+            <b-col class="col-md-3">
+                <b-container class="d-flex justify-content-center">
+                    <b-button-group vertical>
+                        <b-button @click="clickMenuForward('/process')" class="mb-3">{{findRouteTitle('/process')}}</b-button>
+                        <br><br><br><br><br><br><br>
+                        <b-button @click="clickMenuForward('/prodprocplanregister')" class="mb-3">{{findRouteTitle('/prodprocplanregister')}}</b-button>
+                    </b-button-group>
+                </b-container>
+            </b-col>
+            <b-col class="col-md-3">
+                <b-container class="d-flex justify-content-center">
+                    <b-button-group vertical>
+                        <b-button @click="clickMenuForward('/projectstatus')" class="mb-3">{{findRouteTitle('/projectstatus')}}</b-button>
+                        <b-button @click="clickMenuForward('/projectareastatus')" class="mb-3">{{findRouteTitle('/projectareastatus')}}</b-button>
+                        <br><br>
+                        <b-button @click="clickMenuForward('/projectstatusplanactual')" class="mb-3">{{findRouteTitle('/projectstatusplanactual')}}</b-button>
+                    </b-button-group>
+                </b-container>
+            </b-col>
+            <b-col class="col-md-3">
+                <b-container class="d-flex justify-content-center">
+                    <b-button-group vertical>
+                        <b-button @click="clickMenuForward('/users')" class="mb-3">{{findRouteTitle('/users')}}</b-button>
+                        <!--b-button @click="clickMenuForward('/projects')" class="mb-3">{{findRouteTitle('/projects')}}</b-button-->
+                        <b-button @click="clickMenuForward('/products')" class="mb-3">{{findRouteTitle('/products')}}</b-button>
+                        <br><br>
+                        <b-button @click="clickMenuForward('/stdproduct')" class="mb-3">{{findRouteTitle('/stdproduct')}}</b-button>
+                        <b-button @click="clickMenuForward('/stdaggregate')" class="mb-3">{{findRouteTitle('/stdaggregate')}}</b-button>
+                        <br><br>
+                        <b-button @click="clickMenuForward('/aggprod')" class="mb-3">{{findRouteTitle('/aggprod')}}</b-button>
+                        <b-button @click="clickMenuForward('/aggregate')" class="mb-3">{{findRouteTitle('/aggregate')}}</b-button>
+                    </b-button-group>
+                </b-container>
+            </b-col>
+            <!-- b-col align="end"><b-button @click="logout">ログアウト</b-button></b-col -->
+        </b-row>
+
+    </b-container>
+    <!-- /b-card -->
+        <!--b-button @click="clickMenuForward('/test')" variant="primary">{{findRouteTitle('/test')}}</b-button -->
+    <b-card v-show = "isShowTest" class="mt-4">
+        <b-row>
+            <br>
+        </b-row>
+        <b-row>
+            <b-col>   
+                <b-button-group vertical>  
+                    <b-button @click="clickMenuForward('/test')" variant="primary" class="mb-3">{{findRouteTitle('/test')}}</b-button>  
+                    <b-button @click="clickMenuForward('/servertest')" class="mb-3">{{findRouteTitle('/servertest')}}</b-button>            
+                </b-button-group>                  
+            </b-col>
+            <b-col> 
+                <b-button-group vertical>     
+                    <b-button @click="clickMenuForward('/prodproc')" class="mb-3">{{findRouteTitle('/prodproc')}}</b-button>
+                    <b-button @click="clickMenuForward('/projecttable')" class="mb-3">{{findRouteTitle('/projecttable')}}</b-button>
+                    <b-button @click="clickMenuForward('/producttable')" class="mb-3">{{findRouteTitle('/producttable')}}</b-button>
+                </b-button-group>
+            </b-col>    
+            <b-col>
+                <b-button-group vertical>
+                    <b-button @click="clickMenuForward('/projectstatusold')" class="mb-3">{{findRouteTitle('/projectstatusold')}}</b-button>
+                </b-button-group>
+            </b-col>
+        </b-row>
+    </b-card>
+    </div>
+</template>
+
+<style scoped>
+h1, .btn {
+    font-size: 2rem;
+}
+
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+import commonMethods from '../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            isShowTest: false,
+        }
+    },
+    created: function() {
+        this.referRoleAll();
+        this.referNameMany();
+        let modeTest = commonMethods.loadCommonArea('modeTest')
+        this.isShowTest = (modeTest == true) ? true: false;
+    },
+    methods: {
+        window:onload = function() {  
+            //console.log('location.href=' + location.href);
+            history.pushState(null, null, location.href);   //location.href=http://localhost:81/menu#/ ->現在のURL=window.location
+            //history.pushState(null, null, null);
+            window.addEventListener('popstate', () => {
+                history.go(1);
+                //if (!event.originalEvent.state) return; // 初回アクセス時対策
+                /*
+                if (event) {
+                    console.log('event=' + event);
+                    if (event.originalEvent) {
+                        console.log('event.originalEvent=' + event.originalEvent);
+                        if (event.originalEvent.state) {
+                            var state = event.originalEvent.state;  // stateオブジェクト
+                            console.log('state=' + state);
+                            if (!state) return; // 初回アクセス時対策
+                        }
+                    }
+                    if (event.PopStateEvent) {
+                        console.log('event.PopStateEvent=' + event.PopStateEvent);
+                    }
+                }
+                */
+                //console.log('popstate!');
+                // TypeError: Cannot read property 'state' of undefined
+                //let menuPath = this.$store.state.menuPaths.pop();
+                //console.log('popstate.menuPath=' + menuPath);
+
+                // TypeError: Cannot read property 'getters' of undefined
+                //let menuPath = this.$store.getters.getLastMenuPath;
+                //console.log('popstate.menuPath=' + menuPath);
+
+                //if(menuPath == '/userupdate') {
+                //    //ユーザ更新画面で戻るボタンを押した時に必要
+                //    this.$store.state.responseData = '';
+                //}
+
+                // TypeError: Cannot read property 'dispatch' of undefined
+                //console.log('popstate.popMenuPath start !');
+                //this.$store.dispatch('popMenuPath');
+                //console.log('popstate.popMenuPath end !');
+
+                // 次の処理は不要
+                //this.$router.push({path: menuPath});
+            });
+        },
+        findRouteTitle(path) {
+            return this.$router.options.routes.find(e => e.path === path).meta.title;
+        },
+        clickMenuForward(menuForwardPath) {
+            //console.log('Menu.clickForwardMenu! menuForwardPath=' + menuForwardPath);
+            //this.$store.dispatch('pushMenuPath', this.$route.path);
+            ////window.history.pushState(null, null, '/menu');
+            //this.$router.push({path: menuForwardPath});
+            commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
+        },
+/*
+        logout() {
+            this.$store.state.loginData = {
+                id:          '',
+                username:    '',
+                email:       '',
+                roles:       [],
+                accessToken: ''
+            }
+            this.$store.rolesResDt = [];
+            this.$store.rolesResDt = null;
+            this.$store.roleLevelsResDt = [];
+            this.$store.roleLevelsResDt = null;
+
+            this.$router.push('/')
+        },
+*/
+        referRoleAll() {
+            //console.log('referRoleAll() ');
+            if (!this.$store.rolesResDt) {
+                let axiosConfigObject = {
+                    headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    }
+                }
+                axios.get(apiUrls.referRoleAll, axiosConfigObject)
+                .then(response => {
+                    if(response.data.resultCode == '000') {
+                        this.$store.rolesResDt = response.data.resDt;
+                    } else {
+                        this.message = commonMethods.getResponseMessage(response);
+                    }
+                })
+                .catch(error => {
+                    this.message = commonMethods.getErrorMessage(error);
+                })
+            }
+        },
+        referNameMany() {
+            //console.log('referNameMany() ');
+            if (!this.$store.roleLevelsResDt) {
+                //let payload = {
+                //    nameSection:  'RoleLevel'
+                //}
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    //params:  payload
+                    params: { nameSection:  'RoleLevel' }
+                }
+                axios.get(apiUrls.referNameMany, axiosConfigObject)
+                .then(response => {
+                    if(response.data.resultCode == '000') {
+                        this.$store.roleLevelsResDt = response.data.resDt;
+                    } else {
+                        this.message = commonMethods.getResponseMessage(response);
+                    }
+                })
+                .catch(error => {
+                    this.message = commonMethods.getErrorMessage(error);
+                })
+            }
+       }
+    }
+}
+</script>

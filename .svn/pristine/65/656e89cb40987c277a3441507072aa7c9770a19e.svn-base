@@ -1,0 +1,249 @@
+<template>
+<div>
+  <b-button @click="fetchDataInput">検索</b-button>
+  <!--<p>{{curDate || 'a'}}</p>-->
+  <b-table-simple small caption-top responsive class="text-nowrap" v-if="dataInput.length">
+  <caption>製品工程一覧表</caption>
+  <b-thead head-variant="light">
+    <!--
+    <b-tr>
+      <b-th style="border:1.2px solid #000000;"
+      class="text-center"
+      v-for="item in resDtTitle" :key="item[0]+Math.random()">{{item}}</b-th>
+    </b-tr>-->
+    <b-tr>
+      <b-th style="border:1.2px solid #000000;"
+      class="text-center"
+      v-for="item in resDtTitle[0]"  :rowspan="item[2]=='rowspan'? item[1] : null" :colspan="item[2]=='colspan'? item[1] : null" :key="item[0]+Math.random()">{{item[0]}}</b-th>
+    </b-tr>
+    <b-tr>
+      <b-th style="border:1.2px solid #000000;"
+      class="text-center"
+      v-for="item in resDtTitle[1]" :key="item[0]+Math.random()">{{item}}</b-th>
+    </b-tr>
+  </b-thead>
+  <b-tbody style="border:1.2px solid #000000;">
+    <b-tr v-for="(line) in dataInput" :key="line[0]">
+      <b-td v-for="(item, itemIndex) in line" :key="item+Math.random()" style="border:1.2px solid #000000;">
+        <div v-if="updateColumns.includes(itemIndex)"><b-input type="date" :value="item=='****-**-**'?'':item" max="9999-12-31" @change="updateItem" @focus="focusItem"/></div>
+        <div v-if="!updateColumns.includes(itemIndex)">{{item}}</div>
+      </b-td>
+    </b-tr>
+  </b-tbody>
+  <b-tfoot>
+    <b-tr style="border:1.2px solid #000000;">
+      <b-td :colspan="dataInput[0].length" variant="secondary">
+        合計: <b>{{dataInput.length}}</b>
+      </b-td>
+    </b-tr>
+  </b-tfoot>
+  </b-table-simple>
+  <b-button v-if="dataInput.length" @click="update">更新</b-button>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+  data() {
+    return {
+      curDate: this.getNow(),
+      dataInput: [],
+      updateData: [],
+      backupData: [],
+      updateColumns: [6,7,8,9,10,11,12,13,14,15],
+      resDtTitle: []
+    }
+  },
+  methods: {
+    fetchDataInput: function() {
+      this.dataInput = [];
+      this.resDtTitle = [];
+      this.updateData = [];
+      let payload = {projId: 1, targetState: 1, prodCode: 'N8B39-7'};
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json'}, 
+          params:  payload };
+      axios.get(apiUrls.registerProdProcPlan, axiosConfigObject)
+          .then(response => {
+            var tabData = this.createTableData(response.data.resDtTitle, response.data.resDt);
+            this.resDtTitle = [tabData[0], tabData[1]];
+            this.dataInput = tabData[2];
+          }).finally(()=>{
+            //this.backupData = this.extractTableData();
+            //this.updateData = this.extractTableData();
+            this.backupData = [...document.querySelectorAll('.form-control')].map(element => element.value);
+            this.updateData = [...document.querySelectorAll('.form-control')].map(element => element.value);
+          })
+    },
+
+    //明細データ再編成関数
+    remakeResDt(obj) {
+        let c = [];
+        for (let y in obj) {
+            let a = {};
+            for(let i in obj[y]) {
+                if (obj[y][i] instanceof Array) {
+                    for(let n in obj[y][i]) {
+                        a[i + n] = obj[y][i][n];
+                    }
+                } else {
+                    a[i] = obj[y][i];
+                }
+            }
+            c.push(a);
+        }
+        return c;
+    },
+
+    //カラム作成・並べ替え関数
+    remakeResDtTitle(obj, order) {
+        let a = []
+        let b = []
+        for(let i in obj) {
+            if (obj[i] instanceof Array) {
+                for(let n in obj[i]) {
+                    a.push( {'key': i + n, 'label': obj[i][n]} );
+                }
+            } else {
+                if (i != 'listProgress') {
+                    a.push( {'key': i, 'label': obj[i]} );
+                } else {
+                    a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                    a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                    a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                    a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                    a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                    /*
+                    a['listProgress0'] = '工程１';
+                    a['listProgress1'] = '工程２';
+                    a['listProgress2'] = '工程３';
+                    a['listProgress3'] = '工程４';
+                    a['listProgress4'] = '工程５';
+                    */
+                }
+            }
+        }
+        if(order) {
+            for(let i in order) {
+                b.push(a[order[i]])
+            }
+            return b
+        }
+        return a
+    },
+
+    createTableData(resDtTitle, resDt) {
+      //非表示データのキー取得
+      var titleKeys = Object.keys(resDtTitle);
+      var dataKeys = Object.keys(resDt[0]);
+      var difference = dataKeys.filter(x => titleKeys.indexOf(x) === -1);
+      //ヘッダー二段化
+      var headerUp = [];
+      var headerDown = [];
+      Object.entries(resDtTitle).forEach(element => {
+        if(element[0] == 'listProgress') {
+          element[1].forEach(element => {
+            var splittedElement = element.trim().split(/\s+/);
+            headerUp.push([splittedElement[0], splittedElement.length - 1, 'colspan']);
+            for(var i=1; i<splittedElement.length; i++) {
+              headerDown.push(splittedElement[i]);
+            }
+          });
+        } else {
+            headerUp.push([element[1],2, 'rowspan']);
+        }
+      });
+      //テーブルデータ展開
+      var tableData = [];
+      var rowData = [];
+      resDt.forEach(element => {
+          Object.entries(element).forEach(element => {
+            if(!difference.includes(element[0])) {
+              if(element[0] == 'listProgress') {
+                element[1].forEach(element => {
+                  var splittedElement = element.trim().split(/\s+/);
+                  splittedElement.forEach(element => {
+                    rowData.push(element);
+                  });
+                });
+              } else {
+                rowData.push(element[1]);
+              }
+            }
+        });
+        tableData.push(rowData);
+        rowData = [];
+      });
+      return [headerUp, headerDown, tableData];
+    },
+
+    extractTableData(data) {
+      //const data = [...document.querySelectorAll('.form-control')].map(element => element.value);
+      let chunkSize = 10;
+      let res = [];
+      for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        res.push(chunk);
+      }
+      return res;
+    },
+
+    findDiff(oldData, newData) {
+      for(let i=0; i<oldData.length; i++) {
+        if(oldData[i] !== newData[i]) {
+          this.curDate = newData[i];
+          break;
+          //return false;
+        }
+      }
+      //return false;
+    },
+
+    updateItem() {
+      //console.log(event);
+      //this.updateData = this.extractTableData();
+      //let updateDataPrev = this.updateData;
+      this.updateData = [...document.querySelectorAll('.form-control')].map(element => element.value);
+      //this.findDiff(updateDataPrev, this.updateData);
+      //console.log(this.findDiff(updateDataPrev, this.updateData));
+      //this.curDate = this.findDiff(updateDataPrev, this.updateData) || this.curDate;
+ 
+      //this.curDate = event;
+      //console.log(this.curDate);
+      //console.log(lineIndex, itemIndex);
+      //console.log(this.extractTableData());
+      //this.dataInput[lineIndex][5] = date;
+      //this.dataInput[lineIndex][itemIndex] = date;
+      //let refVal = 'ref' + lineIndex + itemIndex;
+      //this.$refs[refVal][0].focus();
+      //console.log(this.$refs[refVal][0]);
+      //this.updateData = [...document.querySelectorAll('.form-control')].map(element => element.value);
+      /*
+      itemIndex = this.updateColumns.indexOf(itemIndex);
+      this.updateData[lineIndex][itemIndex] = date;
+      console.log(this.updateData);
+      if(itemIndex == 6) { this.dataInput[lineIndex][4] = date; }
+      this.dataInput[lineIndex][5] = date;*/
+      //console.log(upd);
+    },
+
+    focusItem() {
+      //console.log(this.curDate);
+    },
+
+    update() {
+      console.log(this.extractTableData(this.backupData));
+      console.log(this.extractTableData(this.updateData));
+    },
+
+    getNow() {
+      let today = new Date(Date.now());
+      return today.toISOString().slice(0,10);
+    }
+  }
+}
+</script>

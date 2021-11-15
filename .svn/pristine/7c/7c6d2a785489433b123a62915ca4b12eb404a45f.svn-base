@@ -1,0 +1,620 @@
+<template>
+    <div>
+        <div class="container-fluid">
+
+        <b-card bg-variant="light">
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="ログインユーザ" label-for="input-user" label-cols-sm="3" label-align-sm="right">
+                        <b-form-input id="input-user" v-model="view.loginUser" />
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="氏名" label-for="input-name" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-name" v-model="view.name" />
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="パスワード" label-for="input-password" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-password" type="password" v-model="view.password" />
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="パスワード（確認）" label-for="inpu-password-confirm" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-password-confirm" type="password" v-model="view.passwordConfirm" />
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="メールアドレス" label-for="input-email" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-email" type="email" v-model="view.email" />
+                    </b-form-group>
+                </b-col>
+                <b-col class="col-md-5">
+                    <b-form-group label="開始日" label-for="input-date-start" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-start" type="date" v-model="view.startDate" max="9999-12-31"/>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5" />
+                <b-col class="col-md-5">
+                    <b-form-group label="終了日" label-for="input-date-end" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-end" type="date" v-model="view.endDate" max="9999-12-31"/>
+                </b-form-group>
+                </b-col>
+            </b-row>
+        </b-card>
+        <b-card bg-variant="light">
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="工程管理" label-cols-sm="3" label-align-sm="right"></b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="権限" label-cols-sm="3" label-align-sm="right">
+                    <b-form-select @change="processRoleChange(view.roles[0].roleLevel, $event)" :value="view.roles[0].roleLevel" :options="roleLevels"></b-form-select>
+                    </b-form-group>
+                </b-col>
+                <b-col class="col-md-5">
+                    <b-form-group label="開始日" label-for="input-date-start-process" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-start-process" type="date" v-model="view.roles[0].userRoleStartDate" max="9999-12-31"/>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5" />
+                <b-col class="col-md-5">
+                    <b-form-group label="終了日" label-for="input-date-end-process" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-end-process" type="date" v-model="view.roles[0].userRoleEndDate" max="9999-12-31"/>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+        </b-card>
+        <b-card bg-variant="light">
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="日報管理" label-cols-sm="3" label-align-sm="right"></b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5">
+                    <b-form-group label="権限" label-cols-sm="3" label-align-sm="right">
+                    <b-form-select  @change="reportRoleChange(view.roles[1].roleLevel, $event)" :value="view.roles[1].roleLevel" :options="roleLevels"></b-form-select>
+                    </b-form-group>
+                </b-col>
+                <b-col class="col-md-5">
+                    <b-form-group label="開始日" label-for="input-date-start-report" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-start-report" type="date" v-model="view.roles[1].userRoleStartDate" max="9999-12-31"/>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col class="col-md-5" />
+                <b-col class="col-md-5">
+                    <b-form-group label="終了日" label-for="input-date-end-report" label-cols-sm="3" label-align-sm="right">
+                    <b-form-input id="input-date-end-report" type="date" v-model="view.roles[1].userRoleEndDate" max="9999-12-31"/>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+        </b-card>
+        </div>
+
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+        <div class="text-right mt-1">
+            <b-button :disabled="!responseData" @click="updateUser" class="mr-1">更新</b-button>
+            <b-button :disabled="!responseData" @click="deleteUser" class="mr-1">削除</b-button>
+        </div>
+    </div>
+</template>
+<style scoped>
+    input[type="date"] {
+        width: 180px;
+    }
+</style>
+<!-- style scoped>
+    input[type="date"] {
+    position: relative;
+    padding: 0 10px;
+    width: 200px;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: #999;
+    }
+</style -->
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+export default {
+    data() {
+        return {
+            responseData: '',
+            view: {
+                loginUser:       '',
+                password:        '',
+                passwordConfirm: '',
+                name:            '',
+                email:           '',
+                startDate:       '',
+                endDate:         '',
+                roles: [
+                    {
+                    roleId:            1,
+                    roleLevel:         0,
+                    userRoleStartDate: '',
+                    userRoleEndDate:   ''
+                    },
+                    {
+                    roleId:            2,
+                    roleLevel:         0,
+                    userRoleStartDate: '',
+                    userRoleEndDate:   ''
+                    }
+                ]
+            },
+            message: '',
+            /*
+            processOptions: [
+                { value: 1, text: '管理者' },
+                { value: 2, text: '一般' },
+                { value: 3, text: 'ゲスト' },
+                { value: 0, text: '無し' }
+            ],
+            reportOptions: [
+                { value: 1, text: '管理者' },
+                { value: 2, text: '一般' },
+                { value: 3, text: 'ゲスト' },
+                { value: 0, text: '無し' }
+            ]
+            */
+            //roles: [],
+            roleLevels: []
+        }
+    },
+    created: function() {
+        if(this.$store.state.responseData) {
+            this.responseData = this.$store.state.responseData
+  
+            this.view.loginUser = this.responseData.resHd.loginUser.slice()
+            this.view.name      = this.responseData.resHd.name.slice()
+            //this.view.password  = this.responseData.resHd.password.slice()
+            this.view.email     = this.responseData.resHd.email.slice()
+            this.view.startDate = this.responseData.resHd.startDate.slice()
+            this.view.endDate   = this.responseData.resHd.endDate.slice()
+
+            //レスポンスにはresDtが入っていれば、その内容でwiew.roles配列を上書きする
+            if(this.responseData.resDt.length == 2) {
+                this.view.roles[0].roleId            = 1
+                this.view.roles[0].roleLevel         = this.responseData.resDt[0].roleLevel
+                this.view.roles[0].userRoleStartDate = this.responseData.resDt[0].userRoleStartDate.slice()
+                this.view.roles[0].userRoleEndDate   = this.responseData.resDt[0].userRoleEndDate.slice()
+                this.view.roles[1].roleId            = 2
+                this.view.roles[1].roleLevel         = this.responseData.resDt[1].roleLevel
+                this.view.roles[1].userRoleStartDate = this.responseData.resDt[1].userRoleStartDate.slice()
+                this.view.roles[1].userRoleEndDate   = this.responseData.resDt[1].userRoleEndDate.slice()
+            }
+            if(this.responseData.resDt.length == 1 && this.responseData.resDt[0].roleId == 1) {
+                this.view.roles[0].roleId            = 1
+                this.view.roles[0].roleLevel         = this.responseData.resDt[0].roleLevel
+                this.view.roles[0].userRoleStartDate = this.responseData.resDt[0].userRoleStartDate.slice()
+                this.view.roles[0].userRoleEndDate   = this.responseData.resDt[0].userRoleEndDate.slice()
+            }
+            if(this.responseData.resDt.length == 1 && this.responseData.resDt[0].roleId == 2) {
+                this.view.roles[1].roleId            = 2
+                this.view.roles[1].roleLevel         = this.responseData.resDt[0].roleLevel
+                this.view.roles[1].userRoleStartDate = this.responseData.resDt[0].userRoleStartDate.slice()
+                this.view.roles[1].userRoleEndDate   = this.responseData.resDt[0].userRoleEndDate.slice()
+            }
+        }
+        //this.setRoles();
+        this.setRoleLevels();
+
+    },
+    methods: {
+        /*
+       setRoles() {
+            //console.log('setRoles()');
+            if (this.$store.rolesResDt) {
+                let resDt = this.$store.rolesResDt;
+                for(let i in resDt) { 
+                        this.roles.push({'value': resDt[i].roleId, 'text': resDt[i].roleName});
+                }
+                this.roles.push({ value: 0, text: '無し' });
+                this.roles.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.rolesResDt is nothing !');
+            }
+
+        },
+        */
+        setRoleLevels() {
+            if (this.$store.roleLevelsResDt) {
+                let resDt = this.$store.roleLevelsResDt;
+                for(let i in resDt) { 
+                    this.roleLevels.push({'value': resDt[i].codeNumeric, 'text': resDt[i].nameShort});
+                }
+                this.roleLevels.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.roleLevelsResDt is nothing !');
+            }
+        },        
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        processRoleChange(oldValue, newValue) {
+            if(!oldValue && newValue) {
+                this.view.roles[0].userRoleStartDate = this.view.startDate
+                this.view.roles[0].userRoleEndDate = this.view.endDate
+            }
+            if(oldValue && !newValue) {
+                this.view.roles[0].userRoleStartDate = ''
+                this.view.roles[0].userRoleEndDate = ''
+            }
+            this.view.roles[0].roleLevel = newValue
+        },
+
+        reportRoleChange(oldValue, newValue) {
+            if(!oldValue && newValue) {
+                this.view.roles[1].userRoleStartDate = this.view.startDate
+                this.view.roles[1].userRoleEndDate = this.view.endDate
+            }
+            if(oldValue && !newValue) {
+                this.view.roles[1].userRoleStartDate = ''
+                this.view.roles[1].userRoleEndDate = ''
+            }
+            this.view.roles[1].roleLevel = newValue
+        },
+
+        updateUser() {
+            let responseData = Object.assign({}, this.responseData)
+
+            if (confirm('更新しますか？')) {
+                //基本リクエストを作成する
+                let payload = {
+                    transId: '',
+                    resultCode: null,
+                    resultMessage: null,
+                    user: null,
+                    terminal: null,
+                    reqDateTime: null,
+                    resDateTime: null,
+                    reqHd: {
+                        userId:      this.responseData.resHd.userId,
+                        loginUser:   this.view.loginUser,
+                        password:    this.getHash(this.view.password),
+                        name:        this.view.name,
+                        email:       this.view.email,
+                        startDate:   this.view.startDate,
+                        endDate:     this.view.endDate,
+                        updDatetime: responseData.resHd.updDatetime
+                        }
+                }
+
+                /*
+                リクエストのreqDtを作成するロジック
+                a/b: 権限レベルの前後の値、.d: 日時
+                a=0 && b>0             -> action: 1（登録）
+                a>0 && b>0 && a!=b     -> action: 2（更新）
+                a>0 && a=b && a.d!=b.d -> action: 2（更新）
+                a>0 && b=0             -> action: 3（削除）
+                */
+
+               let reqDt = []
+
+               //工程管理
+               //登録
+                if(
+                    this.view.roles[0].roleLevel > 0 && responseData.resDt.length == 0
+                    ||
+                    this.view.roles[0].roleLevel > 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId != 1
+                ) {
+                    console.log('工程管理．登録')
+                    reqDt.push({
+                        action:            1,
+                        roleId:            1,
+                        roleLevel:         this.view.roles[0].roleLevel,
+                        userRoleStartDate: this.view.roles[0].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[0].userRoleEndDate,
+                        updDatetime:       null
+                    })
+                }
+                else
+                //更新
+                if(
+                    this.view.roles[0].roleLevel > 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId == 1 && responseData.resDt[0].roleLevel !== this.view.roles[0].roleLevel
+                    ||
+                    this.view.roles[0].roleLevel > 0 && responseData.resDt.length == 2 && responseData.resDt[0].roleLevel !== this.view.roles[0].roleLevel
+                    ||
+                    this.view.roles[0].roleLevel > 0 && responseData.resDt.length > 0 && (this.view.roles[0].userRoleStartDate != this.responseData.resDt[0].userRoleStartDate || this.view.roles[0].userRoleEndDate != this.responseData.resDt[0].userRoleEndDate) 
+                ){
+                    console.log('工程管理．更新')
+                    reqDt.push({
+                        action:            2,
+                        roleId:            1,
+                        roleLevel:         this.view.roles[0].roleLevel,
+                        userRoleStartDate: this.view.roles[0].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[0].userRoleEndDate,
+                        updDatetime:       responseData.resDt[0].updDatetime
+                    })
+                }
+                //削除
+                if(
+                    this.view.roles[0].roleLevel == 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId == 1
+                    ||
+                    this.view.roles[0].roleLevel == 0 && responseData.resDt.length == 2
+                ){
+                    console.log('工程管理．削除')
+                    reqDt.push({
+                        action:            3,
+                        roleId:            1,
+                        roleLevel:         null,
+                        userRoleStartDate: this.view.roles[0].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[0].userRoleEndDate,
+                        updDatetime:       responseData.resDt[0].updDatetime
+                    })
+                }
+
+                //日報管理
+                //登録
+                 if(
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 0
+                    ||
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId != 2
+                ) {
+                    console.log('日報管理．登録')
+                    reqDt.push({
+                        action:            1,
+                        roleId:            2,
+                        roleLevel:         this.view.roles[1].roleLevel,
+                        userRoleStartDate: this.view.roles[1].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[1].userRoleEndDate,
+                        updDatetime:       null
+                    })
+                }
+                else
+                //更新（resDtが1行の場合）
+                if(
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId == 2 && responseData.resDt[0].roleLevel !== this.view.roles[1].roleLevel
+                    ||
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 1 && (this.view.roles[1].userRoleStartDate != this.responseData.resDt[0].userRoleStartDate || this.view.roles[1].userRoleEndDate != this.responseData.resDt[0].userRoleEndDate) 
+                ){
+                    console.log('日報管理．更新')
+                    reqDt.push({
+                        action:            2,
+                        roleId:            2,
+                        roleLevel:         this.view.roles[1].roleLevel,
+                        userRoleStartDate: this.view.roles[1].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[1].userRoleEndDate,
+                        updDatetime:       responseData.resDt[0].updDatetime
+                    })
+                }
+                else
+                //更新（resDtが2行の場合）
+                if(
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 2 && responseData.resDt[1].roleId == 2 && responseData.resDt[1].roleLevel !== this.view.roles[1].roleLevel            
+                    ||
+                    this.view.roles[1].roleLevel > 0 && responseData.resDt.length == 2 && (this.view.roles[1].userRoleStartDate != this.responseData.resDt[1].userRoleStartDate || this.view.roles[1].userRoleEndDate != this.responseData.resDt[1].userRoleEndDate) 
+                ){
+                    console.log('日報管理．更新')
+                    reqDt.push({
+                        action:            2,
+                        roleId:            2,
+                        roleLevel:         this.view.roles[1].roleLevel,
+                        userRoleStartDate: this.view.roles[1].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[1].userRoleEndDate,
+                        updDatetime:       responseData.resDt[1].updDatetime
+                    })
+                }
+                //削除（resDtが1行の場合）
+                if(
+                    this.view.roles[1].roleLevel == 0 && responseData.resDt.length == 1 && responseData.resDt[0].roleId == 2
+                ){
+                    console.log('日報管理．削除')
+                    reqDt.push({
+                        action:            3,
+                        roleId:            2,
+                        roleLevel:         null,
+                        userRoleStartDate: this.view.roles[1].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[1].userRoleEndDate,
+                        updDatetime:       responseData.resDt[0].updDatetime
+                    })
+                }
+                else
+                //削除（resDtが2行の場合）
+                if(
+                    this.view.roles[1].roleLevel == 0 && responseData.resDt.length == 2
+                ){
+                    console.log('日報管理．削除')
+                    reqDt.push({
+                        action:            3,
+                        roleId:            2,
+                        roleLevel:         null,
+                        userRoleStartDate: this.view.roles[1].userRoleStartDate,
+                        userRoleEndDate:   this.view.roles[1].userRoleEndDate,
+                        updDatetime:       responseData.resDt[1].updDatetime
+                    })
+                }
+
+                if(reqDt) { payload.reqDt = reqDt }
+
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    }
+                    }
+
+                if(this.view.password !== this.view.passwordConfirm) {
+                    alert('パスワードとパスワード（確認）が一致していません。')
+                } else {
+                    axios.put(apiUrls.modifyUser, payload, axiosConfigObject)
+                    .then((response) => {
+                        if(response.data.resultCode != '000') {
+                            this.message = response.data.resultMessage
+                            }
+                        else {
+                            alert(response.data.resultMessage)
+                            this.$store.state.responseData = ''
+                            this.$router.push('users')
+                        }
+                    })
+                    .catch(error => {
+                        this.message = error.response.data
+                    })
+                }
+            }
+        },
+
+        deleteUser() {
+            if (confirm('削除しますか？')) {
+                let payload = {
+                    tranId:        '',
+                    resultCode:    null,
+                    resultMessage: null,
+                    user:          null,
+                    terminal:      null,
+                    reqDateTime:   null,
+                    resDateTime:   null,
+                    reqHd: {
+                        userId:      this.responseData.resHd.userId,
+                        updDatetime: this.responseData.resHd.updDatetime
+                        }
+                    }
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                        },
+                    data:    payload}
+
+                axios.delete(apiUrls.removeUser, axiosConfigObject)
+                .then((response) => {
+                    if(response.data.resultCode != '000') {
+                        this.message = response.data.resultMessage
+                        }
+                    else {
+                        alert(response.data.resultMessage)
+                        this.$store.state.responseData = ''
+                        this.$router.push('users')
+                    }
+                })
+                .catch(error => {
+                    this.message = error.response.data
+                })
+            }
+        },
+
+        getHash(ascii) {
+            function rightRotate(value, amount) {
+                return (value>>>amount) | (value<<(32 - amount));
+            }
+            
+            var mathPow = Math.pow;
+            var maxWord = mathPow(2, 32);
+            var lengthProperty = 'length'
+            var i, j; // Used as a counter across the whole file
+            var result = ''
+        
+            var words = [];
+            var asciiBitLength = ascii[lengthProperty]*8;
+            
+            /* caching results is optional - remove/add slash from front of this line to toggle
+            // Initial hash value: first 32 bits of the fractional parts of the square roots of the first 8 primes
+            // (we actually calculate the first 64, but extra values are just ignored)
+            var hash = sha256.h = sha256.h || [];
+            // Round constants: first 32 bits of the fractional parts of the cube roots of the first 64 primes
+            var k = sha256.k = sha256.k || [];
+            var primeCounter = k[lengthProperty];
+            /*/
+            var hash = [], k = [];
+            var primeCounter = 0;
+            //*/
+        
+            var isComposite = {};
+            for (var candidate = 2; primeCounter < 64; candidate++) {
+                if (!isComposite[candidate]) {
+                    for (i = 0; i < 313; i += candidate) {
+                        isComposite[i] = candidate;
+                    }
+                    hash[primeCounter] = (mathPow(candidate, .5)*maxWord)|0;
+                    k[primeCounter++] = (mathPow(candidate, 1/3)*maxWord)|0;
+                }
+            }
+            
+            ascii += '\x80' // Append Ƈ' bit (plus zero padding)
+            while (ascii[lengthProperty]%64 - 56) ascii += '\x00' // More zero padding
+            for (i = 0; i < ascii[lengthProperty]; i++) {
+                j = ascii.charCodeAt(i);
+                if (j>>8) return; // ASCII check: only accept characters in range 0-255
+                words[i>>2] |= j << ((3 - i)%4)*8;
+            }
+            words[words[lengthProperty]] = ((asciiBitLength/maxWord)|0);
+            words[words[lengthProperty]] = (asciiBitLength)
+            
+            // process each chunk
+            for (j = 0; j < words[lengthProperty];) {
+                var w = words.slice(j, j += 16); // The message is expanded into 64 words as part of the iteration
+                var oldHash = hash;
+                // This is now the undefinedworking hash", often labelled as variables a...g
+                // (we have to truncate as well, otherwise extra entries at the end accumulate
+                hash = hash.slice(0, 8);
+                
+                for (i = 0; i < 64; i++) {
+                    //var i2 = i + j;
+                    // Expand the message into 64 words
+                    // Used below if 
+                    var w15 = w[i - 15], w2 = w[i - 2];
+        
+                    // Iterate
+                    var a = hash[0], e = hash[4];
+                    var temp1 = hash[7]
+                        + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) // S1
+                        + ((e&hash[5])^((~e)&hash[6])) // ch
+                        + k[i]
+                        // Expand the message schedule if needed
+                        + (w[i] = (i < 16) ? w[i] : (
+                                w[i - 16]
+                                + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15>>>3)) // s0
+                                + w[i - 7]
+                                + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2>>>10)) // s1
+                            )|0
+                        );
+                    // This is only used once, so *could* be moved below, but it only saves 4 bytes and makes things unreadble
+                    var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) // S0
+                        + ((a&hash[1])^(a&hash[2])^(hash[1]&hash[2])); // maj
+                    
+                    hash = [(temp1 + temp2)|0].concat(hash); // We don't bother trimming off the extra ones, they're harmless as long as we're truncating when we do the slice()
+                    hash[4] = (hash[4] + temp1)|0;
+                }
+                
+                for (i = 0; i < 8; i++) {
+                    hash[i] = (hash[i] + oldHash[i])|0;
+                }
+            }
+            
+            for (i = 0; i < 8; i++) {
+                for (j = 3; j + 1; j--) {
+                    var b = (hash[i]>>(j*8))&255;
+                    result += ((b < 16) ? 0 : '') + b.toString(16);
+                }
+            }
+            return result;
+        }
+    }
+}
+</script>

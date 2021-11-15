@@ -1,0 +1,236 @@
+import store from '../store/index'
+import router from '../router/index'
+
+//カラム作成・並べ替え関数
+function createFields(obj, order) {
+    let a = []
+    let b = []
+    for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ) }
+    if(order) {
+        for(let i in order) { b.push(a[order[i]]) }
+        return b
+    }
+    return a
+}
+
+function clickMenuForward(menuCurrentPath, menuForwardPath) {
+    saveCommonArea('menuCurrentPathNew', menuForwardPath);
+    store.dispatch('pushMenuPath', menuCurrentPath);
+    router.push({path: menuForwardPath});
+}
+
+function clickMenuBack() {
+    // vue からの呼び出しは、次のとおり！
+    //let menuBackPath = this.$store.getters.getLastMenuPath;
+    //this.$store.dispatch('popMenuPath');
+    //this.$router.push({path: menuPath});
+    let menuBackPath = store.getters.getLastMenuPath;
+    saveCommonArea('menuCurrentPathNew', menuBackPath);
+    store.dispatch('popMenuPath');
+    router.push({path: menuBackPath});
+}
+
+function getCurrentMenu() {
+    return loadCommonArea('menuCurrentPathNew');
+}
+
+function getParentMenu() {
+    return store.getters.getLastMenuPath;
+}
+
+
+function saveCommonArea(key, val) {
+    //this.$store.dispatch('saveCommonArea', { commonKey: key, commonVal: val });
+    store.dispatch('saveCommonArea', { commonKey: key, commonVal: val });
+}
+
+function loadCommonArea(key) {
+    //let menuPath = this.$store.getters.loadCommonArea(commonKey);
+    //console.log('menuPath=' + menuPath);
+    return store.getters.loadCommonArea(key);
+}
+
+function deleteCommonArea(key) {
+    //this.$store.dispatch('deleteCommonArea', commonKey);
+    store.dispatch('deleteCommonArea', key);
+    //menuPath = this.$store.getters.loadCommonArea(commonKey);
+    //console.log('menuPath=' + menuPath);
+}
+
+function getResponseMessage(response) {
+    return response.data.resultCode + ": " + response.data.resultMessage;
+}
+
+function getErrorMessage(error) {
+    return error.response.data.status.code + ": " + error.response.data.status.message;
+}
+
+function sleep(delay, iteration, callbackFunc) {
+    // delay（ミリ秒） * iteration = 待機時間
+    var count = 0;
+    // delayミリ秒間隔で無名関数をiterationの回数実行
+    var id = setInterval(function () {
+        count++;
+        // 経過時間（delay * count） >= 待機時間の場合、待機終了。
+        if (count >= iteration) {
+            // タイマー停止
+            clearInterval(id);
+            // 完了時、コールバック関数を実行
+            if (callbackFunc) callbackFunc();
+        }
+    }, delay);
+}
+
+// 右寄せする項目名のtargetFields配列とresDtTitleからresDtのインデックスをキーにしてresDtの列を左寄せ、または右寄せする値を格納した連想配列を返す。
+// let targetFields = ['procColorNo', 'projCode', 'procName', 'endDate'];   // 右寄せする項目名をtargetFieldsの配列に指定する
+function makeResDtIndex2Layout(targetFields, resDtTitle) {
+    let resDtIndex2Layout = {};     // インデックスからresDtの列を左寄せ、または右寄せする値を格納した連想配列
+    let resDtName2Index = {};       // 項目名からresDtTitleのインデックスを格納した連想配列
+    for(let i in resDtTitle) {
+        //console.log('resDtTitle[i].key=' + resDtTitle[i].key + ', i=' + i);
+        resDtName2Index[resDtTitle[i].key] = i;
+        resDtIndex2Layout[i] = 'text-left';
+    }
+    // 右寄せする項目名をtargetFields配列からresDtIndex2Layout連想配列に設定
+    for(let i in targetFields) {
+        //console.log('targetFields[i]=' + targetFields[i] + ', i=' + i);
+        // targetFields配列の右寄せする項目名からresDtTitleのインデックスを取得する
+        let index = resDtName2Index[targetFields[i]];
+        if (index != null) {
+            //console.log('filedName=' + resDtTitle[index].key + ', index=' + index);
+            // resDtIndex2Layout連想配列に右寄せの設定をする
+            resDtIndex2Layout[index] = 'text-right';
+        }
+    }
+    return resDtIndex2Layout;
+}
+
+// 項目名をキーにしてresDtTitleのインデックスを格納した連想配列を返す。
+function makeResDtName2Index(resDtTitle) {
+    let resDtName2Index = {};       // 項目名からresDtTitleのインデックスを格納した連想配列
+    for(let i in resDtTitle) {
+        //console.log('resDtTitle[i].key=' + resDtTitle[i].key + ', i=' + i);
+        resDtName2Index[resDtTitle[i].key] = i;
+    }
+    return resDtName2Index;
+}
+
+// インデックスをキーにしてresDtTitleの項目名を格納した連想配列を返す。
+function makeResDtIndex2Name(resDtTitle) {
+    let resDtIndex2Name = {};       // インデックスからresDtTitleの項目名を格納した連想配列
+    for(let i in resDtTitle) {
+        //console.log('resDtTitle[i].key=' + resDtTitle[i].key + ', i=' + i);
+        resDtIndex2Name[i] = resDtTitle[i].key;
+    }
+    return resDtIndex2Name;
+}
+
+//isPrint: true=印刷前処理、false=印刷後処理
+function printDesingHandler(tableName, isPrint) {
+    if(isPrint) {
+        if(document.getElementsByClassName(tableName).length) {                       
+            let doubleHeadTable = document.getElementsByClassName(tableName)[0].children[0].children[0];
+            doubleHeadTable.children[0].removeAttribute('hidden');
+            doubleHeadTable.children[1].removeAttribute('hidden');
+            doubleHeadTable.children[2].removeAttribute('hidden');
+            
+            //ブートストラップのテーブルラッパーとその中のテーブルを取得し、組込クラスを一旦削除
+            let bTable = document.getElementsByClassName(tableName)[0];
+            let table = bTable.getElementsByTagName('table')[0];
+            bTable.classList.remove('table-sm', 'table-bordered');
+            table.classList.remove('b-table-no-border-collapse', 'table', 'b-table');
+            
+            //印刷用スタイル追加
+            let trStyle = 'border: 1px solid #dee2e6; border-collapse: collapse; color: black;';
+            let thStyle = 'border-left: 1px solid #dee2e6; border-top: none; border-bottom: none; border-bottom-width: 1px; border-collapse: collapse; color: black; padding: .5rem;';
+            let tdStyle = 'border-right: 1px solid #dee2e6; border-top: none; border-collapse: collapse; padding: .5rem;';
+            let trs = table.getElementsByTagName('tr');
+            [...trs].map((tr, idx) => {
+                if(idx === 0) {
+                    tr.setAttribute('style', trStyle + 'border-bottom: none;');
+                } else
+                if(idx === 1) {
+                    tr.setAttribute('style', trStyle + 'border-top: none; border-bottom: none;');
+                } else
+                if(idx === 2) {
+                    tr.setAttribute('style', trStyle + 'border-top: none;');
+                } else {
+                    tr.setAttribute('style', trStyle);
+                }
+            });
+            let ths = table.getElementsByTagName('th');
+            [...ths].map((th, idx) => {
+                if(idx === 0 || idx === 2) {
+                    th.setAttribute('style', 'padding-top: 1rem;');
+                } else
+                if(idx === 1) {
+                    th.setAttribute('style', 'text-align:center; font-size: 2em;');
+                } else {
+                    th.setAttribute('style', thStyle);
+                }
+            });
+            let tds = table.getElementsByTagName('td');
+            [...tds].map(td => td.setAttribute('style', tdStyle));
+        }
+    } else {
+        if(document.getElementsByClassName(tableName).length) {
+            let doubleHeadTable = document.getElementsByClassName(tableName)[0].children[0].children[0];
+            doubleHeadTable.children[0].setAttribute('hidden', '');
+            doubleHeadTable.children[1].setAttribute('hidden', '');
+            doubleHeadTable.children[2].setAttribute('hidden', '');
+            
+            //ブートストラップのテーブルラッパーとその中のテーブルを取得し、組込クラスを復元
+            let bTable = document.getElementsByClassName(tableName)[0];
+            let table = bTable.getElementsByTagName('table')[0];
+            bTable.classList.add('table-sm', 'table-bordered');
+            table.classList.add('b-table-no-border-collapse', 'table', 'b-table');
+
+            //印刷用スタイル削除
+            let trs = table.getElementsByTagName('tr');
+            [...trs].map(tr => tr.removeAttribute('style'));
+            let ths = table.getElementsByTagName('th');
+            [...ths].map(th => th.removeAttribute('style'));
+            let tds = table.getElementsByTagName('td');
+            [...tds].map(td => td.removeAttribute('style'));
+        }
+    }
+}
+
+function printPrepare(tableName, colLength, title, info) {
+    let doubleHeadTable = document.getElementsByClassName(tableName)[0].children[0].children[0];
+    //入れ子を挿入
+    let text = document.createTextNode(info);
+    let tr = document.createElement('tr');
+    let th = document.createElement('th');
+
+    tr.setAttribute('hidden', '');
+    th.appendChild(text);
+    th.setAttribute('colspan', colLength);
+    tr.appendChild(th);
+    doubleHeadTable.prepend(tr);
+
+    text = document.createTextNode(title);
+    tr = document.createElement('tr');
+    th = document.createElement('th');
+    tr.setAttribute('hidden', '');
+    th.appendChild(text);
+    th.setAttribute('colspan', colLength);
+    tr.appendChild(th);
+    doubleHeadTable.prepend(tr);
+
+    tr = document.createElement('tr');
+    th = document.createElement('th');
+    tr.setAttribute('hidden', '');
+    th.setAttribute('colspan', colLength);
+    tr.appendChild(th);
+    doubleHeadTable.prepend(tr);
+}
+
+export default {
+    createFields, clickMenuForward, clickMenuBack,
+    saveCommonArea, loadCommonArea, deleteCommonArea,
+    getResponseMessage, getErrorMessage, sleep,
+    getCurrentMenu, getParentMenu,
+    makeResDtIndex2Layout, makeResDtName2Index, makeResDtIndex2Name,
+    printDesingHandler, printPrepare
+}

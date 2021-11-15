@@ -1,0 +1,190 @@
+<template>
+    <div>
+        <comp-proj-status
+            v-if="isShowProjChoice"
+            :class-print-hide-proj="classPrintHideProj"
+            v-on:emitProjParams="emittedProjSelectedEvent"
+            v-on:emitProjSearchButton="emittedProjSearchButtonEvent"
+            v-on:emitProjPrintButton="emittedProjPrintButtonEvent"/>
+
+        <comp-area-status
+            v-if="isShowAreaChoice"
+            :prod-input="projSelected"
+            :class-print-hide-area="classPrintHideArea"
+            v-on:emitAreaParams="emittedAreSelectedEvent"
+            v-on:emitAreaSearchButton="emittedAreaSearchButtonEvent"
+            v-on:emitAreaPrintButton="emittedAreaPrintButtonEvent"/>
+
+        <comp-prod-status
+            v-if="isShowProdChoice"
+            :prod-input="projSelected"
+            :class-print-hide-prod="classPrintHideProd"
+            v-on:emitProdParams="emittedProdSelectedEvent"
+            v-on:emitProdSearchButton="emittedProdSearchButtonEvent"
+            v-on:emitProdPrintButton="emittedProdPrintButtonEvent"/>
+
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+//import axios from 'axios'
+//import apiUrls from '../../common/apiUrls'
+//import commonMethods from '../../common/commonMethods'
+import compProjStatus from "@/components/compProjStatus.vue";
+import compAreaStatus from "@/components/compAreaStatus.vue";
+import compProdStatus from "@/components/compProdStatus.vue";
+
+export default {
+    components: {
+        compProjStatus,
+        compAreaStatus,
+        compProdStatus,
+    },
+    data() {
+        return {
+            projSelected: {},
+            areaSelected: {},
+            prodSelected: [],
+
+            isShowProjChoice: true,
+            isShowAreaChoice: false,
+            isShowProdChoice: false,
+
+            // isShowProjTable: false,
+            // isShowProdTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            // isLoadingProj: false,
+            // isLoadingProd: false,
+            // isShowProdProcPlanSearch: true,
+            classPrintHideProj: '',
+            classPrintHideArea: '',
+            classPrintHideProd: '',
+        }
+    },
+    // watch:{
+    //     projSelected: function(newValue) {
+    //         console.log('projSelected newValue.projId=' + newValue.projId);
+    //         if(newValue.projId) {
+    //             // this.isShowProdChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //             setTimeout(()=>this.isShowProdChoice = true, 100);
+    //         } else {
+    //             this.isShowProdChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //         }
+    //     },
+    //     projSearchButtonCount: function() {
+    //         console.log('projSearchButtonCount !');
+    //         //this.clearData(['prodSeq', 'procList']);
+    //         this.projSelected = {};
+    //     },
+    // },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        emittedProjSearchButtonEvent(value) {
+            console.log('emittedProjSearchButtonEvent value=' + value);
+            this.projSearchButtonCount = value;
+            this.isShowAreaChoice = false;
+            this.isShowProdChoice = false;
+            this.projSelected = {};
+        },
+        emittedAreaSearchButtonEvent(value) {
+            console.log('emittedProjSearchButtonEvent value=' + value);
+            this.projSearchButtonCount = value;
+            this.isShowProdChoice = false;
+            this.areaSelected = {};
+        },
+        emittedProdSearchButtonEvent(value) {
+            // console.log('emittedProdSearchButtonEvent value=' + value);
+            this.prodSearchButtonCount = value;
+        },
+
+        emittedProjSelectedEvent(value) {
+            console.log('emittedProjSelectedEvent value=' + value);
+            console.log('emittedProjSelectedEvent value.projId=' + value.projId);
+            console.log('emittedProjSelectedEvent this.projSelected.projId=' + this.projSelected.projId);
+            console.log('emittedProjSelectedEvent value.projCode=' + value.projCode);
+            console.log('emittedProjSelectedEvent value.projName=' + value.projName);
+            if(value.projId) {
+                if (value.projId != this.projSelected.projId) {
+                    // 工事コンポーネントの工事が選択されている状態で別の工事が選択された場合、
+                    // 工区コンポーネントのisShowAreaChoiceをfalseにしてからtrueにすることで工区コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、工区コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowAreaChoice = false;
+                }
+                this.projSelected = value;
+                setTimeout(()=>this.isShowAreaChoice = true, 100);
+            } else {
+                this.projSelected = value;
+                this.isShowAreaChoice = false;
+            }
+        },
+        emittedAreaSelectedEvent(value) {
+            console.log('emittedAreaSelectedEvent value=' + value);
+            console.log('emittedAreaSelectedEvent value.projId=' + value.projId);
+            console.log('emittedAreaSelectedEvent value.projCode=' + value.projCode);
+            console.log('emittedAreaSelectedEvent value.projName=' + value.projName);
+            this.projSelected = value;
+            // this.isShowProdChoice = true;
+            if(value.projId) {
+                // this.isShowProdChoice = false;
+                setTimeout(()=>this.isShowProdChoice = true, 100);
+            } else {
+                this.isShowProdChoice = false;
+            }
+        },
+        emittedProdSelectedEvent(value) {
+            console.log('emittedProdSelectedEvent value.prodCode=' + value.prodCode);
+            console.log('emittedProdSelectedEvent value.prodName=' + value.prodName);
+            this.prodSelected = value;
+        },
+
+        emittedProjPrintButtonEvent(value) {
+            console.log('emittedProjPrintButtonEvent value=' + value);
+            console.log('emittedProjPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = '';
+            this.classPrintHideArea = 'print-hide';
+            this.classPrintHideProd = 'print-hide';
+        },
+        emittedAreaPrintButtonEvent(value) {
+            console.log('emittedProjPrintButtonEvent value=' + value);
+            console.log('emittedProjPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideArea = '';
+            this.classPrintHideProd = 'print-hide';
+        },
+        emittedProdPrintButtonEvent(value) {
+            // console.log('emittedProdPrintButtonEvent value=' + value);
+            // console.log('emittedProdPrintButtonEvent this.classPrintHideProd=' + this.classPrintHideProd);
+            this.prodSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideArea = 'print-hide';
+            this.classPrintHideProd = '';
+        },
+    }
+}
+</script>

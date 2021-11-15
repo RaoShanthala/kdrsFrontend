@@ -1,0 +1,109 @@
+<template>
+    <div>
+        <b-row>
+            <b-col><b-button to="/importtekla">{{findRouteTitle('/importtekla')}}</b-button></b-col>
+            <b-col>
+                <b-button-group vertical>
+                    <b-button to="/prodproc" class="mb-3">{{findRouteTitle('/prodproc')}}</b-button>
+                    <b-button to="/process" class="mb-3">{{findRouteTitle('/process')}}</b-button>
+                    <b-button to="/projectstatus">{{findRouteTitle('/projectstatus')}}</b-button>
+                </b-button-group>
+            </b-col>
+            <b-col>
+                <b-button-group vertical>
+                    <b-button to="/projecttable" class="mb-3">{{findRouteTitle('/projecttable')}}</b-button>
+                    <b-button to="/producttable">{{findRouteTitle('/producttable')}}</b-button>
+                </b-button-group>
+            </b-col>
+            <b-col>
+                <b-button-group vertical>
+                    <b-button to="/users" class="mb-3">{{findRouteTitle('/users')}}</b-button>
+                    <b-button to="/projects" class="mb-3">{{findRouteTitle('/projects')}}</b-button>
+                    <b-button to="/products">{{findRouteTitle('/products')}}</b-button>
+                </b-button-group>
+            </b-col>
+            <b-col align="end"><b-button @click="logout">ログアウト</b-button></b-col>
+        </b-row>
+    </div>
+</template>
+
+<style scoped>
+h1, .btn {
+    font-size: 2rem;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+export default {
+    created: function() {
+        this.referRoleAll();
+        this.referNameMany();
+    },
+    methods: {
+        findRouteTitle(path) {
+            return this.$router.options.routes.find(e => e.path === path).meta.title;
+        },
+        logout() {
+            this.$store.state.loginData = {
+                id:          '',
+                username:    '',
+                email:       '',
+                roles:       [],
+                accessToken: ''
+            }
+            this.$router.push('/')
+        },
+        referRoleAll() {
+            //console.log('referRoleAll() ');
+            if (!this.$store.rolesResDt) {
+                let axiosConfigObject = {
+                    headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    }
+                }
+                axios.get(apiUrls.referRoleAll, axiosConfigObject)
+                .then(response => {
+                    if(response.data.resultCode == '000') {
+                        this.$store.rolesResDt = response.data.resDt;
+                    } else {
+                        this.message = response.data.resultMessage
+                    }
+                })
+                .catch(error => {
+                    this.message = error.response.data
+                })
+            }
+        },
+        referNameMany() {
+            //console.log('referNameMany() ');
+            if (!this.$store.roleLevelsResDt) {
+                //let payload = {
+                //    nameSection:  'RoleLevel'
+                //}
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    //params:  payload
+                    params: { nameSection:  'RoleLevel' }
+                }
+                axios.get(apiUrls.referNameMany, axiosConfigObject)
+                .then(response => {
+                    if(response.data.resultCode == '000') {
+                        this.$store.roleLevelsResDt = response.data.resDt;
+                    } else {
+                        this.message = response.data.resultMessage
+                    }
+                })
+                .catch(error => {
+                    this.message = error.response.data
+                })
+            }
+       }
+    }
+}
+</script>

@@ -1,0 +1,139 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+    <b-form inline>
+        <b-form-group label="工事コード" class="mr-2">
+        <b-form-input v-model="projSearchForm.projCode"/>
+        </b-form-group>
+        <b-form-group label="工事名称" class="mr-2">
+        <b-form-input v-model="projSearchForm.projName"/>
+        </b-form-group>
+        <b-form-group>
+            <b-form-radio-group
+            v-model="projSearchForm.targetState"
+            :options="projSearchForm.targetStateOptions"/>
+        </b-form-group>
+        <b-form-group label="基準日" class="mr-2">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="projSearchForm.targetDate"/>
+        </b-form-group>
+        <div style="margin-bottom: -2rem">
+        <b-button @click="projSearch(null)" >検索</b-button>
+        </div>
+    </b-form>
+    </b-card>
+    <div v-if="isLoadingProj" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <div v-if="projData.length">
+        <b-table
+            head-variant="light"
+            class="table-sm table-bordered text-nowrap"
+            responsive
+            selected-variant="info"
+            selectable
+            select-mode="single"
+            @row-selected="projSelect"
+            :items="projData"
+            :fields="projFields"/>
+    </div>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+    data() {
+        return {
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                targetDate: '',
+                targetState: 5,
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            },
+            projData: [],
+            projFields: [],
+            isLoadingProj: false
+        }
+    },
+    methods: {
+        async projSearch(searchMode) {
+            this.projData = [];
+            this.isLoadingProj = true;
+            if(searchMode) {
+                var payload = {
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},  
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.projName    && { projName:   this.projSearchForm.projName },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},
+                    ...this.projSearchForm.targetDate  && { targetDate: this.projSearchForm.targetDate }
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt;
+                this.projFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+            })
+        },
+        projSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProjParams', 
+                    {projCode: item[0].projCode,
+                    projName: item[0].projName}
+                );
+            } else {
+                this.$emit('emittedProjParams', 
+                    {projCode: '',
+                    projName: ''}
+                );
+            }
+
+        },
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        }
+    }
+}
+</script>

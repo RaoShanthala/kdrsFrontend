@@ -1,0 +1,674 @@
+<template>
+    <div>
+        <comp-proj-search 
+            :proj-settings="projSettings"
+            :projInput="projInput"
+            :class-print-hide-proj="classPrintHideProj"
+            :revertTableContent="revertTableContent"
+            v-on:emitProjSearchButton="emittedPojSearchButton"
+            v-on:emitProjSelect="emittedProjSelect"
+            v-on:emitUpdateProject="emittedUpdateProject"
+            v-on:emitProjPrintButton="emittedProjPrintButtonEvent"/>
+            <!-- v-on:searchData="searchData" -->
+            <!-- v-on:emitSelctedProjId = "emittedSelctedProjId" -->
+            <!-- v-on:emitShowOtherData="emittedShowOtherData" -->
+
+        <div v-if="prodSearchForm.isShowProdSearch">
+            <b-card bg-variant="light" :class="classPrintHideProd">
+                <b-row class="mb-2 print-hide">
+                    <b-col class="col-md-9">
+                        <b-form inline class="mt-1">
+                            <!-- <span class="mr-4 mt-1"><strong>工事ID：</strong>{{ project.projId }}</span> -->
+                            <span class="mr-4 mt-1"><strong>工事コード：</strong>{{ project.projCode }}</span>
+                            <strong>工事名称：</strong>{{ project.projName }}
+                            <span class="mr-5"></span>
+                            <!-- <b-form-radio-group plain @change="prodFlagChange" v-model="prodSearchForm.prodFlag" :options="prodFlagOptions"/> -->
+                            <!-- <b-form-radio-group class="mr-4" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" :options="prodFlagOptions"/> -->
+                        </b-form>
+                        <b-form inline class="mt-2">
+                            <div style="margin-top: 0.0rem; margin-right:2rem;">
+                                <b-form-radio class="mt-1" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" value="1" >製品</b-form-radio>
+                                <b-form-radio class="mt-2" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" value="0" >部品</b-form-radio>
+                            </div>
+                            <b-form-group :label="labelProdCode" class="mr-2">
+                                <b-form-input v-if="prodSearchForm.prodFlag==1" v-model="prodSearchForm.prodCode"/>
+                                <b-form-input v-if="prodSearchForm.prodFlag==0" v-model="prodSearchForm.partCode"/>
+                            </b-form-group>
+                            <b-form-group :label="labelProdName" class="mr-2">
+                                <b-form-input v-if="prodSearchForm.prodFlag==1" v-model="prodSearchForm.prodName"/>
+                                <b-form-input v-if="prodSearchForm.prodFlag==0" v-model="prodSearchForm.partName"/>
+                            </b-form-group>
+                            <div id="flexButton">
+                                <b-button @click="getProductData()" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                            </div>
+                        </b-form>
+                    </b-col>
+                    <b-col class="col-md-3">
+                        <div class="text-right mt-5 print-hide">
+                            <b-button @click="aggregateProject" class="mr-1">集計</b-button>
+                            <!-- <b-button @click="registerProduct" class="mr-1">新規</b-button> -->
+                        </div>
+                    </b-col>
+                </b-row>
+
+                <!-- <div v-if="prodData.length" class="mt-1"> -->
+                <div v-if="prodSearchForm.isShowProdTable && prodData.length" class="mt-1">
+                    <b-table ref="tableRefProd"
+                        head-variant="light"
+                        sticky-header="500"
+                        class="table-sm table-bordered text-nowrap prod-table" 
+                        responsive
+                        no-border-collapse
+                        selected-variant="info"
+                        selectable
+                        select-mode="single"
+                        @row-selected="prodSelect"
+                        :items="prodData"
+                        :fields="prodFields">
+                        <template #cell(update)="row">
+                            <b-link  class="button"  v-on:click="updateProduct(row.item.projId, row.item.prodId)">更新/削除</b-link> 
+                            <!--b-button size="sm" @click="updateProduct(row.item.projId, row.item.prodId)">更新/削除</b-button-->
+                        </template>   
+                    </b-table > 
+                         
+                    <b-row align-h="end" class="my-0 print-hide">
+                        <b-col class="col-md-10"/>
+                        <b-col class="col-md-2">
+                            <div class="d-flex justify-content-end">
+                                <b-button @click="printProdTable" class="mr-0">印刷</b-button>
+                                <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                            </div>
+                        </b-col>
+                    </b-row>
+                </div>
+                <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                    <b-spinner class="align-middle"></b-spinner>
+                    <strong>検索中...</strong>
+                </div>   
+            </b-card>       
+        </div>        
+       <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>   
+    </div>  
+</template>
+
+<style scoped>
+    #flexButton {
+        margin-bottom: -2rem;
+    }
+    .button {
+        font: 11px Arial;
+        text-decoration: none;
+        background-color: #7E7E7E; /* #817d7d; */
+        color: #FFFFFF;
+        padding: 4px 20px 4px 20px;
+        border-top: 1px solid #CCCCCC;
+        border-right: 1px solid #333333;
+        border-bottom: 1px solid #333333;
+        border-left: 1px solid #CCCCCC;
+    }
+    /* 印刷ボタンのマージン設定 */
+    .b-table-sticky-header, .table-responsive, [class*=table-responsive-] {
+        margin-bottom: 0.5rem;
+    }
+    .col > p {
+        margin-bottom: 0.5rem;
+    }
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+import compProjSearch from "@/components/compProjSearch.vue";
+
+export default {
+    components: {
+        compProjSearch
+    },
+    
+    data() {
+        return {
+            titleProj: '工事一覧',
+            titleProd: '製品一覧',
+            // projSearchForm: {
+            projInput: {
+                projCode: '',
+                projName: '',
+                targetState: '5',
+                startDateBegin: '',
+                endDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                isShowProjTable: '',
+                selectedRowProjId: '',
+            },
+            projSettings: { maintenanceMode: true, addButtonMode:true },
+            revertTableContent : false,
+            prodFlagOptions: [
+                { value: 1, text: '製品' },
+                { value: 0, text: '部品' }
+            ],
+            labelProdCode: '製品コード',
+            labelProdName: '製品名称',
+            //製品検索データ   
+            prodSearchForm: {
+                projId: '',
+                prodFlag: 1,
+                prodCode: '',
+                prodName: '',
+                partCode: '',
+                partName: '',
+                isShowProdSearch: '',
+                isShowProdTable: '',
+                selectedRowProdId: '',
+                gotProduct: false,
+            },
+            prodData: [],
+            prodFields: [],
+            prodFieldsCopy: [],
+            project: {},
+    
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            projSearchButtonCount: 0,
+            isLoadingProd: false,
+            currentMenuName:'',
+            classPrintHideProj: '',
+            classPrintHideProd: '',
+            prodRestorMode: false,
+        }
+    },
+   
+   created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        this.currentMenuName = commonMethods.getCurrentMenu();
+      
+        let prodSearchForm = commonMethods.loadCommonArea(this.currentMenuName + "_ProdSearchForm");
+        if (prodSearchForm) {
+            for (let item in this.prodSearchForm) {
+                this.prodSearchForm[item] = prodSearchForm[item];
+                // console.log('this.prodSearchForm[' + item + ']=' + this.prodSearchForm[item]);
+            }
+            if (this.prodSearchForm.gotProduct){
+                this.prodRestorMode = true;
+            }
+        }
+        if (this.$store.state.responseData) {
+            this.project = this.$store.state.responseData
+        }
+    },
+
+    async mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })  
+      
+        await this.$nextTick(); // waits for the component to load
+    
+        window.addEventListener('beforeprint', () => {
+            if (this.classPrintHideProj != 'print-hide') {
+                // 工事一覧コンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+                commonMethods.printDesingHandler('proj-table', true);
+            }
+            if (this.classPrintHideProd != 'print-hide') {
+                // 製品一覧の印刷ボタンがクリックされたときのみ処理を行う
+                commonMethods.printDesingHandler('prod-table', true);
+            }
+        })
+        window.addEventListener('afterprint', () => {
+            if (this.classPrintHideProj != 'print-hide') {
+                this.revertTableContent = true;
+                // 工事一覧コンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+                commonMethods.printDesingHandler('proj-table', false);
+            }
+             if (this.classPrintHideProd != 'print-hide') {
+                // 製品一覧の印刷ボタンがクリックされたときのみ処理を行う
+                this.prodFields = this.prodFieldsCopy;
+                commonMethods.printDesingHandler('prod-table', false);
+            }
+        })
+    },
+                        
+    methods: {
+        resetProdSearchForm() {
+            for (let item in this.prodSearchForm) {
+                if (item != 'projId' && item != 'prodFlag' && item != 'isShowProdSearch')
+                this.prodSearchForm[item] = '';
+            }
+            this.prodData = [];
+            this.message = '';
+        },        
+        prodFlagChange() {
+            if (this.prodSearchForm.prodFlag == 1) {
+                this.labelProdCode = '製品コード';
+                this.labelProdName = '製品名称';
+            } else {
+                this.labelProdCode = '部品コード';
+                this.labelProdName = '部品名称';
+            }
+            // this.prodSearchForm.prodCode = '';
+            // this.prodSearchForm.prodName = '';
+            this.prodData = [];
+            this.message = ''
+        },        
+        emittedProjSelect(value) {
+            // 工事一覧の行を選択したときの他、工事、製品の更新削除画面から戻ったときにも呼び出される。
+            if (value.projId) {
+                this.project = value;
+                this.prodSearchForm.isShowProdSearch = true;
+                // console.log('emittedProjSelect value.projId=' + value.projId);
+                // console.log('emittedProjSelect this.projInput.selectedRowProjId=' + this.projInput.selectedRowProjId);
+                // alert (value.projId === this.projInput.selectedRowProjId);  
+                if (value.projId != this.projInput.selectedRowProjId) {
+                    this.prodSearchForm.projId = value.projId;
+                    // this.prodSearchForm.prodFlag = 1;
+                    // this.prodSearchForm.prodCode = '';
+                    // this.prodSearchForm.prodName = '';
+                    this.projInput.selectedRowProjId = value.projId;
+                } 
+                this.prodData = [];
+            } else {
+                this.project = {};
+                this.prodSearchForm.isShowProdSearch = false;
+                this.projInput.selectedRowProjId = '';
+            } 
+            // console.log('emittedProjSelect() this.prodSearchForm.projId=' + this.prodSearchForm.projId);
+            this.prodSearchForm.isShowProdTable = false;
+            // console.log('emittedProjSelect() this.prodSearchForm.gotProduct=' + this.prodSearchForm.gotProduct);
+            if (this.prodRestorMode) {
+                // 製品の更新/削除ボタンを押したときにtrueにしているので子画面から戻ったときに次の処理を行う。
+                this.prodRestorMode = false;
+                this.getProductData();
+            } else {
+                this.prodSearchForm.selectedRowProdId = '';
+            }
+            this.prodFlagChange();
+        },
+        emittedUpdateProject(value) {
+            // console.log('emittedUpdateProject value=' + value);
+            // console.log('emittedUpdateProject this.prodSearchForm.projId=' + this.prodSearchForm.projId);
+            // console.log('emittedUpdateProject this.prodSearchForm.gotProduct=' + this.prodSearchForm.gotProduct);
+            // this.projInputは、projSearchFormとしてcompProjSearch側でセーブする。
+            // commonMethods.saveCommonArea(this.currentMenuName + "_ProjInput", this.projInput);
+            if (this.prodSearchForm.projId != value) {
+                // このセーブ前に工事一覧の更新/削除ボタンをクリックしたprojIdと製品一覧を表示しているprojIdが異なるとき、
+                // this.prodSearchForm.gotProductをfalseにして、子画面から戻ってきたときに製品一覧を表示しないようにする。
+                this.prodSearchForm.gotProduct = false;
+                this.prodSearchForm.projId = value;
+            }
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProdSearchForm", this.prodSearchForm);
+        },
+        emittedProjPrintButtonEvent(value) {
+            this.projSearchButtonCount = value;
+            this.classPrintHideProd = 'print-hide';
+            this.classPrintHideProj = '';
+            // this.revertTableContent = true;
+        },
+
+        // searchData(data) {
+        //     // alert ("search data");
+        //     // this.projInput.projCode = data.projCode;
+        //     // this.projInput.projName = data.projName;
+        //     // this.projInput.targetState = data.targetState;
+        //     // this.projInput.startDateBegin = data.startDateBegin;
+        //     // this.projInput.endDateBegin = data.endDateBegin;
+        //     // this.projInput.startDateComplete = data.startDateComplete;
+        //     // this.projInput.endDateComplete = data.endDateComplete;
+        //     for (let item in this.projInput) {
+        //         this.projInput[item] = data[item];
+        //     }
+        //     this.message = "";
+        // },
+        // async emittedSelctedProjId(data) {
+        //     let oldSelctedProjId = data.oldProjId;
+        //     // this.selcetdRowProjIdはスペルミス！
+        //     this.selcetdRowProjId = data.newProjId;
+
+        //     this.isShowProdTable = false;
+        //     if (!this.selcetdRowProjId) {
+        //         this.isShowProdSearch  = false;
+        //         this.prodSearchForm.prodCode = '';
+        //         this.prodSearchForm.prodName = '';
+        //     } else {
+        //         var showProd = commonMethods.loadCommonArea(this.currentMenuName + '_ShowProduct');
+        //         commonMethods.deleteCommonArea(this.currentMenuName + '_ShowProduct');
+
+        //         if (oldSelctedProjId && oldSelctedProjId != this.selcetdRowProjId) {
+        //             showProd = false;
+        //         }
+    
+        //         if (showProd == true && this.selcetdRowProjId ) {  
+        //             // await this.getProjData(this.selcetdRowProjId);
+
+        //             let savedProdCode = commonMethods.loadCommonArea(this.currentMenuName + '_ProdCode');
+        //             let savedProdName = commonMethods.loadCommonArea(this.currentMenuName + '_ProdName');
+        //             commonMethods.deleteCommonArea(this.currentMenuName + '_ProdCode');
+        //             commonMethods.deleteCommonArea(this.currentMenuName + '_ProdName');
+            
+        //             if (savedProdCode) {
+        //                 this.prodSearchForm.prodCode =  savedProdCode;
+        //             }
+        //             if (savedProdName) {
+        //                 this.prodSearchForm.prodName = savedProdName;
+        //             }     
+        //             if (this.selectedRowProdId) {
+        //                 this.getProductData();
+        //             }
+        //         } else {
+        //             this.prodSearchForm.prodCode = '';
+        //             this.prodSearchForm.prodName = ''; 
+        //         }
+        //     }
+        // },        
+
+        // emittedShowOtherData(val) {
+        //    this.prodSearchForm.isShowProdSearch = val;
+        // },
+
+        emittedPojSearchButton(value) {
+             this.projSearchButtonCount = value;
+             this.prodSearchForm.isShowProdSearch = false;
+             this.prodData = [];
+             this.message = '';
+        },
+
+        prodSelect(item) {
+            if(item[0]) {
+                this.prodSearchForm.selectedRowProdId = item[0].prodId;
+            } 
+        },
+
+        // apiUrlsの定義には、当初（rev:1433）よりreferProjectOneでなくrefereProjectOneで作成したためエラーが発生していた。
+        // つまり、この処理は不要ということになるのでコメントにする。（ここで取得する値はセットされていることを確認した。）
+        // async getProjData(projId) {  
+        //     let payload =  {
+        //         projId:   projId
+        //     }
+        //     let axiosConfigObject = {
+        //         headers: {
+        //             Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+        //             'Content-Type': 'application/json',
+        //         },
+        //         params:  payload
+        //     }
+        //     await axios.get(apiUrls.referProjectOne, axiosConfigObject).then(response => {    
+        //         if (response.data.resultCode != '000') {
+        //             this.message = commonMethods.getResponseMessage(response);
+        //         } else {
+        //             var data = [] ;
+        //             data = response.data.resDt;
+        //             if (data) { 
+        //                 this.project.projId = projId;
+        //                 this.project.projCode = data[0].projCode;
+        //                 this.project.projName = data[0].projName;
+        //                 // alert ("this.project.projCode "+ this.project.projCode)
+        //             }          
+        //         }
+        //     })
+        //     .catch(error => {
+        //         this.message = commonMethods.getErrorMessage(error);
+        //     })
+        // },
+
+        async getProductData() {
+            await this.getProjectProductList(); 
+
+            if (this.prodSearchForm.isShowProdTable != true) {
+                return;
+            }
+            // alert ("getProjectProductList this.prodSearchForm.selectedRowProdId=" + this.prodSearchForm.selectedRowProdId);
+            if (this.prodSearchForm.selectedRowProdId) {
+                // console.log('getProductData selectRow.scrollIntoView() start !');
+                // 工事一覧の選択行までスクロールが終わるまで1秒待機する。
+                 await commonMethods.wait(1);   // await が使えるのは、async を付けた関数のみ
+                // console.log('wait end !');
+                const row = this.prodData.findIndex(x => x.prodId === this.prodSearchForm.selectedRowProdId);
+                if ( row > -1) {
+                    this.$refs.tableRefProd.selectRow(row);
+                    //scrolls down to the position of selected row
+                    const tbody = this.$refs.tableRefProd.$el.querySelector('tbody');
+                    const selectRow = tbody.querySelectorAll('tr')[row];
+                    // selectRow.scrollIntoView(false);
+                    selectRow.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+                } else {
+                    this.prodSearchForm.selectedRowProdId = '';
+                }    
+            }             
+            // console.log('getProductData !');
+            // let titleProd = this.titleProd;
+            // let frm = this.project;
+            // let prodFields = this.prodFields;
+            // commonMethods.sleep(100, 1, function () {
+            //     //製品一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+            //     commonMethods.printPrepare('prod-table', prodFields.length, titleProd, `工事コード：${frm.projCode}、工事名称：${frm.projName}`);
+            // });
+        },
+
+        async getProjectProductList() {
+            // console.log('getProjectProductList() this.prodSearchForm.projId=' + this.prodSearchForm.projId);
+            this.isLoadingProd = true;
+            this.prodSearchForm.isShowProdTable = false;
+            // this.$store.state.searchForm = this.searchForm
+            this.prodData = [];
+            this.message = '';
+            this.prodSearchForm.gotProduct = false;
+            let prodCode = this.prodSearchForm.prodFlag == 1 ? this.prodSearchForm.prodCode : this.prodSearchForm.partCode;
+            let prodName = this.prodSearchForm.prodFlag == 1 ? this.prodSearchForm.prodName : this.prodSearchForm.partName;
+
+            let payload = {
+                projId:     this.prodSearchForm.projId,
+                prodFlag:   this.prodSearchForm.prodFlag,
+                ...prodCode   && { prodCode:   prodCode },
+                ...prodName   && { prodName:   prodName }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referProductMany, axiosConfigObject).then(response => {    
+               // console.log(response.data.resDt);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.prodData = response.data.resDt;
+                    // this.prodFields =  this.createFields(response.data.resDtTitle, [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]);
+                    this.prodFields =  this.createFields(response.data.resDtTitle);
+                }
+                this.prodSearchForm.isShowProdTable = true;
+                this.prodSearchForm.gotProduct = true;
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+            })         
+        },
+
+        printProdTable() {
+            if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                // this.printing = true;
+                this.prodFieldsCopy = [];
+                this.prodFieldsCopy = this.prodFields;
+                this.prodFields = this.prodFieldsCopy.filter(field => !field.required); 
+     
+                this.classPrintHideProj = 'print-hide';
+                this.classPrintHideProd = '';
+                let titleProd = this.titleProd;
+                let frm = this.project;
+                let prodFields = this.prodFields;
+                commonMethods.sleep(100, 1, function () {
+                    // 100ミリ秒*1回、待機後確認メッセージを表示
+                    commonMethods.printPrepare('prod-table', prodFields.length, titleProd, `工事コード：${frm.projCode}、工事名称：${frm.projName}`);
+                    // commonMethods.printDesingHandler('prod-table', true);
+                    window.print();
+                    // commonMethods.printDesingHandler('prod-table', false);
+                });
+            }          
+        },
+
+        aggregateProject() {
+            this.message = "";
+            if (confirm('集計しますが、よろしいでしょうか？') == false) {
+                return;
+            }
+            //基本リクエストを作成する
+            let payload = {
+                transId: "",
+                resultCode: null,
+                resultMessage: null,
+                user: null,
+                terminal: null,
+                reqDateTime: null,
+                resDateTime: null,
+                reqHd: {
+                    projId: this.projInput.selectedRowProjId
+                },
+            };
+            let axiosConfigObject = {
+                headers: {
+                    Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                    "Content-Type": "application/json",
+                },
+            };
+            axios
+                .post(apiUrls.projectAggregate, payload, axiosConfigObject).then((response) => {
+                    if (response.data.resultCode != "000") {
+                        this.message = commonMethods.getResponseMessage(response);
+                        alert('エラーが発生しました。(' + this.message + ')');
+                    } else {
+                        // this.$store.state.responseData = this.projectData;
+                        alert(response.data.resultMessage);
+                        //this.$router.push('productsearch')
+                        // commonMethods.clickMenuBack();
+                    }
+            })
+            .catch((error) => {
+                //this.message = (error.response || {}).data;
+                //console.log((error.response || {}).data);
+                this.message = commonMethods.getErrorMessage(error);
+                alert('エラーが発生しました。(' + error + ')');
+            });
+        },
+
+        async getProductDetail(projId, prodId) {
+            // console.log('Calling getProductDetail Method');
+            let payload =  {
+                projId:   projId,
+                prodId:   prodId
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload}
+
+            await axios.get(apiUrls.referProductOne, axiosConfigObject).then(response => {    
+                //console.log(response.data.resDt);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.$store.state.responseData = response.data.resDt;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+        },
+
+        registerProduct() {
+            commonMethods.saveCommonArea(this.currentMenuName + '_ProdSearchForm', this.prodSearchForm);
+            
+            this.$store.state.responseData = this.project;
+            commonMethods.clickMenuForward(this.$route.path, 'registerproduct');
+        },
+
+        async updateProduct(projId, prodId) {
+            this.prodSearchForm.ProjId = projId;
+            this.prodSearchForm.selectedRowProdId = prodId;
+            this.prodSearchForm.gotProduct = true;
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProdSearchForm", this.prodSearchForm);
+
+            this.$store.state.responseData = this.project;
+
+            await this.getProductDetail(projId, prodId);
+            commonMethods.clickMenuForward(this.$route.path, 'productupdate');
+        },
+
+        // back() {
+        //     // this.isShowProjScreen = true;
+        //     this.clearData(['proj', 'update']);
+        // },
+
+        // clearData(items) {
+        //     this.message = '';
+        //     items.forEach(element => {
+        //         if(element === 'proj') {
+                   
+        //             this.prodData = [];
+        //             this.prodFields = [];
+        //             this.prodSelectedItem = '';
+        //             this.prodSelected = [];
+        //         }     
+        //         if(element === 'update') {
+        //             this.prodSearchForm = {
+        //                 prodCode: '',
+        //                 prodName: ''
+        //             }
+        //         }
+        //     });
+        // },
+
+        getNow() {
+            let today = new Date(Date.now())
+            //return today.toISOString().slice(0, 10);
+            let diff = today.getTimezoneOffset() * 60 * 1000;    // -540 * 60 * 1000 = -32400000 (ミリ秒)
+            let localToday = new Date(today - diff);
+            return localToday.toISOString().slice(0, 10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },     
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': '', 'required': 'true' } )
+            return a;
+        },
+
+        // resetProjForm() {
+        //     this.prodSearchForm.prodCode = '';
+        //     this.prodSearchForm.prodName = '';
+        // },  
+    }
+}
+</script>

@@ -1,0 +1,33 @@
+let host = 'http://localhost:8080'
+
+const urls = {
+
+        signIn:            host + '/api/auth/signin',
+        referUserMany:     host + '/UserMaintenance/ReferUserMany',
+        referUserOne:      host + '/UserMaintenance/ReferUserOne',
+        registUser:        host + '/UserMaintenance/RegistUer',
+        modifyUser:        host + '/UserMaintenance/ModifyUer',
+        removeUser:        host + '/UserMaintenance/RemoveUer',
+        referRoleAll:      host + '/UserMaintenance/ReferRoleAll',
+        referNameMany:     host + '/NameCollection/ReferMany',
+        referProjectMany:  host + '/Product/ReferProjectMany',
+        referProjectOne:   host + '/Product/ReferProjectOne',
+        referProductMany:  host + '/Product/ReferProductMany',
+        referProcessMany:  host + '/Product/ReferProdProcMany',
+        referProcessAll:   host + '/Product/ReferProcessMany',
+        referProdSeqMany:  host + '/Product/ReferProdseqProcMany',
+        referProjProcMany: host + '/Product/ReferProjProcProgMany',
+        referProdProcMany: host + '/Product/ReferProdProcProgMany',
+        registerProcess:   host + '/Product/RegisterProcess',
+        registerProject:   host + '/Product/RegisterProject',
+        registerProduct:   host + '/Product/RegisterProduct',
+        removeProject:     host + '/Product/RemoveProject',
+        updateProject:     host + '/Product/UpdateProject',
+        uploadTeklaData:   host + '/Impprod/UploadTeklaData',
+        importProduct:     host + '/Impprod/RegisterProduct',
+        checkNotImpProj:   host + '/Impprod/CheckNotImpProj',
+        referProdProcProg1: host + '/Product/ReferProdProcProg1Prod',
+        referProdseqProcProg1Prod: host + '/Product/ReferProdseqProcProg1Prod'
+}
+
+export default urls 

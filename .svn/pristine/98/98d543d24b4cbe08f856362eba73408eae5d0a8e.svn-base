@@ -1,0 +1,254 @@
+<template>
+    <div>
+         <b-card bg-variant="light">
+        <b-form inline>
+            <b-form-group label="ログインユーザ" class="mr-2">
+            <b-form-input id="input-user" v-model="searchForm.loginUser"/>
+            </b-form-group>
+            <b-form-group label="氏名" class="mr-2">
+            <b-form-input id="input-name" v-model="searchForm.name"/>
+            </b-form-group>
+            <b-form-group label="業務" class="mr-2">
+            <b-form-select id="input-work" v-model="searchForm.role" :options="roles"/>
+            </b-form-group>
+            <b-form-group label="役割" class="mr-2">
+            <b-form-select id="input-role" v-model="searchForm.roleLevel" :options="roleLevels"/>
+            </b-form-group>
+            <b-form-group label="基準日">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="searchForm.date"/>
+                </b-form-group>
+            <div id="flexButton">
+            <b-button variant="primary" @click="resetSearchForm">クリア</b-button>
+            </div>
+        </b-form>
+        </b-card>
+
+        <div class="text-right mt-1">
+        <b-button @click="registerUser" class="mr-1">新規</b-button>
+        <b-button @click="searchUser">検索</b-button>
+        </div>
+
+        <b-table
+            head-variant="light"
+            class="table-sm"
+            :sticky-header="table_height"
+            hover
+            responsive
+            :striped="striped"
+            :no-border-collapse="noCollapse"
+            :items="users"
+            :fields="fields">
+            <template #cell(update)="row">
+                <b-button size="sm" @click="updateUser(row.item.userId)">更新/削除</b-button>
+            </template>
+        </b-table>
+
+        <div v-if="isLoadingUsers" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+        </div>
+
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 5px;
+}
+.form-inline label {
+    justify-content: left;
+}
+.text-right {
+  margin-bottom: 1rem;
+}
+
+#flexButton {
+    margin-bottom: -2rem;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+export default {
+    data() {
+        return {
+            striped: true,
+            noCollapse: true,
+            searchForm: {
+                loginUser: '',
+                name: '',
+                //work: '',
+                role: '',
+                roleLevel: '',
+                date: ''
+            },
+            /*
+            works: [
+                { value: 1, text: '工程管理' },
+                { value: 2, text: '日報管理' },
+                { value: 0, text: '無し' },
+                { value: '', text: '' }
+            ],
+            roles: [
+                { value: 1, text: '管理者' },
+                { value: 2, text: '一般' },
+                { value: 3, text: 'ゲスト' },
+                { value: '', text: '' }
+            ],
+            */
+            roles: [],
+            roleLevels: [],
+            users: [],
+            fields: [],
+            message: '',
+            isLoadingUsers: false,
+            table_height: window.innerHeight - 240 + 'px'
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 240 + 'px'
+    })
+    },
+    created: function() {
+        this.setRoles();
+        this.setRoleLevels();
+    },
+    methods: {
+        setRoles() {
+            //console.log('setRoles()');
+            if (this.$store.rolesResDt) {
+                let resDt = this.$store.rolesResDt;
+                for(let i in resDt) { 
+                        this.roles.push({'value': resDt[i].roleId, 'text': resDt[i].roleName});
+                }
+                this.roles.push({ value: 0, text: '無し' });
+                this.roles.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.rolesResDt is nothing !');
+            }
+
+        },
+
+        setRoleLevels() {
+            if (this.$store.roleLevelsResDt) {
+                let resDt = this.$store.roleLevelsResDt;
+                for(let i in resDt) { 
+                    this.roleLevels.push({'value': resDt[i].codeNumeric, 'text': resDt[i].nameShort});
+                }
+                this.roleLevels.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.roleLevelsResDt is nothing !');
+            }
+        },
+
+        searchUser() {
+            this.isLoadingUsers = true;
+            this.message = '';
+            this.users = [];
+            this.fields =[];
+
+            let payload = {
+                ...this.searchForm.loginUser && {loginUser:  this.searchForm.loginUser},
+                ...this.searchForm.name && {name:       this.searchForm.name},
+                ...this.searchForm.work && {roleId:     this.searchForm.work},
+                ...this.searchForm.role && {roleLevel:  this.searchForm.role},
+                ...this.searchForm.date && {targetDate: this.searchForm.date.replaceAll('-','/')}
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            axios.get(apiUrls.referUserMany, axiosConfigObject)
+            .then(response => {
+                this.users = response.data.resDt
+                this.fields = this.createFields(response.data.resDtTitle, [0,1,2,3,4,5,6,7,8,9,10,11]);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingUsers = false;
+            })
+            this.$store.state.searchForm = this.searchForm;
+        },
+
+        registerUser() {
+            this.$store.state.searchForm = this.searchForm
+            this.$store.state.responseData = ''
+            this.$router.push('userregister')
+        },
+
+        updateUser(item) {
+            this.$store.state.searchForm = this.searchForm
+
+            let payload = {
+                userId: item
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            axios.get(apiUrls.referUserOne, axiosConfigObject)
+            .then(response => {
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                }
+                else {
+                    response.data.resHd.userId = item
+                    this.$store.state.responseData = response.data
+                    this.$router.push('userupdate')
+                }
+            })
+            .catch(error => {
+                this.message = error.reponse.data
+            })
+        },
+
+        resetSearchForm() {
+            this.searchForm = {
+                loginUser: '',
+                name: '',
+                work: '',
+                role: '',
+                date: ''
+            }
+            this.$store.state.searchForm = this.searchForm
+        },
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ) }
+            for(let i in order) { b.push(a[order[i]]) }
+            b.push( {'key': 'update', 'label': ''} )
+            return b
+        }
+    }
+}
+</script>

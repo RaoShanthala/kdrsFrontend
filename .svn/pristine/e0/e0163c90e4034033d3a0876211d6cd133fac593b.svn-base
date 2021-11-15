@@ -1,0 +1,448 @@
+<template>
+    <!--工事進捗一覧-->
+    <!-- div v-if="isShowProjChoice" -->
+    <div>
+        <b-card bg-variant="light"  :class="classPrintHideProj" height="100px">
+            <b-row class="print-hide">
+                <!--b-col class="col-md-2 print-hide" -->
+                <!-- b-col>
+                    <h4 class="mb-3">{{ titleProj }}</h4>
+                </b-col -->
+                <b-col class="col-md-12">
+                    <b-form inline class="mt-0">
+                        <b-form-group label="工事コード" class="mr-3">
+                            <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+                        </b-form-group>
+                        <b-form-group label="工事名称" class="mr-3">
+                            <b-form-input id="projName" v-model="projSearchForm.projName"/>
+                        </b-form-group>
+                        <b-form-group class="mt-5 mb-4 mr-3">
+                            <b-form-radio-group v-model="projStatus" :options="projStatusOptions"/>
+                        </b-form-group>
+                        <b-form-group v-if="projStatus==1" label="工事着手日From" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+                        </b-form-group>
+                        <b-form-group v-if="projStatus==1" label="工事着手日To" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+                        </b-form-group>
+                        <b-form-group  v-if="projStatus==3" label="工事完了日From" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+                        </b-form-group>
+                        <b-form-group v-if="projStatus==3" label="工事完了日To" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+                        </b-form-group>
+                        <b-form-group v-if="projStatus==1 || projStatus==3" class="mt-5 mr-1">
+                            <b-button @click="projSearchClick" class="mr-1">検索</b-button>
+                            <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="!(projStatus==1 || projStatus==3)" class="mt-4 mr-1">
+                            <b-button @click="projSearchClick" class="mr-1">検索</b-button>
+                            <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                        </b-form-group>
+                    </b-form>
+                </b-col>
+            </b-row>
+            <!--/b-card -->
+
+            <div v-if="isShowProjTable" :class="classPrintHideProj">
+                <b-table head-variant="light"
+                    sticky-header = "200px"
+                    class="table-sm table-bordered text-nowrap proj-table"
+                    hover
+                    selected-variant="info"
+                    selectable
+                    select-mode="single"
+                    ref="refProjTable"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="projData"
+                    :fields="projFields"
+                    @row-selected="rowClickProjTable"/>
+                    <!-- @row-dblclicked="projDblClick" -->
+                <b-row align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-2">
+                        <p class="print-hide ml-1">工事を選択してください</p>
+                    </b-col>
+                    <b-col class="col-md-8"/>
+                    <b-col class="col-md-2">
+                        <div class="d-flex justify-content-end">
+                            <b-button @click="printProjTable" class="mr-0">印刷</b-button>
+                            <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                        </div>
+                    </b-col>
+                </b-row>
+            </div>
+
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    /* 印刷釦のマージン設定 */
+    .b-table-sticky-header, .table-responsive, [class*=table-responsive-] {
+        margin-bottom: 0.5rem;
+    }
+    .col > p {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body {
+        padding-top: 0;
+    }
+
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        table {
+            border: 4px solid green;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size: auto;
+        margin-top: 1rem;
+    }
+    /* .table-sm{
+        border: 4px solid green;
+    } */
+    /* .table-sm{
+        border: 4px solid red;
+    }
+    th {
+        background-color: green;
+    } */
+</style>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['projInput', 'classPrintHideProj', ],
+
+    data() {
+        return {
+            titleProj: '工事進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //工事関連データ
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+            },
+            projStatus: 4,
+            projStatusOptions: [
+                { value: 0, text: '工事未着手' },
+                { value: 1, text: '工事着手' },
+                { value: 2, text: '工事未完了' },
+                { value: 3, text: '工事完了' },
+                { value: 4, text: '工事すべて' }
+            ],
+            projData: [],
+            projFields: [],
+            projSelected: {},
+            resDtTitle: {},
+            
+            isShowProjChoice: true,
+            isShowProjTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProj: false,
+            clickCount: 1,
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 380 + 'px';
+        })
+        // window.addEventListener('beforeprint', () => {
+        //     if (this.classPrintHideProj != 'print-hide') {
+        //         // 自分のコンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+        //         if(document.getElementsByClassName('proj-table').length) {
+        //             let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+        //             doubleHeadTable.children[0].removeAttribute('hidden');
+        //             doubleHeadTable.children[1].removeAttribute('hidden');
+                    
+        //             let trStyle = 'border: 1px solid #dee2e6; border-collapse: collapse; color: black;';
+        //             let thStyle = 'border-left: 1px solid #dee2e6; border-top: none; border-bottom: none; border-bottom-width: 1px; border-collapse: collapse; color: black;';
+        //             let tdStyle = 'border-right: 1px solid #dee2e6; border-top: none; border-collapse: collapse;';
+
+        //             document.getElementsByClassName('proj-table')[0].classList.remove('table-sm', 'table-bordered');
+        //             document.getElementsByTagName('table')[0].classList.remove('b-table-no-border-collapse', 'table', 'b-table');
+
+        //             let trs = document.getElementsByTagName('tr');
+        //             [...trs].map((tr, idx) => {
+        //                 idx === 0 ? null : tr.setAttribute('style', trStyle);
+        //                 });
+        //             let ths = document.getElementsByTagName('th');
+        //             [...ths].map((th, idx) => {
+        //                 idx === 0 ? th.setAttribute('style', 'border-top: none; border-bottom: none;') : th.setAttribute('style', thStyle);
+        //                 });
+        //             let tds = document.getElementsByTagName('td');
+        //             [...tds].map(td => td.setAttribute('style', tdStyle));
+        //         }
+        //     }
+        //     // if(document.getElementsByClassName('prod-table').length) {
+        //     //     let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+        //     //     doubleHeadTable.children[0].removeAttribute('hidden');
+        //     //     doubleHeadTable.children[1].removeAttribute('hidden');
+        //     //     doubleHeadTable.children[2].removeAttribute('hidden');
+        //     // }
+        // })
+        // window.addEventListener('afterprint', () => {
+        //     if (this.classPrintHideProj != 'print-hide') {
+        //         // 自分のコンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+        //         if(document.getElementsByClassName('proj-table').length) {
+        //             let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+        //             doubleHeadTable.children[0].setAttribute('hidden', '');
+        //             doubleHeadTable.children[1].setAttribute('hidden', '');
+
+        //             document.getElementsByClassName('proj-table')[0].classList.add('table-sm', 'table-bordered');
+        //             document.getElementsByTagName('table')[0].classList.add('b-table-no-border-collapse', 'table', 'b-table');
+        //             let trs = document.getElementsByTagName('tr');
+        //             [...trs].map(tr => tr.removeAttribute('style'));
+        //             let ths = document.getElementsByTagName('th');
+        //             [...ths].map(th => th.removeAttribute('style'));
+        //             let tds = document.getElementsByTagName('td');
+        //             [...tds].map(td => td.removeAttribute('style'));
+        //         }
+        //     }
+        //     // if(document.getElementsByClassName('prod-table').length) {
+        //     //     let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+        //     //     doubleHeadTable.children[0].setAttribute('hidden', '');
+        //     //     doubleHeadTable.children[1].setAttribute('hidden', '');
+        //     //     doubleHeadTable.children[2].setAttribute('hidden', '');
+        //     // }
+        // })
+    },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        } 
+       // alert ("ProjSearch projInput " + this.projInput.projCode + " " + this.projInput.projName + " ");
+        if (this.projInput) {  
+            if (this.projInput.projCode){
+                this.projSearchForm.projCode =  this.projInput.projCode;
+            }
+            if (this.projInput.projName){
+                this.projSearchForm.projName =  this.projInput.projName;
+            }
+            if (this.projInput.targetState){
+                this.projSearchForm.targetState = this.projInput.targetState;
+            }
+        
+            if (this.projInput.projCode || this.projInput.projName || this.projInput.targetState){
+                this.projSearchClick();          
+            }            
+            this.projInput.projCode='';
+            this.projInput.projName='';
+            this.projInput.targetState='';
+        }    
+    }, 
+    methods: {
+        resetProjSearchForm() {
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: ''
+            }
+            //this.$store.state.searchForm = this.searchForm
+        },
+        async projSearchClick() {
+            await this.projSearch();
+            if (this.isShowProjTable != true) {
+                return;
+            }
+
+            let titleProj = this.titleProj;
+            let projFieldsLength = this.projFields.length;
+            this.isShowProjTable = true;
+
+            commonMethods.sleep(100, 1, function () {
+                //工事一覧表テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+                commonMethods.printPrepare('proj-table', projFieldsLength, titleProj, '');
+              });
+        },
+        async projSearch() {
+            this.message = '';
+            this.isLoadingProj = true;
+            this.isShowProjTable = false;
+            this.projData = [];
+            this.projFields = [];
+            let startDate = '';
+            let endDate = '';
+            if (this.projStatus == 1) {
+                startDate = this.projSearchForm.startDateBegin
+                endDate = this.projSearchForm.endDateBegin
+            } else if (this.projStatus == 3) {
+                startDate = this.projSearchForm.startDateComplete
+                endDate = this.projSearchForm.endDateComplete
+            }
+            let payload = {
+                ...this.projSearchForm.projCode && {projCode:        this.projSearchForm.projCode},
+                ...this.projSearchForm.projName && {projName:        this.projSearchForm.projName},
+                targetState:     this.projStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate}
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload
+            }
+            await axios.get(apiUrls.referProjProcMany, axiosConfigObject)
+            .then(response => {
+                this.projData = this.remakeResDt(response.data.resDt);
+                this.projFields = this.remakeResDtTitle(response.data.resDtTitle);//, [1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
+                this.resDt = response.data.resDt;
+                this.resDtTitle = response.data.resDtTitle;
+                // this.procNum = response.data.resDtTitle.listProgress?.length;
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+                this.isShowProjTable = true;
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+                this.$emit('emitProjSearchButton', this.clickCount++);
+                // セルの背景色
+                commonMethods.progressColor('proj-table', this.resDtTitle);     
+
+                // // セルの色付け
+                //  let colsCount = 0;
+                // let table = document.querySelector('.proj-table>.table>tbody');
+                // let rows = [...table.querySelectorAll('tr')];
+                // for(let i=0; i<rows.length; i++) {
+                //     let cols = [...rows[i].querySelectorAll('td')];
+                //     for(let j=cols.length-this.procNum; j<cols.length; j++) {
+                //         let progress = cols[j].innerText?.split('(')[0]?.split('/');
+                //         if(+progress[0] === +progress[1]) {
+                //             colsCount ++;
+                //             cols[j].setAttribute('style', 'background-color: red');
+                //         }
+                //     }
+                //     if(colsCount === this.procNum) {
+                //         rows[i].setAttribute('style', 'background-color: red');
+                //     }
+                //     colsCount = 0;
+                // }
+            })
+        },
+
+        rowClickProjTable(item) {
+            if(item[0]) {
+                this.projSelected = item[0];
+                // this.isShowProdChoice = true;
+                this.$emit('emitProjParams', item[0]);
+
+            } else {
+                this.projSelected = {};
+                // this.isShowProdChoice = false;
+                this.$emit('emitProjParams', {});
+            }
+        },
+
+        printProjTable () {
+            // this.classPrintHideProj = '';    // プロパティへの設定は親でないと効かない
+            this.$emit('emitProjPrintButton', this.clickCount++);
+
+            //let docTitle = document.title;  // タイトルを退避
+            //document.title = '';          // タイトルを表示しないように漢字スペースをセット（空文字、半角スペースだとUrlがタイトルに入る）
+              commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    commonMethods.printDesingHandler('proj-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('proj-table', false);
+                }
+            });
+        },
+
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = {};
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

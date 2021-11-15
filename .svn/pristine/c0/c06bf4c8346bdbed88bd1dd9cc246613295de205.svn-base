@@ -1,0 +1,56 @@
+<template>
+<div>
+  <proj-search
+    v-on:emittedProjParams="emitProjEvent"
+    v-on:projSearchButton="projSearchButtonEvent"/>
+  
+  <prod-proc-plan-search
+    v-if="isShowProdProcPlanSearch"
+    :proj-params="projSelected"
+    v-on:emittedProdParams="emitProdEvent"
+    v-on:prodSearchButton="prodSearchButtonEvent"/>
+</div>
+</template>
+
+<script>
+import projSearch from "@/components/ProjSearch.vue";
+import prodProcPlanSearch from "@/components/ProdProcPlanSearch.vue";
+export default {
+    components: {
+      projSearch,
+      prodProcPlanSearch
+    },
+  data() {
+    return {
+      projSelected: {},
+      isShowProdProcPlanSearch: false
+    }
+  },
+  watch:{
+    projSelected: function(newValue) {
+        if(newValue.projId) {
+            this.isShowProdProcPlanSearch = false;
+            //this.clearData(['prodSeq', 'procList']);
+            setTimeout(()=>this.isShowProdProcPlanSearch = true, 1);
+        } else {
+            this.isShowProdProcPlanSearch = false;
+            //this.clearData(['prodSeq', 'procList']);
+        }
+    }
+  },
+  methods: {
+    emitProjEvent(value) {
+        this.projSelected = value;
+    },
+    emitProdEvent(value) {
+        this.prodSelected = value;
+    },
+    projSearchButtonEvent(value) {
+         this.projSearchButtonCount = value;
+    },
+    prodSearchButtonEvent(value) {
+         this.prodSearchButtonCount = value;
+    }
+  }
+}
+</script>

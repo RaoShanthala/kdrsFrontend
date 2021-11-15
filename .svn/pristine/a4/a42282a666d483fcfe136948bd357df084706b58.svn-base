@@ -1,0 +1,648 @@
+<template>
+    <div>
+        <b-card bg-variant="light">
+            <b-form class="print-hide ml-3 mt-1">
+                <!-- <b-row align-v="center" class="mb-3"> -->
+                <b-form inline class="mt-1">
+                    <span class="mr-4"><strong>工事コード：</strong>{{ prodPartSearchForm.projCode }}</span>
+                    <strong>工事名称：</strong>{{ prodPartSearchForm.projName }}
+                    <span class="mr-5"></span>
+                    <!-- <b-form-radio-group plain @change="searchTypeChange" v-model="searchType" :options="searchTypeOptions"/> -->
+                    <!-- <b-form-radio-group class="mr-4" @change="searchTypeChange" v-model="searchType" :options="searchTypeOptions"/> -->
+                <!-- </b-row> -->
+                </b-form>
+                <!-- <b-row align-v="baseline" class="mb-1" v-if="!prodPartSearchForm.aggUnitCode"> -->
+                <!-- <b-row align-v="baseline" class="mb-1"> -->
+                <b-form inline class="mt-1">
+                    <div style="margin-top: 1.0rem; margin-right:2rem;">
+                        <b-form-radio class="mt-0" @change="searchTypeChange" v-model="searchType" value=0 >製品</b-form-radio>
+                        <b-form-radio class="mt-0" @change="searchTypeChange" v-model="searchType" value=1 >柱</b-form-radio>
+                        <b-form-radio class="mt-0 mb-2" @change="searchTypeChange" v-model="searchType" value=2 >部品</b-form-radio>
+                    </div>
+                    <b-form-group v-if="searchType==0" label="製品コード" class="mr-3">
+                        <b-form-input id="prodCode" v-model="prodPartSearchForm.prodCode"/>
+                    </b-form-group>
+                    <b-form-group v-if="searchType==0" label="製品名称"  class="mr-3">
+                        <b-form-input id="prodName" v-model="prodPartSearchForm.prodName"/>
+                    </b-form-group>
+                    <b-form-group v-if="searchType==1" label="部材種類コード"  class="mr-3">
+                        <b-form-input id="aggUnitCode" v-model="prodPartSearchForm.aggUnitCode"/>
+                    </b-form-group>
+                    <b-form-group v-if="searchType==1" label="部材種類名称"  class="mr-3">
+                        <b-form-input id="aggUnitName" v-model="prodPartSearchForm.aggUnitName"/>
+                    </b-form-group>
+                    <b-form-group v-if="searchType==2"  label="部品コード"  class="mr-3">
+                        <b-form-input id="partCode" v-model="prodPartSearchForm.partCode"/>
+                    </b-form-group>
+                    <b-form-group v-if="searchType==2" label="部品名称"  class="mr-3">
+                        <b-form-input id="partName" v-model="prodPartSearchForm.partName"/>
+                    </b-form-group>
+                    <!-- <b-form-group v-if="searchType==0" style="padding-bottom:10px;"> -->
+                    <b-form-group v-if="searchType == 0" class="mt-5 mb-4 mr-3">
+                        <!-- <b-form-radio-group plain v-model="prodTarget" :options="prodTargetOptions"/> -->
+                        <b-form-radio-group v-model="prodTarget" :options="prodTargetOptions"/>
+                    </b-form-group>
+                    <b-form-group v-if="prodTarget == 1 && searchType == 0" label="製品着手日From"  class="mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="prodPartSearchForm.beginDateFrom"/>
+                    </b-form-group>
+                    <b-form-group v-if="prodTarget==1 && searchType==0" label="製品着手日To" class="mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="prodPartSearchForm.beginDateTo"/>
+                    </b-form-group>
+                    <b-form-group v-if="prodTarget==3 && searchType==0" label="製品完了日From" class="mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="prodPartSearchForm.CompleteDateFrom"/>
+                    </b-form-group>
+                    <b-form-group v-if="prodTarget==3 && searchType==0" label="製品完了日To" class="mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="prodPartSearchForm.CompleteDateTo"/>
+                    </b-form-group>
+                    <b-form-group class="mt-4">
+                        <div style="margin-top: 0.4rem;">
+                            <b-button @click="prodPartSearch" class="mr-1">検索</b-button>
+                            <b-button variant="outline-primary" @click="resetProdPartSearchForm">クリア</b-button>
+                        </div>
+                    </b-form-group>
+                    <!-- <b-form-group v-if="prodTarget==1 || prodTarget==3" class="mt-5 mr-1">
+                        <b-button @click="prodPartSearch" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProdPartSearchForm">クリア</b-button>
+                    </b-form-group>
+                    <b-form-group v-if="!(prodTarget==1 || prodTarget==3)" class="mt-4 mr-1">
+                        <b-button @click="prodPartSearch" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProdPartSearchForm">クリア</b-button>
+                    </b-form-group> -->
+                <!-- </b-row> -->
+                </b-form>
+            </b-form>
+
+            <div v-show="isShowProdPartTable" :class="classPrintHideProdPart">
+                <b-table
+                    head-variant="light"
+                    sticky-header="300px"
+                    class="table-sm table-bordered text-nowrap prod-part-table"
+                    hover
+                    selected-variant="info"
+                    selectable
+                    select-mode="single"
+                    v-if="prodPartSearchForm && prodPartData.length"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="prodPartData"
+                    :fields="prodPartFields"
+                    @row-selected="rowClickProdTable"/>
+                <b-row v-show="isShowProdPartTable && prodPartData.length" align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-10">
+                        <p class="ml-1">※1、検索結果の行を選択して部品別進捗一覧が表示できるのは個別管理の部品のみです（数量管理は対象外）。</p>
+                    </b-col>
+                    <b-col class="col-md-2">
+                        <div class="d-flex justify-content-end">
+                            <b-button @click="printProdPartTable" class="mr-0">印刷</b-button>
+                        </div>
+                    </b-col>
+                </b-row>
+            </div>
+            <div v-if="isLoadingProdPart" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+
+        <b-card v-show="isShowPartChoice" bg-variant="light">
+            <b-form class="print-hide ml-3 mt-1">
+                <b-row align-v="center" class="mb-3">
+                    <span class="mr-4"><strong>工事コード：</strong>{{ prodPartSearchForm.projCode }}</span>
+                    <strong>工事名称：</strong>{{ prodPartSearchForm.projName }}
+                    <div v-if="searchType != 2">
+                        <span class="ml-4 mr-4"><strong>製品コード：</strong>{{ partSearchForm.prodPartCode }}</span>
+                        <strong>製品名称：</strong>{{ partSearchForm.prodPartName }}
+                    </div>
+                    <div v-if="searchType == 2">
+                        <span class="ml-4 mr-4"><strong>部品コード：</strong>{{ partSearchForm.prodPartCode }}</span>
+                        <strong>部品名称：</strong>{{ partSearchForm.prodPartName }}
+                    </div>
+                </b-row>
+            </b-form>
+
+            <div v-show="isShowPartTable" :class="classPrintHidePart">
+                <b-table
+                    head-variant="light"
+                    sticky-header="300px"
+                    class="table-sm table-bordered text-nowrap part-table"
+                    hover
+                    v-if="partSearchForm && partData.length"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="partData"
+                    :fields="partFields"/>
+                <b-row v-show="isShowPartTable" align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-10"/>
+                    <b-col class="col-md-2">
+                        <div class="d-flex justify-content-end">
+                            <b-button @click="printPartTable" class="mr-0">印刷</b-button>
+                        </div>
+                    </b-col>
+                </b-row>
+            </div>
+            <div v-if="isLoadingPart" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger" class="print-hide">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    /* 印刷釦のマージン設定 */
+    .b-table-sticky-header, .table-responsive, [class*=table-responsive-] {
+        margin-bottom: 0.5rem;
+    }
+    .col > p {
+        margin-bottom: 0.5rem;
+    }
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size: auto;
+        margin-top: 1rem;
+    }
+    .form-group {
+        margin-bottom: 0;
+    }
+    .b-form-btn-label-control {
+        font-size: 0.9rem;
+    }
+</style>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['prodPartInput', 'classPrintHideProdPart', 'classPrintHidePart', ],
+
+    data() {
+        return {
+            titleProd: '製品進捗一覧',
+            titlePart: '部品進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //製品部品関連データ
+            prodPartSearchForm: {
+                projId: '',
+                projCode: '',
+                projName: '',
+                prodCode: '',
+                prodName: '',
+                partCode: '',
+                partName: '',
+                targetState: '',
+                beginDateFrom: '',
+                beginDateTo: '',
+                CompleteDateFrom: '',
+                CompleteDateTo: '',
+                aggTypeCode: '',
+                aggTypeName: '',
+                aggUnitCode: 'C',
+                aggUnitName: '',
+                aggTypeCodeTitle: '',
+                aggTypeNameTitle: '',
+            },
+            //部品関連データ
+            partSearchForm: {
+                projId: '',
+                prodId: '',
+                prodPartCode: '',
+                prodPartName: '',
+                partCode: '',
+                partName: '',
+                prodSeqMng: '',
+            },
+            prodTarget: 4,
+            prodTargetOptions: [
+                { value: 0, text: '製品未着手' },
+                { value: 1, text: '製品着手' },
+                { value: 2, text: '製品未完了' },
+                { value: 3, text: '製品完了' },
+                { value: 4, text: '製品すべて' }
+            ],
+
+            searchType: 0,
+            searchTypeOptions: [
+                { value: 0, text: '製品' },
+                { value: 1, text: '柱' },
+                { value: 2, text: '部品' }
+            ],
+
+            prodPartData: [],
+            prodPartFields: [],
+            partData: [],
+            partFields: [],
+            resDtProdPart: [],
+            resDtProdPartTitle: {},
+            resDtPart: [],
+            resDtPartTitle: {},
+
+            isShowProdPartTable: false,
+            isShowPartChoice: false,
+            isShowPartTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProdPart: false,
+            isLoadingPart: false,
+            clickCount: 1,
+            prodSelected: {}
+        }
+    },
+ 
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        // console.log("compProdStatus created: ");
+        this.isShowProdPartTable = false;
+        if (this.prodPartInput) {
+            for (let item in this.prodPartSearchForm) {
+                this.prodPartSearchForm[item] = this.prodPartInput[item];
+            }
+            if (!this.prodPartInput.aggTypeNameTitle) {
+                this.setInitValProdPartSearchForm();
+            }
+            if (!this.prodPartInput.aggUnitCode) {
+                this.prodPartSearchForm.aggUnitCode = 'C';
+            }
+        }    
+        this.isShowPartTable = false;
+    }, 
+    methods: {
+        resetProdPartSearchForm() {
+            for (let item in this.prodPartSearchForm) {
+                if (item != 'projId' && item != 'projCode' && item != 'projName' ) {
+                    this.prodPartSearchForm[item] = '';
+                }
+            }
+            this.setInitValProdPartSearchForm();
+            this.prodPartSearchForm.aggUnitCode = 'C';
+            this.prodPartData = [];
+            this.partData = [];
+            this.message = '';
+        },
+        setInitValProdPartSearchForm() {
+            switch (this.prodPartInput.aggTypeCode) {
+                case 'Area':
+                    this.prodPartSearchForm.aggTypeNameTitle = '工区：'; break;
+                case 'Section':
+                    this.prodPartSearchForm.aggTypeNameTitle = '節：'; break;
+                case 'Floor':
+                    this.prodPartSearchForm.aggTypeNameTitle = 'フロア：'; break;
+                case 'Member':
+                    this.prodPartSearchForm.aggTypeNameTitle = '部材種類：'; break;
+                default:
+                    this.prodPartSearchForm.aggTypeNaggTypeNameTitleame = '全て：'; break;
+            }
+        },
+
+        searchTypeChange() {
+            this.isShowPartChoice = false;
+            this.isShowProdPartTable = false;
+            this.isShowPartTable = false;
+            this.message = ''
+        },
+
+        async prodPartSearch() {
+            let titleProd;
+            switch (Number(this.searchType)) {
+                case 0: // 製品
+                case 1: // 柱
+                    await this.prodSearch();
+                    titleProd = this.titleProd;
+                    break;
+                case 2: // 部品
+                    this.partSearchForm.projId = this.prodPartSearchForm.projId;
+                    this.partSearchForm.prodId = '';
+                    this.partSearchForm.partCode = this.prodPartSearchForm.partCode;
+                    this.partSearchForm.partName = this.prodPartSearchForm.partName;
+                    this.partSearchForm.prodSeqMng = '';     // 製品個別管理（0:数量管理、1:個別管理）
+                    await this.partSearch(true);
+                    titleProd = this.titlePart;
+                    break;
+            }
+            if (this.isShowProdPartTable != true) {
+                return;
+            }
+            let frm = this.prodPartSearchForm;
+            let prodPartFields = this.prodPartFields;
+            commonMethods.sleep(500, 1, function () {
+                // console.log('prodPartSearch 1 !')
+                // commonMethods.printPrepare('prod-part-table', prodPartFields.length, titleProd,
+                // `工事コード：${frm.projCode}、工事名称：${frm.projName}、${frm.aggTypeNameTitle}${frm.aggUnitCode}`);
+                commonMethods.printPrepare('prod-part-table', prodPartFields.length, titleProd,
+                `工事コード：${frm.projCode}、工事名称：${frm.projName}`);
+            });
+        },
+
+        async prodSearch() {
+            this.message = '';
+            this.isLoadingProdPart = true;
+            this.isShowProdPartTable = false;
+            this.isShowPartChoice = false;
+            
+            this.prodPartData = [];
+            this.prodPartFields = [];
+
+            let prodCode = '';
+            let prodName = '';
+            let prodTarget = '';
+            let startDate = '';
+            let endDate = '';
+            let aggTypeCode = '';
+            let aggUnitCode = '';
+            let aggUnitName = '';
+
+            switch (Number(this.searchType)) {
+                case 0: // 製品
+                    prodCode = this.prodPartSearchForm.prodCode;
+                    prodName = this.prodPartSearchForm.prodName;
+                    prodTarget = this.prodTarget + 1;
+                    switch (Number(this.prodTarget)) {
+                        case 1: // 製品着手日From、To
+                            startDate = this.prodPartSearchForm.beginDateFrom
+                            endDate = this.prodPartSearchForm.beginDateTo
+                            break;
+                        case 3: // 製品完了日From、To
+                            startDate = this.prodPartSearchForm.CompleteDateFrom
+                            endDate = this.prodPartSearchForm.CompleteDateTo
+                            break;
+                    }
+                    break;
+                case 1: // 柱
+                    // console.log('prodSearch 柱 this.prodPartSearchForm.aggUnitCode=' + this.prodPartSearchForm.aggUnitCode)
+                    prodTarget = 5;
+                    aggTypeCode = 'Member';
+                    aggUnitCode = this.prodPartSearchForm.aggUnitCode;
+                    aggUnitName = this.prodPartSearchForm.aggUnitName;
+                    break;
+            }
+            let payload = {
+                ...this.prodPartSearchForm.projId && {projId:           this.prodPartSearchForm.projId},
+                prodFlag: 1,
+                ...prodCode && {prodCode:       prodCode},
+                ...prodName && {prodName:       prodName},
+                targetState: prodTarget,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate},
+                ...aggTypeCode && {aggTypeCode: aggTypeCode},
+                ...aggUnitCode && {aggUnitCode: aggUnitCode},
+                ...aggUnitName && {aggUnitName: aggUnitName},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProdProcMany, axiosConfigObject)
+            .then(response => {
+                this.prodPartData = this.remakeResDt(response.data.resDt);
+                this.prodPartFields = this.remakeResDtTitle(response.data.resDtTitle);
+                this.resDtProdPart = response.data.resDt;
+                this.resDtProdPartTitle = response.data.resDtTitle;
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.isShowProdPartTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProdPart = false;
+                if (this.isShowProdPartTable == true) {
+                    // this.$emit('emitProdPartSearchButton', this.clickCount++);
+                    // セルの背景色
+                    commonMethods.progressColor('prod-part-table', this.resDtProdPartTitle);
+                }
+             })
+        },
+
+        async rowClickProdTable(item) {
+            // console.log('rowClickProdTable !');
+            // console.log('rowClickProdTable item=' + item);
+            // console.log('rowClickProdTable item[0]=' + item[0]);
+            let info;
+            if (item[0]) {
+                this.prodSelected = item[0];
+
+                switch (Number(this.searchType)) {
+                    case 0: // 製品
+                    case 1: // 柱
+                        this.partSearchForm.projId = this.prodPartSearchForm.projId;
+                        this.partSearchForm.prodId = item[0].prodId;
+                        this.partSearchForm.partCode = '';
+                        this.partSearchForm.partName = '';
+                        this.partSearchForm.prodSeqMng = 1;     // 製品個別管理（0:数量管理、1:個別管理）
+
+                        await this.partSearch(false);
+
+                        this.partSearchForm.prodPartCode = item[0].prodCode;
+                        this.partSearchForm.prodPartName = item[0].prodName;
+                        info = `工事コード：${this.prodPartSearchForm.projCode}、工事名称：${this.prodPartSearchForm.projName}、`
+                                + `製品コード：${this.partSearchForm.prodPartCode}、製品名称：${this.partSearchForm.prodPartName}`;
+                        break;
+                    case 2: // 部品
+                        this.partSearchForm.projId = this.prodPartSearchForm.projId;
+                        this.partSearchForm.prodId = item[0].partId;
+                        this.partSearchForm.partCode = '';
+                        this.partSearchForm.partName = '';
+                        this.partSearchForm.prodSeqMng = '1';   // 製品個別管理（0:数量管理、1:個別管理）
+
+                        await this.partSearch(false);
+
+                        this.partSearchForm.prodPartCode = item[0].partCode;
+                        this.partSearchForm.prodPartName = item[0].partName;
+                        info = `工事コード：${this.prodPartSearchForm.projCode}、工事名称：${this.prodPartSearchForm.projName}、`
+                                + `部品コード：${this.partSearchForm.prodPartCode}、部品名称：${this.partSearchForm.prodPartName}`;
+                        break;
+                }
+                if (this.isShowPartTable == false) {
+                    return;
+                }
+                this.isShowPartChoice = true;
+                let titlePart = this.titlePart;
+                let partFields = this.partFields;
+                commonMethods.sleep(500, 1, function () {
+                    commonMethods.printPrepare('part-table', partFields.length, titlePart, info);
+                });
+            } else {
+                this.prodSelected = {};
+                this.isShowPartChoice = false;
+                this.message = '';
+            }
+        },
+
+        async partSearch(partAll) {
+            // console.log('partSearch!');
+            this.message = '';
+            if (partAll == true) {
+                this.isLoadingProdPart = true;
+                this.isShowProdPartTable = false;
+                this.prodPartData = [];
+                this.prodPartFields = [];
+            } else {
+                this.isLoadingPart = true;
+                this.isShowPartTable = false;
+                this.partData = [];
+                this.partFields = [];
+            }
+            
+            let payload = {
+                ...this.partSearchForm.projId && {projId:           this.partSearchForm.projId},
+                ...this.partSearchForm.prodId && {prodId:           this.partSearchForm.prodId},
+                ...this.partSearchForm.partCode && {partCode:       this.partSearchForm.partCode},
+                ...this.partSearchForm.partName && {partName:       this.partSearchForm.partName},
+                ...this.partSearchForm.prodSeqMng && {prodSeqMng:   this.partSearchForm.prodSeqMng},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referPartProcMany, axiosConfigObject)
+            .then(response => {
+                if (partAll == true) {
+                    this.prodPartData = this.remakeResDt(response.data.resDt);
+                    this.prodPartFields = this.remakeResDtTitle(response.data.resDtTitle);
+                    this.resDtProdPart = response.data.resDt;
+                    this.resDtProdPartTitle = response.data.resDtTitle;
+                } else {
+                    this.partData = this.remakeResDt(response.data.resDt);
+                    this.partFields = this.remakeResDtTitle(response.data.resDtTitle);
+                    this.resDtPart = response.data.resDt;
+                    this.resDtPartTitle = response.data.resDtTitle;
+                }
+                // console.log('response.data.resultCode=' + response.data.resultCode);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    if (partAll == true) {
+                        this.isShowProdPartTable = true;
+                    } else {
+                        this.isShowPartTable = true;
+                    }
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                if (partAll == true) {
+                    this.isLoadingProdPart = false;
+                    if (this.isShowProdPartTable == true) {
+                        // this.$emit('emitProdPartSearchButton', this.clickCount++);
+                        // セルの背景色
+                        commonMethods.progressColor('prod-part-table', this.resDtProdPartTitle);
+                    }
+                } else {
+                    this.isLoadingPart = false;
+                    if (this.isShowPartTable == true) {
+                        // this.$emit('emitPartSearchButton', this.clickCount++);
+                        // セルの背景色
+                        commonMethods.progressColor('part-table', this.resDtPartTitle);
+                    }
+                }
+             })
+        },
+
+        printProdPartTable () {
+            this.$emit('emitProdPartPrintButton', this.clickCount++);
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    commonMethods.printDesingHandler('prod-part-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('prod-part-table', false);
+                }
+            });
+        },
+        printPartTable () {
+            this.$emit('emitPartPrintButton', this.clickCount++);
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    commonMethods.printDesingHandler('part-table', true);
+                    window.print();
+                    commonMethods.printDesingHandler('part-table', false);
+                }
+            });
+        },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = [];
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

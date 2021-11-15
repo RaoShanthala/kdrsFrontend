@@ -1,0 +1,243 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+            <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="標準製品名称" class="mr-2">
+                <b-form-input v-model="stdprodSearchForm.stdprodName"/>
+                </b-form-group>
+                <div  id="flexButton">
+                <b-button @click="stdprodCheck">検索</b-button>
+                <b-button variant="primary" @click="resetProjForm">クリア</b-button>
+                </div>
+            </b-form>
+            </b-card>
+
+             <div class="text-right mt-1">
+                <b-button @click="registerStdProd" class="mr-1">新規</b-button>
+                <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+             </div>
+
+            <div v-if="prodSelected.length">
+                 <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="prodSelected"
+                    :fields="stdprodFields">
+                   <template #cell(update)="row">
+                     <b-button size="sm" @click="updateProject(row.item.projId)">更新/削除</b-button>
+                   </template>                     
+                </b-table>
+            </div>
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+export default {
+    data() {
+        return {
+            title: '標準製品登録・更新・取消',
+           // prodSeqMng: 0, //0:数量管理、1:個別管理
+           // prodModel: 0, //0:パッケージモデル 1:北二モデル
+            //工事関連データ
+            stdprodSearchForm: {
+                stdprodName: ''
+            },
+            isShowProjScreen: false,
+            stdprodData: [],
+            stdprodFields: [],
+            prodSelectedItem: '',
+            prodSelected: [],
+            isLoadingProj: false,
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px'
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+   
+    methods: {
+        //工事検索処理
+        async stdprodFetch() {
+            this.clearData(['stdprodData']);
+            this.isLoadingProj = true;
+            let payload = {
+                ...this.stdprodSearchForm.stdprodName   && { stdprodName:   this.stdprodSearchForm.stdprodName }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referStdProductMany, axiosConfigObject)
+            .then(response => {
+                this.stdprodData = response.data.resDt;
+                this.stdProdFields = this.createTableFields(response.data.resDtTitle);
+              
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                }
+            })
+           .catch((error) => {
+                this.message = (error.response || {}).data;
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+            })
+        },
+
+        async stdprodCheck() {
+            await this.stdprodFetch();
+            if(this.stdprodData.length > 0) {
+               console.log("Not empty");
+               this.prodSelected = this.stdprodData;
+             } else{
+                this.message = "no data";
+                console.log("no data");
+            }
+             console.log(this.stdProdFields);
+        },
+
+        registerStdProd() {
+            this.$store.state.stdprodSearchForm = this.stdprodSearchForm
+            this.$store.state.responseData = ''
+            this.$router.push('registerstdprod')
+        },
+
+        updateProject(item) {
+            console.log('Calling updateProject Method');
+            console.log(item);
+            this.$store.state.stdprodSearchForm = this.stdprodSearchForm
+
+            let payload = {
+                projId: item
+            }
+              let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            axios.get(apiUrls.referProjectOne, axiosConfigObject)
+            .then(response => {
+                if(response.data.resultCode != '000') {
+                    console.log(response.data.resultMessage);
+                    this.message = response.data.resultMessage
+                }
+                else {
+                    console.log(response.data);
+                    this.$store.state.responseData = response.data.resDt;   
+                    console.log("moving to update page");   
+                    this.$router.push('projectupdate');
+                }
+            })
+          .catch(error => {
+                this.message = error.data;
+            }) 
+           
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.prodSelectedItem = item[0];
+            }
+            else {
+                this.prodSelectedItem = '';
+            }
+        },
+
+
+        back() {
+            this.isShowProjScreen = true;
+           // this.isShowProdScreen = false;
+           // this.title = '工事登録・更新・取消';
+            this.clearData();
+        },
+
+        clearData() {
+            this.message = '';                
+            this.stdprodData = [];
+            this.stdprodFields = [];
+            this.prodSelectedItem = '';
+            this.prodSelected = [];   
+         
+        },
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+   
+
+        //カラム作成・並べ替え関数
+        createTableFields(obj, order) {
+            console.log("createTableFields");
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            console.log(a);
+            return a;
+        },
+
+        resetProjForm() {
+            this.stdprodSearchForm.stdProdName = '';
+        },
+       
+
+    }
+}
+</script>

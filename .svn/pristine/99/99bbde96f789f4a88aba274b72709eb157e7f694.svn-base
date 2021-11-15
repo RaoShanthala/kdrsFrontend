@@ -1,0 +1,88 @@
+<template>
+    <div>
+        <h1 class="mb-3">製品一覧</h1>
+        <b-table
+        head-variant="light"
+        class="table-sm table-bordered text-nowrap"
+        :items="prodData"
+        :fields="prodFields"
+        />
+        <b-row align-h="end"  class="print-hide">
+            <b-button @click="print_page" class="mr-1">ページ印刷</b-button>
+            <b-button to="/menu" variant="info">戻る</b-button>
+        </b-row>
+    </div>
+</template>
+
+<style scoped>
+@media print {
+    .print-hide {
+        display: none;
+    }
+}
+@page {
+  size: auto;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+export default {
+    data() {
+        return {
+            prodData: [],
+            prodFields: []
+        }
+
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        this.prodFetch();
+    },
+    methods: {
+        prodFetch() {
+            let payload = {
+                prodCode: '',
+                prodName: '4C',
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            axios.get(apiUrls.referProductMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = response.data.resDt
+                this.prodFields = this.createFields(response.data.resDtTitle, [1,2,3,4,5,6,7,8,9,10,11,12])
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+        },
+
+        createFields(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ) }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]) }
+                return b
+            }
+            return a
+        },
+
+        print_page () {
+            window.print();
+        }
+    }
+}
+</script>

@@ -1,0 +1,159 @@
+<template>
+    <div>
+        <comp-proj-status v-if="isShowProjChoice"
+            :class-print-hide-proj="classPrintHideProj"
+            v-on:emitProjSelect="emittedProjSelectedEvent"
+            v-on:emitProjSearchButton="emittedProjSearchButtonEvent"
+            v-on:emitProjPrintButton="emittedProjPrintButtonEvent"
+        />
+        <comp-prod-part-status v-if="isShowProdPartChoice"
+            :prod-part-input="prodPartSearchForm"
+            :class-print-hide-prod-part="classPrintHideProdPart"
+            :class-print-hide-part="classPrintHidePart"
+            v-on:emitProdPartPrintButton="emittedProdPartPrintButtonEvent"
+            v-on:emitPartPrintButton="emittedPartPrintButtonEvent"
+        />
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+import compProjStatus from "@/components/compProjStatus.vue";
+import compProdPartStatus from "@/components/compProdPartStatus.vue";
+
+export default {
+    components: {
+        compProjStatus,
+        compProdPartStatus,
+    },
+    data() {
+        return {
+            isShowProjChoice: true,
+            isShowProdPartChoice: false,
+
+            message: '',
+            
+            classPrintHideProj: '',
+            classPrintHideProdPart: '',
+            classPrintHidePart: '',
+
+            //製品関連データ
+            prodPartSearchForm: {
+                projId: '',
+                projCode: '',
+                projName: '',
+                prodCode: '',
+                prodName: '',
+                partCode: '',
+                partName: '',
+                targetState: '',
+                beginDateFrom: '',
+                beginDateTo: '',
+                CompleteDateFrom: '',
+                CompleteDateTo: '',
+                aggTypeCode: '',
+                aggTypeName: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCodeTitle: '',
+                aggTypeNameTitle: '',
+            },
+        }
+    },
+    // watch:{
+    //     projSelected: function(newValue) {
+    //         console.log('projSelected newValue.projId=' + newValue.projId);
+    //         if(newValue.projId) {
+    //             // this.isShowProdPartChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //             setTimeout(()=>this.isShowProdPartChoice = true, 100);
+    //         } else {
+    //             this.isShowProdPartChoice = false;
+    //             //this.clearData(['prodSeq', 'procList']);
+    //         }
+    //     },
+    //     projSearchButtonCount: function() {
+    //         console.log('projSearchButtonCount !');
+    //         //this.clearData(['prodSeq', 'procList']);
+    //         this.projSelected = {};
+    //     },
+    // },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+        emittedProjSearchButtonEvent(value) {
+            // console.log('emittedProjSearchButtonEvent value=' + value);
+            this.projSearchButtonCount = value;
+            this.isShowProdPartChoice = false;
+            // this.projSelected = {};
+            this.prodPartSearchForm = {};
+        },
+        emittedProjSelectedEvent(value) {
+            // console.log('emittedProjSelectedEvent value=' + value);
+            // console.log('emittedProjSelectedEvent value.projId=' + value.projId);
+            // console.log('emittedProjSelectedEvent this.projSelected.projId=' + this.projSelected.projId);
+            // console.log('emittedProjSelectedEvent value.projCode=' + value.projCode);
+            // console.log('emittedProjSelectedEvent value.projName=' + value.projName);
+            if(value.projId) {
+                // if (value.projId != this.projSelected.projId) {
+                if (value.projId != this.prodPartSearchForm.projId) {
+                    // 工事コンポーネントの工事が選択されている状態で別の工事が選択された場合、
+                    // 製品コンポーネントのisShowProdPartChoiceをfalseにしてからtrueにすることで製品コンポーネントのcreateイベントを発生させる。
+                    // このイベントで、製品コンポーネントの工事コードと工事名を再描画し検索結果をクリアする。
+                    this.isShowProdPartChoice = false;
+                }
+                // this.projSelected = value;
+                this.prodPartSearchForm.projId = value.projId;
+                this.prodPartSearchForm.projCode = value.projCode;
+                this.prodPartSearchForm.projName = value.projName;
+                setTimeout(()=>this.isShowProdPartChoice = true, 100);
+            } else {
+                this.isShowProdPartChoice = false;
+            }
+        },
+        emittedProjPrintButtonEvent(value) {
+            // console.log('emittedProjPrintButtonEvent value=' + value);
+            // console.log('emittedProjPrintButtonEvent this.classPrintHideProj=' + this.classPrintHideProj);
+            this.projSearchButtonCount = value;
+            this.classPrintHideProj = '';
+            this.classPrintHideProdPart = 'print-hide';
+            this.classPrintHidePart = 'print-hide';
+        },
+        emittedProdPartPrintButtonEvent(value) {
+            // console.log('emittedProdPartPrintButtonEvent value=' + value);
+            // console.log('emittedProdPartPrintButtonEvent this.classPrintHideProdPart=' + this.classPrintHideProdPart);
+            this.prodSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideProdPart = '';
+            this.classPrintHidePart = 'print-hide';
+        },
+        emittedPartPrintButtonEvent(value) {
+            // console.log('emittedPartPrintButtonEvent value=' + value);
+            // console.log('emittedPartPrintButtonEvent this.classPrintHideProdPart=' + this.classPrintHideProdPart);
+            this.partSearchButtonCount = value;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideProdPart = 'print-hide';
+            this.classPrintHidePart = '';
+        },
+    }
+}
+</script>

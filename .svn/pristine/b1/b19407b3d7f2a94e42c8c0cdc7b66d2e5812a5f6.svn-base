@@ -1,0 +1,588 @@
+<template>
+    <div>
+        <!--h1 class="print-hide">{{ titleProj }}</h1 -->
+        <!--工事進捗一覧-->
+        <div v-if="isShowProjChoice">
+            <b-card bg-variant="light"  :class="classPrintHideProj" height="100px">
+                <b-row>
+                    <!--b-col class="col-md-2 print-hide" -->
+                    <b-col>
+                        <h1 class="mb-4">{{ titleProj }}</h1>
+                        <!--p class="print-hide">工事を選択してください</p -->
+                    </b-col>
+                    <b-col class="col-md-10 print-hide">
+                        <b-form inline class="mt-0">
+                            <b-form-group label="工事コード" class="mr-3">
+                                <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+                            </b-form-group>
+                            <b-form-group label="工事名称" class="mr-3">
+                                <b-form-input id="projName" v-model="projSearchForm.projName"/>
+                            </b-form-group>
+                            <b-form-group class="mt-5 mb-4 mr-3">
+                                <b-form-radio-group v-model="projStatus" :options="projStatusOptions"/>
+                            </b-form-group>
+                            <b-form-group v-if="projStatus==1" label="工事着手日From" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="projStatus==1" label="工事着手日To" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+                            </b-form-group>
+                            <b-form-group  v-if="projStatus==3" label="工事完了日From" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="projStatus==3" label="工事完了日To" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="projStatus==1 || projStatus==3" class="mt-5 mr-1">
+                                <b-button @click="projSearch">検索</b-button>
+                            </b-form-group>
+                            <b-form-group v-if="!(projStatus==1 || projStatus==3)" class="mt-4 mr-1">
+                                <b-button @click="projSearch" class="mr-1">検索</b-button>
+                                <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                            </b-form-group>
+                        </b-form>
+                    </b-col>
+                </b-row>
+                <!--/b-card -->
+
+                <!-- b-row align-h="end" class="my-1 print-hide">
+                    <b-button to="/menu" variant="info">戻る</b-button>
+                </b-row -->
+
+                <div v-if="isShowProjTable" :class="classPrintHideProj">
+                    <!-- p class="print-hide">工事を選択してください（ダブルクリック可）</p -->
+                    <!-- p class="print-hide">工事を選択してください</p -->
+                    <b-table head-variant="light" sticky-header = "200px" class="table-sm table-bordered text-nowrap"
+                        hover selectable select-mode="single" ref="refProjTable" :striped="striped" :no-border-collapse="noCollapse"
+                        :items="projData" :fields="projFields" @row-selected="rowClickProjTable"/> <!-- @row-dblclicked="projDblClick" -->
+                    <b-row align-h="end" class="my-2 print-hide">
+                        <b-col class="col-md-2">
+                            <p class="print-hide ml-1">工事を選択してください</p>
+                        </b-col>
+                        <b-col class="col-md-9"/>
+                        <b-col class="col-md-1">
+                            <b-button @click="printProjTable" class="mr-0">ページ印刷</b-button>
+                            <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                        </b-col>
+                    </b-row>
+                </div>
+
+                <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+                </div>
+            </b-card>
+        </div>
+
+        <!-- h1 v-if="isShowProdChoice" class="print-hide">{{ titleProd }}</h1 -->
+        <!--製品進捗一覧-->
+        <div v-if="isShowProdChoice"  :class="classPrintHideProd">
+            <b-card bg-variant="light">
+                <b-row>
+                    <!-- b-col class="col-md-2" -->
+                    <b-col>
+                        <h1 class="mb-4">{{ titleProd }}</h1>
+                    </b-col>
+                    <b-col class="col-md-10">
+                        <b-form inline class="mt-1">
+                            <span class="mr-4 mt-1"><strong>工事コード：</strong>{{ projSelected.projCode }}</span>
+                            <strong>工事名称：</strong>{{ projSelected.projName }}
+                        </b-form>
+                        <b-form inline class="mt-0 print-hide">
+                            <b-form-group  label="製品コード" class="mr-3">
+                                <b-form-input id="prodCode" v-model="prodSearchForm.prodCode"/>
+                            </b-form-group>
+                            <b-form-group label="製品名称" class="mr-3">
+                                <b-form-input id="prodName" v-model="prodSearchForm.prodName"/>
+                            </b-form-group>
+                            <b-form-group class="mt-5 mb-4 mr-3">
+                                <b-form-radio-group v-model="prodStatus" :options="prodStatusOptions"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodStatus==1" label="製品着手日From" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.startDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodStatus==1" label="製品着手日To" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.endDateBegin"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodStatus==3" label="製品完了日From" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.startDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodStatus==3" label="製品完了日To" class="mt-3 mr-3">
+                                <b-datepicker today-button reset-button close-button
+                                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                    placeholder="日付を選択してください" v-model="prodSearchForm.endDateComplete"/>
+                            </b-form-group>
+                            <b-form-group v-if="prodStatus==1 || prodStatus==3" class="mt-5 mr-1">
+                                <b-button @click="prodSearch">検索</b-button>
+                            </b-form-group>
+                            <b-form-group v-if="!(prodStatus==1 || prodStatus==3)" class="mt-4 mr-1">
+                                <b-button @click="prodSearch" class="mr-1">検索</b-button>
+                                <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                            </b-form-group>
+                        </b-form>
+                    </b-col>
+                </b-row>
+                <!-- /b-card -->
+                <!--b-row align-h="end" class="my-1">
+                    <b-button @click="cancel" variant="info">取消</b-button>
+                </b-row -->
+                <!-- div v-if="projSelected && prodData.length" -->
+                <div v-show="isShowProdTable" :class="classPrintHideProd">
+                    <!-- p><strong>製品分類一覧、全製品分類、選択製品分類オプション</strong></p -->
+                    <b-table head-variant="light" sticky-header = "500px" class="table-sm table-bordered text-nowrap"
+                        hover v-if="projSelected && prodData.length" :striped="striped" :no-border-collapse="noCollapse"
+                        :items="prodData" :fields="prodFields"/>
+                    <b-row align-h="end" class="my-2 print-hide">
+                        <b-col class="col-md-11"/>
+                        <b-col class="col-md-1">
+                            <b-button @click="printProdTable" class="mr-0">ページ印刷</b-button>
+                            <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                        </b-col>
+                    </b-row>
+                </div>
+                <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                    <b-spinner class="align-middle"></b-spinner>
+                    <strong>検索中...</strong>
+                </div>
+            </b-card>
+        </div>
+        <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+@media print {
+    .print-hide {
+        display: none;
+    }
+}
+/*
+@page {
+    size: auto;
+    margin-top: 0;
+}
+*/
+.row {
+    margin: 0;
+}
+
+
+@page { size: A4 landscape;
+    background: gray;
+    border: solid 1pt blue;
+    padding: 9pt;
+    margin: 18pt 18pt 18pt 18pt;
+    font-family: "Helvetica Narrow";
+    @top-left {
+       content: 'PrivateCopy';
+       color: red;
+       font-style: bolditalic;
+    }
+/*    @top {
+       content: string(doctitle);
+    } */
+    @bottom-left {
+       content: 'My Super-Duper Manual';
+       font-style: bold;
+    }
+    @top-right {
+       content: "Page " counter(page) " of " counter(pages);
+       font-style: bold;
+    }
+/*    @bottom {
+       content: string(paratitle);
+    }*/
+  }
+
+
+body {
+    counter-reset: sheet; /* カウンタの初期化 */
+}
+.sheet::after {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    counter-increment: sheet;
+    content: "ページ " counter(sheet);
+}
+
+body { counter-reset: page-number; }
+.page::after {
+    position: absolute; bottom: 0; right: 0;
+    counter-increment: page-number;
+    content: “ページ ” counter(page-number);
+}
+
+</style>
+
+<!--
+@media print {
+    body {  width: 210mm;  }/* needed for Chrome */
+}
+@page {
+    size: auto;
+    size: A3 landscape;
+    margin: 0;
+}
+.pagebreak {
+  break-after: page;
+}
+-->
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+import commonMethods from '../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            titleProj: '工事進捗一覧',
+            titleProd: '製品進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //工事関連データ
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+            },
+            projStatus: 4,
+            projStatusOptions: [
+                { value: 0, text: '工事未着手' },
+                { value: 1, text: '工事着手' },
+                { value: 2, text: '工事未完了' },
+                { value: 3, text: '工事完了' },
+                { value: 4, text: '工事すべて' }
+            ],
+            projData: [],
+            projFields: [],
+            projSelected: '',
+            //製品関連データ
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: ''
+            },
+            prodStatus: 4,
+            prodStatusOptions: [
+                { value: 0, text: '製品未着手' },
+                { value: 1, text: '製品着手' },
+                { value: 2, text: '製品未完了' },
+                { value: 3, text: '製品完了' },
+                { value: 4, text: '製品すべて' }
+            ],
+            prodData: [],
+            prodFields: [],
+
+            isShowProjChoice: true,
+            isShowProdChoice: false,
+            isShowProjTable: false,
+            isShowProdTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProj: false,
+            isLoadingProd: false,
+            classPrintHideProj: '',
+            classPrintHideProd: ''
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 380 + 'px'
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    methods: {
+         resetProjSearchForm() {
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: ''
+            }
+            //this.$store.state.searchForm = this.searchForm
+        },
+        resetProdSearchForm() {
+            this.prodSearchForm = {
+                prodCode: '',
+                prodName: '',
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: ''
+            }
+            //this.$store.state.searchForm = this.searchForm
+        },
+        async projSearch() {
+            this.message = '';
+            this.isShowProjTable = false;
+            this.isShowProdChoice = false;
+            this.isShowProdTable = false;
+            //this.$refs.refProjTable.selectRow(0);
+            this.projData = [];
+            this.projFields = [];
+            let startDate = '';
+            let endDate = '';
+            this.isLoadingProj = true;
+            if (this.projStatus == 1) {
+                startDate = this.projSearchForm.startDateBegin
+                endDate = this.projSearchForm.endDateBegin
+            } else if (this.projStatus == 3) {
+                startDate = this.projSearchForm.startDateComplete
+                endDate = this.projSearchForm.endDateComplete
+            }
+            let payload = {
+                ...this.projSearchForm.projCode && {projCode:        this.projSearchForm.projCode},
+                ...this.projSearchForm.projName && {projName:        this.projSearchForm.projName},
+                targetState:     this.projStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate}
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjProcMany, axiosConfigObject)
+            .then(response => {
+                this.projData = this.remakeResDt(response.data.resDt);
+                this.projFields = this.remakeResDtTitle(response.data.resDtTitle);//, [1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                //} else {
+                //    this.isShowProdChoice = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+            })
+            this.isShowProjTable = true;
+            this.prodData = [];
+            this.prodFields = [];
+            //this.$refs.refProjTable.selectRow(0);
+        },
+
+        rowClickProjTable(item) {
+            if(item[0]) {
+                if (this.projSelected != item[0]) {
+                    this.prodData.splice(0);
+                    this.prodFields.splice(0);
+                }
+                this.projSelected = item[0];
+                //console.log('item[0]=' + item[0]);
+                this.isShowProdChoice = true;
+            } else {
+                //this.projSelected = '';
+                this.isShowProdChoice = false;
+            }
+        },
+
+        //async projDblClick(item) {
+        //    //this.title = '製品一覧進捗表示'
+        //    this.projSelected = item;
+        //    await this.prodSearch();
+        //    //this.isShowProjChoice = false
+        //},
+
+        prodSearch() {
+            this.message = '';
+            this.isLoadingProd = true;
+            this.prodData = [];
+            this.prodFields = [];
+            let startDate = ''
+            let endDate = '' 
+
+            if (this.prodStatus == 1) {
+                startDate = this.prodSearchForm.startDateBegin
+                endDate = this.prodSearchForm.endDateBegin
+            } else if (this.prodStatus == 3) {
+                startDate = this.prodSearchForm.startDateComplete
+                endDate = this.prodSearchForm.endDateComplete
+            }
+            let payload = {
+                ...this.projSelected.projId && {projId:          this.projSelected.projId},
+                ...this.prodSearchForm.prodCode && {prodCode:        this.prodSearchForm.prodCode},
+                ...this.prodSearchForm.prodName && {prodName:        this.prodSearchForm.prodName},
+                targetState: this.prodStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate}
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            axios.get(apiUrls.referProdProcMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = this.remakeResDt(response.data.resDt);
+                this.prodFields = this.remakeResDtTitle(response.data.resDtTitle);
+                //console.log(this.prodData);
+                //this.isShowProdTable = true;
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.isShowProdTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+            })
+        },
+
+        cancel() {
+            this.title = '工事進捗一覧';
+            this.isShowProjChoice = true;
+            this.isShowProjTable = false;
+            this.isShowProdChoice = false;
+            this.isShowProdTable = false;
+            this.projData = [];
+            this.projFields = [];
+            this.prodData = [];
+            this.prodFields = [];
+            this.projSelected = '';
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+            }
+            this.projStatus = 0,
+            this.prodSearchForm = {
+                prodCode: '',
+                prodName: '',
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: ''
+            }
+            this.prodStatus = 0;
+        },
+
+        printProjTable () {
+            //let isShowProdChoice = this.isShowProdChoice;
+            //let isShowProdTable = this.isShowProdTable;
+            //this.isShowProdChoice = false;
+            //this.isShowProdTable = false;
+            //this.$forceUpdate();
+            this.classPrintHideProj = '';
+            this.classPrintHideProd = 'print-hide';
+
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    window.print();
+                }
+            });
+            //this.isShowProdChoice = isShowProdChoice;
+            //this.isShowProdTable = isShowProdTable;
+        },
+        printProdTable () {
+            //let isShowProjChoice = this.isShowProjChoice;
+            //let isShowProjTable = this.isShowProjTable;
+            //this.isShowProjChoice = false;
+            //this.isShowProjTable = false;
+            this.classPrintHideProj = 'print-hide';
+            this.classPrintHideProd = '';
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    window.print();
+                }
+            });
+            //this.isShowProjChoice = isShowProjChoice;
+            //this.isShowProjTable = isShowProjTable;
+        },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = {};
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

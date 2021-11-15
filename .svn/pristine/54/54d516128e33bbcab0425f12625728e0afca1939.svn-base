@@ -1,0 +1,336 @@
+<template>
+    <div>
+        <b-card bg-variant="light">
+            <b-form>
+                <b-container>
+                    <br />
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="工事コード" label-for="input-proj-code" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-proj-code" v-model="view.projCode" :disabled="restrict"></b-form-input>
+                                <!-- <div><p style="color: #ff0000;" id="projCodeError"></p> </div> -->
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5"> 
+                            <b-form-group label="工事名称" label-for="input-proj-name" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-proj-name" v-model="view.projName"></b-form-input>
+                                <div><p style="color: #ff0000;" id="projNameError"></p> </div>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+         
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="数量" label-for="input-quantity" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-quantity" v-model="view.quantity" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <!-- b-col class="col-md-5">
+                            <b-form-group label="重量" label-for="input-weight" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                                <b-form-input id="input-weight" v-model="view.weight" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col -->
+                    </b-form-row> 
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="開始数量" label-for="input-start-quantity" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-start-quantity" v-model="view.startQuantity" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了数量" label-for="input-end-quantity" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-end-quantity" v-model="view.endQuantity" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="中止数量" label-for="input-abort-quantity" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-abort-quantity" v-model="view.abortQuantity" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="不良数量" label-for="input-fail-quantity" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-fail-quantity" v-model="view.failQuantity" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br/>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="着手予定日" label-for="input-start-plan-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-date-start" type="date" v-model="view.startPlanDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="着手日" label-for="input-start-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-start-date" type="date" v-model="view.startDate" max="9999-12-31" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row> 
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了予定日" label-for="input-end-plan-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-end-plan-date" type="date" v-model="view.endPlanDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="完了日" label-for="input-end-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-end-date" type="date" v-model="view.endDate" max="9999-12-31" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="納品予定日" label-for="input-deli-plan-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-deli-plan-date" type="date" v-model="view.deliPlanDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="納品日" label-for="input-deli-date" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-deli-date" type="date" v-model="view.deliDate" max="9999-12-31"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <br />       
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="取引先ID" label-for="input-cust-id" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-cust-id" v-model="view.custId" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                        <b-col class="col-md-5">
+                            <b-form-group label="取込回" label-for="input-import-no" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-import-no" v-model="view.importNo" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                    <b-form-row>
+                        <b-col class="col-md-5">
+                            <b-form-group label="最大製品ID" label-for="input-max-prod-id" label-cols-sm="3" label-align-sm="right">
+                                <b-form-input id="input-max-prod-id" v-model="view.maxProdId" @keypress="isNumber($event)" :disabled="restrict"></b-form-input>
+                            </b-form-group>
+                        </b-col>
+                    </b-form-row>
+                </b-container>
+            </b-form>
+            <div class="text-right mt-1">
+                <div v-if="canDeleteProject">
+                    <b-button :disabled="!responseData" @click="updateProject" class="mr-1">更新</b-button>
+                    <b-button :disabled="!responseData" @click="deleteProject" class="mr-1">削除</b-button>
+                </div>
+                <div v-else>
+                    <b-button :disabled="!responseData" @click="updateProject" class="mr-1">更新</b-button>
+                </div>
+             <!--b-button variant="info" @click="$store.state.responseData = ''; $router.push('projects')" class="mr-1">戻る</b-button-->
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            message: "",
+            text: "",
+            projCodePresent:true,
+            projNamePresent:true,
+            keysAllowed: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            view: {
+                projCode: "",
+                projName: "",
+                custId: "",   
+                quantity: "",
+                weight:"",
+                startQuantity: "",
+                endQuantity: "",
+                abortQuantity: "",
+                failQuantity: "",
+                startPlanDate: "",
+                endPlanDate: "",
+                deliPlanDate: "",
+                startDate: "",
+                endDate: "",
+                deliDate: "",
+                importNo: "",
+                maxProdId: "",
+            },
+            restrict: true,
+            canDeleteProject: true,
+        };
+    },
+    created: function() {
+        if(this.$store.state.responseData) {       
+            this.responseData = this.$store.state.responseData
+
+            this.view.projCode        = this.responseData.projCode
+            this.view.projName        = this.responseData.projName
+            this.view.custId          = this.responseData.custId
+            this.view.quantity        = this.responseData.quantity
+            this.view.weight          = this.responseData.weight
+            this.view.startQuantity   = this.responseData.startQuantity
+            this.view.endQuantity   = this.responseData.endQuantity
+            this.view.abortQuantity   = this.responseData.abortQuantity
+            this.view.failQuantity   = this.responseData.failQuantity
+            this.view.startPlanDate  = this.responseData.startPlanDate
+            this.view.endPlanDate  = this.responseData.endPlanDate
+            this.view.deliPlanDate  = this.responseData.deliPlanDate
+            this.view.startDate  = this.responseData.startDate
+            this.view.endDate  = this.responseData.endDate
+            this.view.deliDate  = this.responseData.deliDate
+            this.view.importNo  = this.responseData.importNo
+            this.view.maxProdId  = this.responseData.maxProdId            
+        }
+        console.log('commonMethods.getParentMenu()=' + commonMethods.getParentMenu());
+        if (commonMethods.getParentMenu() == '/prodprocplanregister') {
+            this.canDeleteProject = false;
+        }
+    },
+ 
+    methods: {
+      
+        getNow() {
+            let today = new Date(Date.now());
+            //return today.toISOString().slice(0, 10);
+            let diff = today.getTimezoneOffset() * 60 * 1000;    // -540 * 60 * 1000 = -32400000 (ミリ秒)
+            let localToday = new Date(today - diff);
+            return localToday.toISOString().slice(0, 10)
+        },
+
+        isNumber(evt) {    
+            if (!this.keysAllowed.includes(evt.key)) {
+                evt.preventDefault()
+            }else{
+              return true;
+            }
+        },
+
+        checkInput() {
+           /* if (!this.view.projCode) {
+                this.text = "工事コードを入力してください";
+                this.projCodePresent = false;
+            } else{
+                this.text = "";
+                this.projCodePresent = true; 
+            }
+            document.getElementById("projCodeError").innerHTML = this.text;*/
+            if (!this.view.projName) {
+                this.text = "工事名称を入力してください";
+                this.projNamePresent == false;
+            }else{
+                this.text = "";
+                this.projNamePresent == true; 
+            } 
+            document.getElementById("projNameError").innerHTML = this.text;
+        },
+
+        deleteProject() {
+            if (confirm('削除しますか？')) {
+              //  alert ("commonMethods.getCurrentMenu() " + commonMethods.getCurrentMenu());
+            
+                let payload = {
+                    tranId:        '',
+                    resultCode:    null,
+                    resultMessage: null,
+                    user:          null,
+                    terminal:      null,
+                    reqDateTime:   null,
+                    resDateTime:   null,
+                    reqHd: {
+                        projId:      this.responseData.projId
+                    }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                data:    payload
+            }
+            axios.delete(apiUrls.removeProject, axiosConfigObject).then((response) => {
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    alert(response.data.resultMessage)
+                    this.$store.state.responseData = ''
+                    //this.$router.push('projects')
+                    commonMethods.clickMenuBack();
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+          }
+        },
+
+        updateProject() {
+            this.message = "";
+         
+            this.checkInput();
+           // if (this.projCodePresent == true && this.projNamePresent == true){
+               if ( this.projNamePresent == true){
+                if (confirm("更新しますか？")) {  
+                     //基本リクエストを作成する
+                    let payload = {
+                        transId: "",
+                        resultCode: null,
+                        resultMessage: null,
+                        user: null,
+                        terminal: null,
+                        reqDateTime: null,
+                        resDateTime: null,
+                        reqHd: {
+                            projId:      this.responseData.projId,              
+                            projCode: this.view.projCode,
+                            projName: this.view.projName,
+                            custId: this.view.custId,
+                            quantity: this.view.quantity,
+                            weight: this.view.weight,
+                            startQuantity: this.view.startQuantity,
+                            endQuantity: this.view.endQuantity,
+                            abortQuantity: this.view.abortQuantity,
+                            failQuantity: this.view.failQuantity,
+                            startPlanDate: this.view.startPlanDate,
+                            endPlanDate: this.view.endPlanDate,
+                            deliPlanDate: this.view.deliPlanDate,
+                            startDate: this.view.startDate,
+                            endDate: this.view.endDate,
+                            deliDate: this.view.deliDate,
+                            importNo: this.view.importNo,
+                            maxProdId: this.view.maxProdId,
+                            updDatetime: this.responseData.updDatetime
+                        },
+                    };
+                    let axiosConfigObject = {
+                        headers: {
+                            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                            "Content-Type": "application/json",
+                        },
+                    };
+                    axios.post(apiUrls.updateProject, payload, axiosConfigObject).then((response) => {
+                        if (response.data.resultCode != "000") {
+                            this.message = commonMethods.getResponseMessage(response);
+                        } else {
+                            alert(response.data.resultMessage);
+                            this.$store.state.responseData = "";
+                            //this.$router.push("projects");
+                            commonMethods.clickMenuBack();
+                        }
+                    })
+                    .catch((error) => {
+                      //this.message = (error.response || {}).data;
+                      //console.log((error.response || {}).data);
+                      this.message = commonMethods.getErrorMessage(error);
+                    });
+                }  
+            }
+        },
+    },
+};
+</script>

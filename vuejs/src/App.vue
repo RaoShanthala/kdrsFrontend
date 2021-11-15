@@ -1,0 +1,150 @@
+<template>
+    <div id="app">
+        <div class="container">
+            <b-row>
+                <b-col>
+                    <div class="name col-md-3">{{this.$store.state.loginData.username}}</div>
+                </b-col>
+                <b-col>
+                    <div class="title col-md-5">{{$route.meta.title}}</div>
+                </b-col>
+                <b-col>
+                    <div class="backButton">
+                        <b-button
+                            variant="info"
+                            v-if="$route.meta.prevPath"
+                            @click="clickMenuBack"
+                            >戻る
+                        </b-button>
+                        <b-button
+                            variant="info"
+                            v-if="$route.name == 'Menu'"
+                            @click="clicklogout"
+                            >Logout
+                        </b-button>
+
+                    </div>
+              </b-col>
+            </b-row>
+        </div>
+        <router-view/>
+    </div>
+</template>
+
+<style>
+#app {
+    margin: 1rem 2rem 0 2rem;
+    line-height: 1;
+}
+/*
+h1 {
+    margin-bottom: 0;
+    font-size: 1.5rem;
+}*/
+.b-calendar .b-calendar-grid {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+}
+.container {
+    margin-bottom: 1.2rem;
+    padding: 0;
+    max-width: none;
+    text-align: center;
+}
+.name {
+    display: inline;
+    font-weight: bold;
+    font-size: 1.4rem;
+    float: left;
+}
+.title {
+    display: inline;
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+.backButton {
+    display: inline;
+    float: right;
+}
+@media print {
+    .container {
+        display: none;
+    }
+}
+label, .col-form-label  {
+    font-weight: bold;
+}
+table {
+    margin-bottom: 0;
+}
+.card {
+    margin-bottom: 0.5rem;
+}
+.card-body {
+    padding: 0.5rem;
+}
+.card-header {
+    padding: 0.2rem 0.5rem;
+}
+.tooltip-inner {
+    font-size: 2rem;
+    max-width: 100%;
+}
+</style>
+
+<script>
+import commonMethods from './common/commonMethods'
+
+export default {
+    created: function() {
+      if(!this.$store.state.loginData.accessToken && this.$route.path !== '/') {
+          this.$router.push('/');
+      }
+    },
+    methods: {
+        clickMenuBack() {
+            //console.log('App.vue:clickMenuBack! $route.path=' + this.$route.path);
+            if (this.$route.path == '/userupdate') {
+                //ユーザ更新画面で戻るボタンを押した時に必要
+                this.$store.state.responseData = '';
+            }
+            ////this.$router.push({path: this.$route.meta.prevPath});
+            //let menuPath = this.$store.getters.getLastMenuPath;
+            //this.$store.dispatch('popMenuPath');
+            //this.$router.push({path: menuPath});
+            commonMethods.clickMenuBack();
+
+/*          actionからpopMenuPathを呼び出した時の戻り値の取得が不明！
+            //let menuPath = $store.dispatch('popMenuPath');
+            let menuPath;
+            this.$store.dispatch('popMenuPath')
+            .then((res) => {
+                console.log('res=' + res);
+                menuPath = res;
+                console.log('App.clickMenuBack.popMenuPath=' + menuPath);
+            })
+*/
+/*          popMenuPathでmenuPathが取得できたときとそうでないときの戻り方！
+            if (menuPath) {
+                this.$router.push({path: menuPath});
+            } else {
+                window.history.back();
+            }
+*/
+        },
+        clicklogout() {
+            this.$store.state.loginData = {
+                id:          '',
+                username:    '',
+                email:       '',
+                roles:       [],
+                accessToken: ''
+            }
+
+            this.$router.push('/')
+        },
+  }
+}
+</script>

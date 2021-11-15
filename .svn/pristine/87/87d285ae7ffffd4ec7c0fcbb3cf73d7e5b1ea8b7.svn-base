@@ -1,0 +1,26 @@
+let host = 'http://localhost:8080'
+
+const urls = {
+        signIn:            host + '/api/auth/signin',
+        referUserMany:     host + '/UserMaintenance/ReferUserMany',
+        referUserOne:      host + '/UserMaintenance/ReferUserOne',
+        registUser:        host + '/UserMaintenance/RegistUer',
+        modifyUser:        host + '/UserMaintenance/ModifyUer',
+        removeUser:        host + '/UserMaintenance/RemoveUer',
+        referRoleAll:      host + '/UserMaintenance/ReferRoleAll',
+        referNameMany:     host + '/NameCollection/ReferMany',
+        referProjectMany:  host + '/Product/ReferProjectMany',
+        referProjectOne:   host + '/Product/ReferProjectOne',
+        referProductMany:  host + '/Product/ReferProductMany',
+        referProcessMany:  host + '/Product/ReferProdProcMany',
+        referProcessAll:   host + '/Product/ReferProcessMany',
+        referProdSeqMany:  host + '/Product/ReferProdseqProcMany',
+        referProjProcMany: host + '/Product/ReferProjProcProgMany',
+        referProdProcMany: host + '/Product/ReferProdProcProgMany',
+        registerProcess:   host + '/Product/RegisterProcess',
+        registerProject:   host + '/Product/RegisterProject',
+        uploadTeklaData:   host + '/Impprod/UploadTeklaData',
+        registerProduct:   host + '/Impprod/RegisterProduct'
+}
+
+export default urls

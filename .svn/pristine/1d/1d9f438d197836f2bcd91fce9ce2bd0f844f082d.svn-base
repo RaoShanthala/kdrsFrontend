@@ -1,0 +1,325 @@
+<template>
+  <div>
+    <b-card bg-variant="light">
+      <b-form>
+        <b-container>
+           <br/>
+           <b-form-row>
+              <b-col class="col-md-5">
+                <b-form-group label="標準製品名称" label-for="input-std-prod-name" label-cols-sm="3" label-align-sm="right">
+                  <b-form-input id="input-std-prod-name" v-model="view.stdProdName"></b-form-input>
+                  <div> <p style="color: #ff0000;" id="stdProdNameError"></p> </div>
+                </b-form-group>
+              </b-col>
+              <b-col class="col-md-5" :select-size="5">
+                <b-form-group label="標準最多工程" label-for="input-std-max-proc" label-cols-sm="4" label-cols-lg="3" label-align-sm="right">
+                  <b-form-select v-model="selected" :options="options" :disabled="disabled == 1"></b-form-select>
+                 </b-form-group>
+              </b-col> 
+           </b-form-row> 
+          <br/> 
+         
+           <div class="col-sm-10 offset-sm-2 text-center ">
+            <b-form-row>
+              <b-col class="col-md-3">
+                 <b-form-group label="工程一覧" label-size="sm" class="mt-0 mb-0">
+                 <b-form-select v-model="option1" :options="procCodeOptions" :select-size="5"  style="height:100%"></b-form-select>      
+                 </b-form-group>
+              </b-col>
+              <div class="btn-group-vertical item">
+                <button class="btn-xs btn-primary mb-2" @click="allToRight">&raquo;</button>
+                <button class="btn-xs btn-primary mb-2" @click="oneToRight">&rsaquo;</button>
+                <button class="btn-xs btn-primary mb-2" @click="oneToLeft">&lsaquo;</button>
+                <button class="btn-xs btn-primary" @click="allToLeft">&laquo;</button>
+              </div> 
+              <b-col class="col-md-3">
+                <b-form-group label="登録工程一覧" label-size="sm" class="mt-0 mb-0"> 
+                <b-form-select v-model="option2" :select-size="5" :options="procCodeSelected"  style="height: 100%"></b-form-select>
+                 </b-form-group>
+              </b-col>    
+           </b-form-row>
+         </div>
+         <br/>
+         <div class="col-sm-10 text-center ">
+           <p>左側の工程一覧から工程順に右側の登録工程一覧に移動してください。</p>
+         </div>  
+        </b-container>
+      </b-form>
+    </b-card>
+
+    <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+    <div class="text-right mt-1">
+        <b-button :disabled="!responseData" @click="updateStdProd" class="mr-1">更新</b-button>
+        <b-button :disabled="!responseData" @click="deleteStdProd" class="mr-1">削除</b-button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+ .item { 
+   padding-left: 50px;
+   padding-right: 50px;
+   padding-top: 20px;
+}
+</style>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+
+ export default {
+  data() {
+    return {
+      message: "",
+      text1: "",
+      stdProdNamePresent:true,
+      processData:[],
+      option1:"",
+      option2:"",
+      selected: 0,
+      options: [
+        { value: '0', text: ' ' },
+        { value: '1', text: '最多' },
+      ],
+      procCodeOptions: [],
+      procCodeSelected: [],
+      procCodeList: [],
+      disabled: 0,
+      view: {
+        stdProdName: "",
+        stdMaxProc: "",
+        procCode: []
+      },
+    };
+  },
+
+  created: function() {
+    if(!this.$store.state.loginData.accessToken) {
+        this.$router.push('/');
+    }  
+    if(this.$store.state.responseData) {     
+        this.responseData = this.$store.state.responseData
+        this.view.stdProdName     = this.responseData.stdProdName
+        this.view.stdMaxProc      = this.responseData.stdMaxProc 
+        this.selected = this.responseData.stdMaxProc 
+        if (this.responseData.stdMaxProc  == 1){
+            this.disabled = 1;
+        }
+        this.getListData(this.responseData.procCodeList);
+    }
+  }, 
+ 
+  methods: {
+    getNow() {
+        let today = new Date(Date.now());
+        return today.toISOString().slice(0, 10);
+    },
+   
+    async getProcessList(){
+        console.log('Calling getProcessList Method');
+        let axiosConfigObject = {
+            headers: {
+                Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                'Content-Type': 'application/json',
+            },
+        }
+
+        await axios.get(apiUrls.processList, axiosConfigObject).then(response => {    
+            console.log(response.data.resDt);
+            if(response.data.resultCode != '000') {
+                this.message = commonMethods.getResponseMessage(response);
+            }else{
+                this.processData = response.data.resDt;
+                for(var i = 0; i < this.processData.length; i++){          
+                    this.procCodeOptions.push({text:this.processData[i].procName, value:this.processData[i].procCode});                             
+                }
+            }
+        })
+        .catch(error => {
+            this.message = commonMethods.getErrorMessage(error);
+        })
+    },
+
+    async getListData(codeList){    
+        await this.getProcessList(); 
+        if (codeList != null){
+        for(var j = 0; j < codeList.length; j++) {
+          var listItem = codeList[j];
+            for(var i = 0; i < this.procCodeOptions.length; i++) {
+                var item = this.procCodeOptions[i];
+                if (item.value == listItem){
+                    this.procCodeSelected.push({text:item.text, value:item.value}); //add
+                    this.procCodeOptions.splice(i,1); //delete
+                }                
+            }
+        }
+        } 
+    },
+
+    oneToRight(){   
+       if (this.option1 != "" && this.option1!== undefined ){
+        for(var i = 0; i < this.procCodeOptions.length; i++) {
+           var item = this.procCodeOptions[i];
+           if (item.value == this.option1){
+              if (this.option2 != "" && this.option2 !== undefined ){ 
+                for(var j = 0; j < this.procCodeSelected.length; j++) {
+                    var itemSelected = this.procCodeSelected[j]; 
+                    if (itemSelected.value == this.option2){
+                        var index = 0;
+                        if (j > 0) {
+                            index = j;
+                        }
+                        this.procCodeSelected.splice(index, 0, {text:item.text, value:item.value});
+                        break;
+                    }    
+                }    
+              }else{
+                this.procCodeSelected.push({text:item.text, value:item.value});
+              }
+              this.procCodeOptions.splice(i,1); //delete             
+            }
+        }  
+        this.option1 = "";
+        this.option2 = "";    
+       }  
+    },
+
+    allToRight(){
+        for(var i = 0; i < this.procCodeOptions.length; i++) {
+           var item = this.procCodeOptions[i];
+           this.procCodeSelected.push({text:item.text, value:item.value});
+        } 
+        this.procCodeOptions = []  ;   
+    },
+
+    oneToLeft(){
+       if (this.option2 != ""){
+        for(var i = 0; i < this.procCodeSelected.length; i++) {
+           var item = this.procCodeSelected[i];
+            if (item.value == this.option2){
+              this.procCodeOptions.push({text:item.text, value:item.value});
+              this.procCodeSelected.splice(i,1); //delete
+              console.log (this.procCodeOptions)
+              console.log (this.procCodeSelected); 
+            }
+        }      
+        this.option2 = "";
+       }
+    },
+  
+    allToLeft(){
+        for(var i = 0; i < this.procCodeSelected.length; i++) {
+           var item = this.procCodeSelected[i];
+           this.procCodeOptions.push({text:item.text, value:item.value});
+        } 
+        this.procCodeSelected = []; 
+    },
+
+    checkInput() {
+      if (!this.view.stdProdName) {
+        this.text1 = "標準製品名称を入力してください";
+        this.stdProdNamePresent = false;
+      }else{
+        this.text1 = "";
+        this.stdProdNamePresent = true; 
+      }
+      document.getElementById("stdProdNameError").innerHTML = this.text1;
+    },
+    
+    getProcCode(){
+       this.procCodeList = [];
+       for(var i = 0; i < this.procCodeSelected.length; i++) {
+           var item = this.procCodeSelected[i];
+           this.procCodeList.push(item.value);
+        } 
+    },
+
+    deleteStdProd(){
+        if (confirm('削除しますか？')) {
+            let payload = {
+                tranId:        '',
+                resultCode:    null,
+                resultMessage: null,
+                user:          null,
+                terminal:      null,
+                reqDateTime:   null,
+                resDateTime:   null,
+                reqHd: {
+                    stdProdId:  this.responseData.stdProdId
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                data:    payload
+            }
+            axios.delete(apiUrls.removeStdProduct, axiosConfigObject).then((response) => {
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }else {
+                    alert(response.data.resultMessage)
+                    this.$store.state.responseData = ''
+                    //this.$router.push('projects')
+                    commonMethods.clickMenuBack();
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+        }
+    },
+
+    updateStdProd() {
+      this.message = "";
+      this.checkInput();
+      if (this.stdProdNamePresent == true ){
+        if (confirm("登録しますか？")) {
+            this.getProcCode(); 
+           //基本リクエストを作成する
+            let payload = {
+                transId: "",
+                resultCode: null,
+                resultMessage: null,
+                user: null,
+                terminal: null,
+                reqDateTime: null,
+                resDateTime: null,
+                reqHd: {
+                   stdProdId: this.responseData.stdProdId,
+                   stdProdName: this.view.stdProdName,
+                   stdMaxProc: this.selected,
+                   procCode: this.procCodeList
+                },
+            };
+            let axiosConfigObject = {
+                headers: {
+                   Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                   "Content-Type": "application/json",
+                },
+            };
+            axios.post(apiUrls.updateStdProduct, payload, axiosConfigObject).then((response) => {
+                if (response.data.resultCode != "000") {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    alert(response.data.resultMessage);
+                    this.$store.state.responseData = "";
+                    // this.$router.push("stdproduct");
+                    commonMethods.clickMenuForward(this.$route.path, 'stdproduct');
+                }
+            })
+            .catch((error) => {
+                //this.message = (error.response || {}).data;
+                //console.log((error.response || {}).data);
+                this.message = commonMethods.getErrorMessage(error);
+            });
+        }  
+      }
+    },
+
+  },
+};
+</script>

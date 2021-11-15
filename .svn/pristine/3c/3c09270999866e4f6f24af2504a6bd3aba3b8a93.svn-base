@@ -1,0 +1,56 @@
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+import Login    from '../views/Login.vue'
+import Menu     from '../views/Menu.vue'
+//ユーザメンテ画面
+import Users    from '../views/UserMaintenance.vue'
+import Update   from '../views/UserUpdate.vue'
+import Register from '../views/UserRegister.vue'
+//製品工程完了登録・取消画面
+import Process from '../views/ProcessMaintenance.vue'
+//製品/工程作成画面
+import ProdProc from '../views/ProdProcMaintenance.vue'
+//工事メンテ画面
+import Projects from '../views/ProjectMaintenance.vue'
+import RegisterProject from '../views/ProjectRegister.vue'
+import ProjectUpdate from '../views/ProjectUpdate.vue'
+//製品メンテ画面
+import Products from '../views/ProductMaintenance.vue'
+import ProductSearch from '../views/ProductSearch.vue'
+import RegisterProduct from '../views/ProductRegister.vue'
+import ProductUpdate from '../views/ProductUpdate.vue'
+//物件一覧進捗表示
+import Status from '../views/ProjectStatus.vue'
+//データ一覧表
+import ProjectTable from '../views/ProjectTable.vue'
+import ProductTable from '../views/ProductTable.vue'
+//Teklaデータ登録
+import ImportTekla from '../views/ImportTekla.vue'
+
+Vue.use(VueRouter)
+
+const routes = [
+  {path: '/',                name: 'Login',           meta: 'ログイン',         component: Login},
+  {path: '/menu',            name: 'Menu',            meta: 'メニュー',         component: Menu},
+  {path: '/users',           name: 'Users',           meta: 'ユーザメンテ',     component: Users},
+  {path: '/update',          name: 'Update',          meta: '更新/削除画面',    component: Update},
+  {path: '/projects',        name: 'Projects',        meta: '工事メンテ',       component: Projects},
+  {path: '/register',        name: 'Register',        meta: '新規登録画面',     component: Register},
+  {path: '/prodproc',        name: 'ProdProc',        meta: '製品/工程作成',    component: ProdProc},
+  {path: '/projectupdate',   name: 'ProjectUpdate',   meta: '更新/削除画面',    component: ProjectUpdate},
+  {path: '/productupdate',   name: 'ProductUpdate',   meta: '更新/削除画面',    component: ProductUpdate},
+  {path: '/process',         name: 'Process',         meta: '製品工程進捗登録', component: Process},
+  {path: '/projectstatus',   name: 'Status',          meta: '進捗表示',         component: Status},
+  {path: '/projecttable',    name: 'ProjectTable',    meta: '工事別進捗一覧',   component: ProjectTable},
+  {path: '/producttable',    name: 'ProductTable',    meta: '製品一覧',         component: ProductTable},
+  {path: '/productsearch',   name: 'ProductSearch',   meta: '製品検索',         component: ProductSearch},
+  {path: '/importtekla',     name: 'ImportTekla',     meta: 'Teklaデータ登録',  component: ImportTekla},
+  {path: '/registerproject', name: 'RegisterProject', meta: '新規登録画面',     component: RegisterProject},
+  {path: '/registerproduct', name: 'RegisterProduct', meta: '新規登録画面',     component: RegisterProduct},
+  {path: '/products',        name: 'Products',        meta: '製品メンテ',       component: Products}
+]
+
+const router = new VueRouter({ routes })
+
+export default router

@@ -1,0 +1,13 @@
+//カラム作成・並べ替え関数
+function createFields(obj, order) {
+    let a = []
+    let b = []
+    for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ) }
+    if(order) {
+        for(let i in order) { b.push(a[order[i]]) }
+        return b
+    }
+    return a
+}
+
+export default { createFields }

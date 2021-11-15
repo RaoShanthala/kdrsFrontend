@@ -1,0 +1,483 @@
+<template>
+    <div>
+        <comp-proj-search :projInput="projInput"  
+                v-on:emittedProjParams="emitProjEvent"
+                v-on:projSearchButton="projSearchButtonEvent"
+                v-on:emitShowOtherData="emittedShowOtherData"
+                v-on:searchData="searchData"/>
+
+        <div v-if="isProjectNamePresent"  >
+        <div class="text-right mt-1">
+                <b-button @click="registerAgg" class="mr-1">登録/更新画面</b-button>
+                <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+        </div> 
+        <br/>
+        <div v-show="aggSelected.length">
+            <b-card bg-variant="light">
+                    <b-row>
+                        <b-col>
+                            <b-form inline class="mt-1">
+                            <span class="mr-4 mt-1" style="font-size: 18px"><b>集計分類(親)一覧 </b></span> 
+                            <span class="space"><strong>工事コード: </strong>{{this.projCode}}</span>      
+                            <span class="space"><strong>工事名称: </strong>{{this.projNameSelected}}</span>
+                        </b-form>    
+                        </b-col>
+                    </b-row>
+                    <br/>            
+                    <b-table 
+                        head-variant="light" 
+                        sticky-header = "200px" 
+                        class="table-sm table-bordered text-nowrap"
+                        selectable select-mode="single" 
+                        striped
+                        no-border-collapse
+                        selected-variant="info"
+                        ref="selectableTable"
+                        :items="aggSelected" 
+                        :fields="aggFields"
+                        @row-selected="aggSelect">
+                        <template #cell(update)="row">
+                            <b-link class="button" v-on:click="deleteAggunit(row)">削除</b-link>
+                            <!--b-button size="sm" @click="deleteAggunit(row)">削除</b-button-->
+                        </template>  
+                    </b-table>   
+                </b-card>                     
+            </div>
+            <div v-if="isLoadingData" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>        
+                        
+        </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+        
+        <div v-if="isShowAggDetail"  >
+            <b-card bg-variant="light">
+                <b-row>
+                    <b-col>
+                        <b-form inline class="mt-1">
+                            <span class="mr-4 mt-1" style="font-size: 18px"><b>集計分類(子)一覧 </b></span>       
+                            <span class="space"><strong>集計分類（親）コード ：</strong>{{ this.aggTypeCodeSelected }}</span>
+                            <span class="space"><strong>集計分類（親）名称：</strong>{{ this.aggTypeNameSelected }}</span>
+                            <span class="space"><strong>集計単位（親）コード：</strong>{{ this.aggUnitCodeSelected }} </span>
+                            <span class="space"><strong>集計単位（親）名称：</strong>{{ this.aggUnitNameSelected }}</span>
+                        </b-form> 
+                    </b-col>  
+                </b-row>        
+                <br/>
+                <div v-if="aggDetailData.length" >     
+                    <b-table
+                        head-variant="light" 
+                        sticky-header = "200px" 
+                        class="table-sm table-bordered text-nowrap"
+                        striped 
+                        no-border-collapse
+                        :items="aggDetailData" 
+                        :fields="aggDetailFields">
+                        <template #cell(update)="row">
+                            <b-link class="button" v-on:click="deleteAggunitAggunit(row)">削除</b-link>       
+                            <!--b-button class="btn btn-primary btn-xs" @click="deleteAggunitAggunit(row)">削除</b-button -->
+                        </template>  
+                    </b-table>
+                </div>        
+            </b-card>         
+        </div>
+        <b-alert class="mt-4" v-if="messageDetail" show variant="danger">{{ messageDetail }}</b-alert>
+    </div>
+</template>
+
+<style lang="css" scoped>
+    .space{
+        padding-left: 30px ;
+    }
+    .button {
+        font: 11px Arial;
+        text-decoration: none;
+        background-color: #7E7E7E; /* #817d7d; */
+        color: #FFFFFF;
+        padding: 4px 20px 4px 20px;
+        border-top: 1px solid #CCCCCC;
+        border-right: 1px solid #333333;
+        border-bottom: 1px solid #333333;
+        border-left: 1px solid #CCCCCC;
+    }
+</style>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+import compProjSearch from "@/components/compProjSearch.vue";
+
+ export default {
+
+    components: {
+        compProjSearch
+    },
+
+    data() {
+     return {
+      projInput: {
+          projCode: '',
+          projName: '',
+          targetState:'',
+          startDateBegin:'',
+          endDateBegin:'',
+          startDateComplete:'',
+          endDateComplete:'',
+          selectedRowProjId:''
+      },    
+      message: "",
+      projId:"0",
+      projCode:'',
+      projSelected: [],
+      aggFields: [],
+      aggSelectedItem: '',
+      aggSelected: [],
+      aggData:'',
+      isProjectNamePresent: false,
+      isLoadingData:false,
+      isShowAggDetail:false,
+      titleDetail : '集計詳細',
+      projNameSelected:'',
+      aggTypeCodeSelected :'',
+      aggTypeNameSelected:'',
+      aggUnitCodeSelected : '',
+      aggUnitNameSelected:'',
+      aggDetailData: [],
+      aggDetailFields: [],
+      messageDetail: '',
+      selectedAggTypeCode:'',
+      selectedAggUnitCode:'',
+      setsuFound: false,
+      currentMenuName: ''
+    };
+  },
+
+  created: function() {
+    if(!this.$store.state.loginData.accessToken) {
+      this.$router.push('/');
+    }
+   /* var parent = commonMethods.getParentMenu();
+    console.log("Parent == " + parent); */
+    this.currentMenuName = commonMethods.getCurrentMenu();
+    if(this.$store.state.responseData) {
+    this.projInput.projCode = commonMethods.loadCommonArea(this.currentMenuName + "_ProjCode");
+    this.projInput.projName = commonMethods.loadCommonArea(this.currentMenuName + "_ProjName");
+    this.projInput.targetState = commonMethods.loadCommonArea(this.currentMenuName + "_TargetState");
+    if (this.projInput.targetState && this.projInput.targetState == 2){
+        this.projInput.startDateBegin = commonMethods.loadCommonArea(this.currentMenuName + "_StartDateBegin");
+        this.projInput.endDateBegin = commonMethods.loadCommonArea(this.currentMenuName + "_EndDateBegin");
+        commonMethods.deleteCommonArea(this.currentMenuName + "_StartDateBegin");
+        commonMethods.deleteCommonArea(this.currentMenuName + "_EndDateBegin"); 
+    }  
+    else if (this.projInput.targetState && this.projInput.targetState == 4){ 
+        this.projInput.startDateComplete = commonMethods.loadCommonArea(this.currentMenuName + "_StartDateComplete");
+        this.projInput.endDateComplete = commonMethods.loadCommonArea(this.currentMenuName + "_EndDateComplete");
+        commonMethods.deleteCommonArea(this.currentMenuName + "_StartDateComplete");
+        commonMethods.deleteCommonArea(this.currentMenuName + "_EndDateComplete");
+    }    
+    this.projInput.selectedRowProjId = commonMethods.loadCommonArea(this.currentMenuName + "_SelectedRowProjId");
+
+    this.selectedAggTypeCode = commonMethods.loadCommonArea(this.currentMenuName + "_SelectedAggTypeCode");
+    this.selectedAggUnitCode = commonMethods.loadCommonArea(this.currentMenuName + "_SelectedAggUnitCode");
+ 
+    commonMethods.deleteCommonArea(this.currentMenuName + "_ProjCode");
+    commonMethods.deleteCommonArea(this.currentMenuName + "_ProjName");
+    commonMethods.deleteCommonArea(this.currentMenuName + "_TargetState");
+     commonMethods.deleteCommonArea(this.currentMenuName + "_SelectedRowProjId");
+    
+    commonMethods.deleteCommonArea(this.currentMenuName + "_SelectedAggTypeCode");
+    commonMethods.deleteCommonArea(this.currentMenuName + "_SelectedAggUnitCode");
+
+   // alert ("SelectedAggTypeCode, SelectedAggUnitCode == " + this.selectedAggTypeCode + " " + this.selectedAggUnitCode); 
+    }
+   }, 
+
+  methods: {  
+       
+    emitProjEvent(value) {    
+      this.projSelected = value;
+      this.projId = this.projSelected.projId
+      this.projNameSelected = this.projSelected.projName; 
+      this.projCode = this.projSelected.projCode;
+      this.onChangeProjSelect();
+    },
+
+    searchData(data){
+       this.projInput.projCode = data.projCode;
+       this.projInput.projName = data.projName;
+       this.projInput.startDateBegin = data.startDateBegin;
+       this.projInput.endDateBegin = data.endDateBegin;
+       this.projInput.startDateComplete = data.startDateComplete;
+       this.projInput.endDateComplete = data.endDateComplete;
+       this.projInput.targetState = data.targetState;
+     },
+
+    projSearchButtonEvent(value) {
+        this.projSearchButtonCount = value;
+    },
+
+    emittedShowOtherData(){
+        this.aggSelected = [];
+        this.isProjectNamePresent = false;
+        this.message = "";
+    },
+
+    getNow() {
+        let today = new Date(Date.now());
+        //return today.toISOString().slice(0, 10);
+        let diff = today.getTimezoneOffset() * 60 * 1000;    // -540 * 60 * 1000 = -32400000 (ミリ秒)
+        let localToday = new Date(today - diff);
+        return localToday.toISOString().slice(0, 10)
+    },
+    
+    async onChangeProjSelect(){
+       if (this.projId){
+         if (this.projId === '0'){
+            this.isProjectNamePresent = false;
+         } else{
+            this.isProjectNamePresent = true; 
+            this.aggregateCheck();
+         } 
+       }else{
+          this.isProjectNamePresent = false; 
+          this.message='';
+       }     
+    },
+    
+    async aggregateFetch() {
+        this.isLoadingData = true;
+        this.aggData= '';
+        this.aggFields = [];
+        this.aggSelected = [];
+        this.message = '';
+        let payload = {
+            projId:   this.projId ,
+            //  ...this.aggregateSearchForm.aggTypeCode   && { aggTypeCode:   this.aggregateSearchForm.aggTypeCode },
+        }
+        let axiosConfigObject = {
+            headers: {
+                Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                'Content-Type': 'application/json',
+            },
+            params:  payload
+        }
+        await axios.get(apiUrls.referAggDataMany, axiosConfigObject).then(response => {     
+            if(response.data.resultCode != '000'  ) {
+                this.message = commonMethods.getResponseMessage(response);
+            }else if (response.data.resultCode == '001') {
+                this.message = commonMethods.getResponseMessage(response);
+            }else{
+                this.aggData = response.data.resDt;
+                this.aggFields = this.createFields(response.data.resDtTitle);
+            }        
+        })
+        .catch(error => {
+            this.message = error;
+            // this.message = commonMethods.getErrorMessage(error);
+        })
+        .finally(() => {  
+            this.projInput.selectedRowProjId = this.projId;
+            this.isLoadingData = false;
+
+            if (this.selectedAggUnitCode){
+                const row = this.aggData.findIndex(x => x.aggUnitCode === this.selectedAggUnitCode);
+                this.$refs.selectableTable.selectRow(row); //NOT WORKING 
+               // alert ("Row = " + row);
+               // alert ("this.$refs.selectableTable " + this.$refs.selectableTable);
+                this.selectedAggTypeCode = '';
+                this.selectedAggUnitCode = '';
+            }
+        })
+    },
+
+    async aggregateCheck() {
+        await this.aggregateFetch();
+        this.setsuFound = false;
+        if(this.aggData.length > 0) {
+            this.aggSelected = this.aggData;  
+            for(var i = 0; i < this.aggSelected.length; i++){ 
+                if (this.aggSelected[i].aggTypeCode == "setsu"){
+                  this.setsuFound = true;
+                  break;
+                }                                  
+            }
+        } else {
+            this.isShowAggDetail = false;
+           // this.message = "no data";
+        }
+    },
+
+    async aggSelect(item){   
+        this.aggTypeCodeSelected = '';
+        this.aggUnitCodeSelected = '';
+        this.isShowAggDetail = false;
+        console.log (item);
+        if(item[0]) {
+            this.aggTypeCodeSelected = item[0].aggTypeCode;
+            this.aggUnitCodeSelected = item[0].aggUnitCode;
+            this.aggTypeNameSelected = item[0].aggTypeName;
+            this.aggUnitNameSelected = item[0].aggUnitName;
+            this.isShowAggDetail = true;
+            await this.getAggDetailData();
+        } else {
+            this.isShowAggDetail = false;
+        }
+    },
+
+    async getAggDetailData(){
+        this.aggDetailData = [];
+        this.aggDetailFields = [];
+        let payload = {
+            aggTypeParCode: this.aggTypeCodeSelected,
+            aggUnitParCode: this.aggUnitCodeSelected,
+            projId :this.projId
+        }
+        let axiosConfigObject = {
+            headers: {
+                Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                'Content-Type': 'application/json',
+            },
+            params:  payload
+        }
+        await axios.get(apiUrls.referAggUnitAggUnitMany, axiosConfigObject).then(response => {
+            this.aggDetailData = response.data.resDt;
+            this.aggDetailFields = this.createFields(response.data.resDtTitle);
+            if(response.data.resultCode != '000') {
+                this.message = commonMethods.getResponseMessage(response);
+            }
+        })
+        .catch(error => {
+            this.message = commonMethods.getErrorMessage(error);
+        })
+        .finally(() => {
+            this.isLoadingData = false;
+            commonMethods.saveCommonArea(this.currentMenuName + "_SelectedAggTypeCode", this.aggTypeCodeSelected);
+            commonMethods.saveCommonArea(this.currentMenuName + "_SelectedAggUnitCode", this.aggUnitCodeSelected);
+        })
+    },
+
+    deleteAggunit(row) {
+        if (confirm('削除しますか？')) {
+            let payload = {
+                tranId:        '',
+                resultCode:    null,
+                resultMessage: null,
+                user:          null,
+                terminal:      null,
+                reqDateTime:   null,
+                resDateTime:   null,
+                reqHd: {
+                  projId: this.projId,
+                  aggTypeParCode: row.item.aggTypeCode,
+                  aggUnitParCode: row.item.aggUnitCode,
+                }      
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                data:    payload
+            }   
+            axios.delete(apiUrls.removeAgg, axiosConfigObject).then((response) => {
+                if(response.data.resultCode != '000') {
+                  this.message = commonMethods.getResponseMessage(response);
+                } else {
+                  alert(response.data.resultMessage);
+                 // commonMethods.clickMenuBack();
+                 this.aggregateCheck();
+                 this.getAggDetailData();
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+        }
+    },
+    
+    async deleteAggunitAggunit(row){
+      if (confirm('削除しますか？')) {
+        let payload = {
+          tranId:        '',
+            resultCode:    null,
+            resultMessage: null,
+            user:          null,
+            terminal:      null,
+            reqDateTime:   null,
+            resDateTime:   null,
+            reqHd: {
+              aggTypeParCode: this.aggTypeCodeSelected,
+              aggUnitParCode: this.aggUnitCodeSelected,
+              projId :this.projId,
+              aggTypeChiCode: row.item.aggTypeChiCode,
+              aggUnitChiCode: row.item.aggUnitChiCode
+            }
+        }
+        let axiosConfigObject = {
+          headers: {
+            Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+            'Content-Type': 'application/json',
+          },
+          data:    payload
+        }
+        axios.delete(apiUrls.removeAggunitAggunit, axiosConfigObject).then((response) => {
+          if(response.data.resultCode != '000') {
+            this.messageDetail = commonMethods.getResponseMessage(response);
+          } else {
+            alert(response.data.resultMessage)
+            this.getAggDetailData();
+          }
+        })
+        .catch(error => {
+          this.messageDetail = commonMethods.getErrorMessage(error);
+        })
+      }
+    },
+
+    registerAgg(){
+
+        commonMethods.saveCommonArea(this.currentMenuName + "_ProjCode", this.projInput.projCode);
+        commonMethods.saveCommonArea(this.currentMenuName + "_ProjName", this.projInput.projName);
+        commonMethods.saveCommonArea(this.currentMenuName + "_TargetState", this.projInput.targetState);
+        if (this.projInput.targetState && this.projInput.targetState == 2){
+            commonMethods.saveCommonArea(this.currentMenuName + "_StartDateBegin", this.projInput.startDateBegin);
+            commonMethods.saveCommonArea(this.currentMenuName + "_EndDateBegin", this.projInput.endDateBegin);
+        }else if (this.projInput.targetState && this.projInput.targetState == 4){    
+            commonMethods.saveCommonArea(this.currentMenuName + "_StartDateComplete", this.projInput.startDateComplete);
+            commonMethods.saveCommonArea(this.currentMenuName + "_EndDateComplete", this.projInput.endDateComplete);
+        }    
+        commonMethods.saveCommonArea(this.currentMenuName + "_SelectedRowProjId", this.projInput.selectedRowProjId);
+
+        var aggTypCd = "0";
+        if (this.setsuFound == true){
+            aggTypCd = "setsu";
+        }
+         var data = {
+            projId:this.projId,
+            projCode:this.projCode,
+            projName:this.projNameSelected,
+            aggTypeCode:aggTypCd,
+        }
+        this.$store.state.responseData  = data; 
+        commonMethods.clickMenuForward(this.$route.path, 'registerupdateagg');
+    }, 
+
+    //カラム作成・並べ替え関数
+    createFields(obj, order) {
+        let a = [];
+        let b = [];
+        for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+        if(order) {
+            for(let i in order) { b.push(a[order[i]]); }
+            return b;
+        }
+        a.push( {'key': 'update', 'label': ''} )
+        return a;
+    },
+
+
+  },
+};
+</script>        

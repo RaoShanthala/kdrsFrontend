@@ -1,0 +1,199 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+
+        <!--工事検索-->
+        <div v-if="!(this.isShowProjScreen )">
+            <b-card bg-variant="light">
+                <b-form inline>
+                     <b-form-group label="工事コード" class="mr-2">
+                        <b-form-input v-model="aggregateSearchForm.projCode"/>
+                     </b-form-group>
+                     <b-form-group label="集計分類コード" class="mr-2">
+                        <b-form-input v-model="aggregateSearchForm.aggTypeCode"/>
+                     </b-form-group>
+                     <div  id="flexButton">
+                        <b-button @click="aggregateCheck" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetForm">クリア</b-button> 
+                     </div>
+                </b-form>
+            </b-card>       
+       
+            <div v-if="aggSelected.length">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="aggSelected"
+                    :fields="aggFields">
+                    <template #cell(update)="row">
+                        <b-button size="sm" @click="updateStdProd(row.item.stdProdId)">更新/削除</b-button>
+                    </template>  
+                </b-table>          
+            </div>
+
+            <div v-if="isLoadingData" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+              
+        </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '集計検索',
+           // prodSeqMng: 0, //0:数量管理、1:個別管理
+           // prodModel: 0, //0:パッケージモデル 1:北二モデル
+            //工事関連データ
+            aggregateSearchForm: {
+                projCode: '',
+                aggTypeCode: ''
+            },
+            isShowProjScreen: false,
+            aggFields: [],
+            aggSelectedItem: '',
+            aggSelected: [],
+    
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            isLoadingData: false
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+   
+    methods: {
+        //工事検索処理
+        async aggregateFetch() {
+            this.isLoadingData = true;
+            let payload = {
+                ...this.aggregateSearchForm.projCode   && { projCode:   this.aggregateSearchForm.projCode },
+                ...this.aggregateSearchForm.aggTypeCode   && { aggTypeCode:   this.aggregateSearchForm.aggTypeCode },
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referAggDataMany, axiosConfigObject).then(response => {
+                this.aggData = response.data.resDt;
+                console.log("Respose DATA ---------------- ");
+                console.log(response.data);
+                this.aggFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingData = false;
+            })
+        },
+
+        async aggregateCheck() {
+            await this.aggregateFetch();
+            if(this.aggData.length > 0) {
+                this.aggSelected = this.aggData;
+            } else {
+                this.message = "no data";
+                console.log("no data");
+            }
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.aggSelectedItem = item[0];
+            } else {
+                this.aggSelectedItem = '';
+            }
+         },
+
+        back() {
+            this.isShowProjScreen = true;
+            // this.isShowProdScreen = false;
+            // this.title = '工事登録・更新・取消';
+            this.clearData(['proj', 'update']);
+        },
+
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            console.log(" createFields ");
+            console.log(obj);
+            console.log(order);
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            return a;
+        },
+        
+        resetForm() {
+            this.aggregateSearchForm.projCode = '';
+            this.aggregateSearchForm.aggTypeCode = '';
+        },
+    }
+}
+</script>

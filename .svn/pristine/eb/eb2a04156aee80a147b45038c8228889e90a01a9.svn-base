@@ -1,0 +1,1122 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+
+        <!--工事検索-->
+        <div v-if="!(this.isShowProjScreen || this.isShowProdScreen)">
+            <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="工事コード" class="mr-2">
+                <b-form-input v-model="projSearchForm.projCode"/>
+                </b-form-group>
+                <div id="flexButton">
+                <b-button @click="projCheck">確認</b-button>
+                </div>
+                <b-form-group label="工事名称" class="mr-2">
+                <b-form-input v-model="projSearchForm.projName"/>
+                </b-form-group>
+                <div  id="flexButton">
+                <b-button class="mr-3" @click="projSearchScreen" >工事検索</b-button>
+                <b-button variant="primary" @click="resetProjForm">クリア</b-button>
+                </div>
+            </b-form>
+            </b-card>
+
+            <div v-if="projSelected.length">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="projSelected"
+                    :fields="projFields"/>
+            </div>
+
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+
+            <!--製品検索-->
+            <div v-if="projSelected.length && prodModel == 0">
+                <b-card bg-variant="light">
+                <b-form inline>
+                    <b-form-group label="製品コード" class="mr-2">
+                    <b-form-input v-model="prodSearchForm.prodCode"/>
+                    </b-form-group>
+                    <div id="flexButton">
+                    <b-button @click="prodCheck">確認</b-button>
+                    </div>
+                    <b-form-group label="製品名称" class="mr-2">
+                    <b-form-input v-model="prodSearchForm.prodName"/>
+                    </b-form-group>
+                    <div  id="flexButton">
+                    <b-button @click="prodSearchScreen" class="mr-3" >製品検索</b-button>
+                    <b-button variant="primary" @click="resetProdForm">クリア</b-button>
+                    </div>
+                </b-form>
+                </b-card>
+            </div>
+
+            <div v-if="prodSelected.length && prodModel == 0">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive           
+                    :items="prodSelected"
+                    :fields="prodFields"></b-table>
+            </div>
+
+            <div v-if="prodData.length && prodModel == 1">
+                <strong>製品検索</strong>
+                <p class="mt-3">製品を選択してください（ダブルクリック可）</p>
+                <b-table
+                    head-variant="light"
+                    sticky-header="200px"
+                    class="table-sm table-bordered text-nowrap"
+                    hover
+                    selectable
+                    responsive
+                    select-mode="single"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="prodData"
+                    :fields="prodFields"
+                    @row-dblclicked="prodClick"
+                    @row-selected="prodSelect"/>
+                <b-row align-h="end" class="mt-1">
+                <b-button
+                    variant="primary"
+                    :disabled="!prodSelectedItem"
+                    @click="prodConfirm"
+                    >決定
+                </b-button>
+                </b-row>
+            </div>
+
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+
+            <!--工程一覧表（表示用）-->
+            <div v-if="procData.length">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="procData"
+                    :fields="procFields"/>
+            </div>
+
+            <div v-if="isLoadingProc" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+
+            <!--製品個別コード選択（数量が０でない場合）-->
+           <div v-if="prodSeqData.length && prodSeqMng==1">
+               
+               <b-card bg-variant="light">
+                    <template #header>
+                        <strong>製品連番を選択してください</strong>
+                    </template>
+                    <b-table
+                        head-variant="light"
+                        class="table-sm table-bordered text-nowrap"
+                        hover
+                        responsive
+                        selectable
+                        selected-variant="info"
+                        select-mode="multi"
+                        :items="prodSeqData"
+                        :fields="prodSeqFields"
+                        ref="prodSeqTable"
+                        @row-selected="prodSeqSelect">
+                    </b-table>
+                    <!--
+                    <template #footer>
+                        <em>Selected: <strong>{{ prodSeqSelectedShow }}</strong></em>
+                    </template>-->
+               </b-card>
+                <!--工程選択-->
+                <b-card v-if="procListData.length" bg-variant="light">
+                    <template #header>
+                        <strong>工程を選択してください</strong>
+                    </template>
+                    <b-row>
+                        <b-col class="col-md-5">
+                            <b-table
+                                head-variant="light"
+                                sticky-header="16rem"
+                                class="table-sm table-bordered text-nowrap mr-2"
+                                hover
+                                selectable
+                                selected-variant="info"
+                                select-mode="single"
+                                :items="procListData"
+                                :fields="procListFields"
+                                ref="procListTable"
+                                @row-selected="procListSelect">
+                            </b-table>
+                        </b-col>
+                            <b-col class="col-md-1">
+                            </b-col>
+                        <b-col class="col-md-6">
+                            <br>
+                            <br>
+                            <b-col>
+                                <b-form-radio-group v-model="procSelected" :options="procOptions"/>
+                                <!--<b-button v-if="prodSeqMng" @click="prodSeqFetch" :disabled="!procListSelected" class="my-2">確定</b-button>-->
+                            </b-col>
+                            <br>
+                            <b-col>
+                                <!--工程完了日・時刻選択-->
+                                <b-form inline id="nomargin">
+                                    <b-form-group label="工程完了日">
+                                        <b-form-datepicker
+                                            today-button
+                                            reset-button
+                                            close-button
+                                            label-today-button="今日"
+                                            label-reset-button="クリア"
+                                            label-close-button="キャンセル"
+                                            placeholder="日付を選択してください"
+                                            :disabled="procSelected == 5"
+                                            v-model="procDate"/>
+                                    </b-form-group>
+                                    <b-form-group label="時刻">
+                                        <b-form-timepicker
+                                            now-button
+                                            reset-button
+                                            label-now-button="現在時刻"
+                                            label-reset-button="クリア"
+                                            label-close-button="キャンセル"
+                                            label-no-time-selected="時刻を選択してください"
+                                            label-am="午前"
+                                            label-pm="午後"
+                                            hour12
+                                            v-model="time"
+                                            :disabled="procSelected == 5"/>
+                                    </b-form-group>
+                                </b-form>
+                            </b-col>
+                        </b-col>
+                    </b-row>
+                    <!--
+                    <template #footer>
+                    <em>Selected: <strong>{{ procListSelected.procName }}, {{ procOptions[procSelected - 1].text }}</strong></em>
+                    </template>-->
+                </b-card>
+               
+           </div>
+
+            <!--製品個別コード選択（数量が０の場合）-->
+           <div v-if="prodSelected.length && prodSeqMng==0">
+                <!--工程完了日・時刻選択-->
+                <b-form inline>
+                    <b-form-group label="工程完了日">
+                        <b-form-datepicker
+                            today-button
+                            reset-button
+                            close-button
+                            label-today-button="今日"
+                            label-reset-button="クリア"
+                            label-close-button="キャンセル"
+                            placeholder="日付を選択してください"
+                            :disabled="procSelected == 5"
+                            v-model="procDate"/>
+                    </b-form-group>
+                    <b-form-group label="完了数量">
+                        <b-form-input v-model="doneQty"/>
+                    </b-form-group>
+                </b-form>
+           </div>
+
+            <div v-if="isLoadingProdSeq" class="text-center text-danger my-2">
+            <b-spinner class="align-middle"></b-spinner>
+            <strong>検索中...</strong>
+            </div>
+
+            <b-row align-h="end" class="my-3">
+                <b-button v-if="prodSeqMng==0" :disabled="!procListSelected" @click="update" class="mr-1">更新</b-button>
+                <b-button v-if="prodSeqMng==1" :disabled="!(procListSelected && prodSeqSelected.length)" @click="update" class="mr-1">更新</b-button>
+                <b-button to="/menu" variant="info">戻る</b-button>
+            </b-row>
+        </div>
+
+        <!--工事検索複数-->
+        <div v-if="isShowProjScreen">
+            <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="工事コード" class="mr-2">
+                <b-form-input v-model="projSearchForm.projCode"/>
+                </b-form-group>
+                <b-form-group label="工事名称" class="mr-2">
+                <b-form-input v-model="projSearchForm.projName"/>
+                </b-form-group>
+                    <b-form-group class="mt-3 mb-5 mr-3">
+                        <b-form-radio-group
+                            v-model="projStatus"
+                            :options="projStatusOptions"/>
+                    </b-form-group>
+                <b-form-group label="基準日">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="projSearchForm.targetDate"/>
+                </b-form-group>
+                <div  id="flexButton">
+                <b-button @click="projFetch">検索</b-button>
+                </div>
+            </b-form>
+            </b-card>
+
+            <div v-if="projData.length">
+                <p class="mt-3">工事を選択してください（ダブルクリック可）</p>
+                <b-table
+                    head-variant="light"
+                    sticky-header="16rem"
+                    class="table-sm table-bordered text-nowrap"
+                    hover
+                    selectable
+                    select-mode="single"
+                    :items="projData"
+                    :fields="projFields"
+                    @row-dblclicked="projClick"
+                    @row-selected="projSelect"/>
+                <b-row align-h="end" class="mt-1">
+                <b-button
+                    variant="primary"
+                    :disabled="!projSelectedItem"
+                    @click="projConfirm"
+                    >決定
+                </b-button>
+                </b-row>
+            </div>
+
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+
+            <b-row align-h="end" class="mt-1">
+                <b-button
+                variant="info"
+                    @click="back"
+                    >戻る
+                </b-button>
+            </b-row>
+        </div>
+
+        <!--製品検索複数-->
+        <div v-if="isShowProdScreen">
+            <b-card bg-variant="light">
+                <span class="mr-4"><strong>工事コード：</strong>{{ projSelected[0].projCode }}</span>
+                <strong>工事名称：</strong>{{ projSelected[0].projName }}
+            <b-form inline class="mt-2">
+                <b-form-group label="製品コード" class="mr-2">
+                <b-form-input v-model="prodSearchForm.prodCode"/>
+                </b-form-group>
+                <b-form-group label="製品名称" class="mr-2">
+                <b-form-input v-model="prodSearchForm.prodName"/>
+                </b-form-group>
+                <b-form-group label="基準日">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="prodSearchForm.targetDate"/>
+                </b-form-group>
+                <div  id="flexButton">
+                <b-button @click="prodFetch">検索</b-button>
+                </div>
+            </b-form>
+            </b-card>
+
+            <div v-if="prodData.length">
+                <p class="mt-3">製品を選択してください（ダブルクリック可）</p>
+                <b-table
+                    head-variant="light"
+                    :sticky-header="table_height"
+                    class="table-sm table-bordered text-nowrap"
+                    hover
+                    selectable
+                    select-mode="single"
+                    :striped="striped"
+                    :no-border-collapse="noCollapse"
+                    :items="prodData"
+                    :fields="prodFields"
+                    @row-dblclicked="prodClick"
+                    @row-selected="prodSelect"/>
+                <b-row align-h="end" class="mt-1">
+                <b-button
+                    variant="primary"
+                    :disabled="!prodSelectedItem"
+                    @click="prodConfirm"
+                    >決定
+                </b-button>
+                </b-row>
+            </div>
+
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+
+            <b-row align-h="end" class="mt-1">
+                <b-button
+                variant="info"
+                    @click="back"
+                    >戻る
+                </b-button>
+            </b-row>
+        </div>
+
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+#nomargin {
+    margin: 0;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+export default {
+    data() {
+        return {
+            title: '製品工程完了登録・取消',
+            prodSeqMng: 0, //0:数量管理、1:個別管理
+            prodModel: 0, //0:パッケージモデル 1:北二モデル
+            striped: true,
+            noCollapse: true,
+            //工事関連データ
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                targetDate: ''
+            },
+            isShowProjScreen: false,
+            projData: [],
+            projFields: [],
+            projSelectedItem: '',
+            projSelected: [],
+            projStatus: 2,
+            projStatusOptions: [
+                { value: 0, text: '工事未着手' },
+                { value: 1, text: '工事着手' },
+                { value: 2, text: '工事未完了' },
+                { value: 3, text: '工事完了' },
+                { value: 4, text: '工事すべて' }
+            ],
+            //製品関連データ
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                targetDate: ''
+            },
+            isShowProdScreen: false,
+            prodData: [],
+            prodFields: [],
+            prodSelectedItem: '',
+            prodSelected: [],
+
+            //工程関連データ
+            procData: [],
+            procFields: [],
+            procListData: [],
+            procListFields: [],
+            procListSelected: '',
+            procSelected: 1,
+            /*
+            procOptions: [
+                { value: 1, text: '開始' },
+                { value: 2, text: '完了' },
+                { value: 3, text: '中止' },
+                { value: 4, text: '不良' },
+                { value: 5, text: '取消', disabled: !this.prodSeqMng }
+            ],*/
+            procDate: this.getNow(),
+
+            //製品個別コードデータ
+            prodSeqSearchForm: {
+                prodCodeSeq: ''
+            },
+            prodSeqData: [],
+            prodSeqFields: [],
+            prodSeqSelected: [],
+
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            isLoadingProj: false,
+            isLoadingProd: false,
+            isLoadingProc: false,
+            isLoadingProdSeq: false,
+            doneQty: 0
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+    })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+    },
+    computed: {
+        procOptions: function() {
+            return [
+                { value: 1, text: '開始' },
+                { value: 2, text: '完了' },
+                { value: 3, text: '中止' },
+                { value: 4, text: '不良' },
+                { value: 5, text: '取消', disabled: !this.prodSeqMng }
+            ]
+        }
+    },
+    methods: {
+        //工事検索処理
+        async projFetch() {
+            this.clearData(['proj', 'prod', 'proc', 'procList', 'prodSeq']);
+            this.isLoadingProj = true;
+            let payload = {
+                ...this.projSearchForm.projCode   && { projCode:   this.projSearchForm.projCode },
+                ...this.projSearchForm.projName   && { projName:   this.projSearchForm.projName },
+                targetState:     this.projStatus + 1,
+                ...this.projSearchForm.targetDate && { targetDate: this.projSearchForm.targetDate }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt
+                this.projFields = this.createFields(response.data.resDtTitle)
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+            })
+        },
+
+        async projCheck() {
+            this.projStatus = 4;
+            await this.projFetch();
+            if(this.projData.length == 1) {
+                this.projSelected = this.projData;
+                this.projSearchForm.projCode = this.projSelected[0].projCode;
+                this.projSearchForm.projName = this.projSelected[0].projName;
+                if(this.prodModel == 1) await this.prodFetch();
+            } else {
+                this.title = '工事検索';
+                this.isShowProjScreen = true;
+            }
+        },
+
+        projSearchScreen() {
+            this.projStatus = 2;
+            this.isShowProjScreen = true;
+            this.title = '工事検索';
+            this.message = '';
+            this.projData = [];
+            this.projFields = [];
+            this.projSelected = [];
+            this.projSearchForm.projCode = '';
+            this.projSearchForm.projName = '';
+        },
+
+        async projClick(item) {
+            this.projSelected = [item];
+            this.projSearchForm.projCode = this.projSelected[0].projCode;
+            this.projSearchForm.projName = this.projSelected[0].projName;
+            this.isShowProjScreen = false;
+            this.title = '製品工程完了登録・取消';
+            if(this.prodModel == 1) await this.prodFetch();
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.projSelectedItem = item[0];
+            }
+            else {
+                this.projSelectedItem = '';
+            }
+        },
+
+        async projConfirm() {
+            this.projSelected = [this.projSelectedItem];
+            this.title = '製品工程完了登録・取消';
+            this.isShowProjScreen = false;
+            this.projSelectedItem = '';
+            this.projSearchForm.projCode = this.projSelected[0].projCode;
+            this.projSearchForm.projName = this.projSelected[0].projName;
+            if(this.prodModel == 1) await this.prodFetch();
+        },
+
+        //製品検索処理
+       async prodFetch() {
+            this.clearData(['proc', 'procList', 'prodSeq']);
+            this.isLoadingProd = true;
+            let payload = {
+                ...this.prodSearchForm.prodCode   && { prodCode:   this.prodSearchForm.prodCode },
+                ...this.prodSearchForm.prodName   && { prodName:   this.prodSearchForm.prodName },
+                ...this.prodSearchForm.targetDate && { targetDate: this.prodSearchForm.targetDate }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProductMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = response.data.resDt;
+                this.prodFields = this.createFields(response.data.resDtTitle, [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+            })
+        },
+
+        async prodCheck() {
+            await this.prodFetch();
+            if(this.prodData.length == 1) {
+                this.prodSelected = this.prodData;
+                this.prodSeqMng = this.prodSelected[0].prodSeqMng;
+                this.prodSearchForm.prodCode = this.prodSelected[0].prodCode;
+                this.prodSearchForm.prodName = this.prodSelected[0].prodName;
+                await this.procFetch();
+                await this.procListFetch();
+                await this.prodSeqFetch();
+            } else {
+                this.title = '製品検索';
+                this.isShowProdScreen = true;
+
+            }
+        },
+
+        prodSearchScreen() {
+            this.title = '製品検索';
+            this.isShowProdScreen = true;
+            this.message = '';
+            this.prodData = [];
+            this.prodFields = [];
+            this.prodSelected = [];
+            this.prodSearchForm.prodCode = '';
+            this.prodSearchForm.prodName = '';
+        },
+
+        async prodClick(item) {
+            this.title = '製品工程完了登録・取消';
+            this.isShowProdScreen = false;
+            this.prodSelected = [item];
+            this.prodSeqMng = this.prodSelected[0].prodSeqMng;
+            this.prodSearchForm.prodCode = this.prodSelected[0].prodCode;
+            this.prodSearchForm.prodName = this.prodSelected[0].prodName;
+            await this.procFetch();
+            await this.procListFetch();
+            await this.prodSeqFetch();
+        },
+
+        prodSelect(item) {
+            if(item[0]) {
+                this.prodSelectedItem = item[0];
+            }
+            else {
+                this.prodSelectedItem = '';
+            }
+        },
+
+        async prodConfirm() {
+            this.title = '製品工程完了登録・取消';
+            this.prodSelected = [this.prodSelectedItem];
+            this.prodSeqMng = this.prodSelected[0].prodSeqMng;
+            this.prodSearchForm.prodCode = this.prodSelected[0].prodCode;
+            this.prodSearchForm.prodName = this.prodSelected[0].prodName;
+            this.isShowProdScreen = false;
+            this.prodSelectedItem = '';
+            await this.procFetch();
+            await this.procListFetch();
+        },
+
+        //工程処理
+        async procFetch() {
+            this.clearData(['proc', 'procList']);
+            this.isLoadingProc = true;
+            let payload = {
+                ...this.projSelected[0].projId && { projId:   this.projSelected[0].projId },
+                ...this.prodSelected[0].prodId   && { prodId:     this.prodSelected[0].prodId },
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProdProcProg1, axiosConfigObject)
+            .then(response => {
+                this.procData = this.remakeResDt(response.data.resDt);
+                this.procFields = this.remakeResDtTitle(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+            .finally(() => {
+                this.isLoadingProc = false;
+            })
+        },
+
+        /*
+        async procFetch() {
+            this.clearData(['proc', 'procList']);
+            this.isLoadingProc = true;
+            let payload = {
+                ...this.projSelected[0].projCode && { projCode:   this.projSelected[0].projCode },
+                ...this.prodSelected[0].prodId   && { prodId:     this.prodSelected[0].prodId },
+                ...this.prodSelected[0].prodCode && { prodCode:   this.prodSelected[0].prodCode }
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProcessMany, axiosConfigObject)
+            .then(response => {
+                this.procData = response.data.resDt;
+                this.procFields = this.createFields(response.data.resDtTitle, [2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+            .finally(() => {
+                this.isLoadingProc = false;
+            })
+        },*/
+
+        async procListFetch() {
+            this.clearData(['prodSeq']);
+            let payload = {
+                ...this.projSelected[0].projId && {projId:   this.projSelected[0].projId},
+                ...this.prodSelected[0].prodId && {prodId:   this.prodSelected[0].prodId}
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProcessAll, axiosConfigObject)
+            .then(response => {
+                this.procListData = response.data.resDt;
+                this.procListFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data
+            })
+        },
+
+        procListSelect(items) {
+            if(items[0]) {
+                this.procListSelected = items[0]
+            }
+            else {
+                this.procListSelected = ''
+            }
+        },
+
+        //製品個別コード処理
+        async prodSeqFetch() {
+            this.clearData(['prodSeq']);
+            this.isLoadingProdSeq = true;
+            let payload = {
+                ...this.projSelected[0].projId        && { projId:      this.projSelected[0].projId },
+                //...this.projSelected[0].projCode      && { projCode:    this.projSelected[0].projCode },
+                ...this.prodSelected[0].prodId        && { prodId:      this.prodSelected[0].prodId },
+                //...this.prodSelected[0].prodCode      && { prodCode:    this.prodSelected[0].prodCode },
+                //...this.prodSeqSearchForm.prodCodeSeq && { prodCodeSeq: this.prodSeqSearchForm.prodCodeSeq },
+                //...this.procListSelected.procCode     && { procCode:    this.procListSelected.procCode },
+                //...this.procSelected                  && { targetState: this.procSelected }
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProdseqProcProg1Prod, axiosConfigObject)
+            .then(response => {
+                this.prodSeqData = this.remakeResDt(response.data.resDt);
+                this.prodSeqFields = this.remakeResDtTitle(response.data.resDtTitle, [3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.$refs.procListTable.selectRow(0);
+                if(this.prodSeqData.length == 1) {
+                    this.prodSeqSelected = this.prodSeqData;
+                    this.prodSeqSelectedShow.push(this.prodSeqSelected[0].prodCodeSeq);
+                    this.$refs.prodSeqTable.selectRow(0);
+                }
+                this.isLoadingProdSeq = false;
+            })
+        },
+
+        /*
+        async prodSeqFetch() {
+            this.clearData(['prodSeq']);
+            this.isLoadingProdSeq = true;
+            let payload = {
+                ...this.projSelected[0].projId        && { projId:      this.projSelected[0].projId },
+                ...this.projSelected[0].projCode      && { projCode:    this.projSelected[0].projCode },
+                ...this.prodSelected[0].prodId        && { prodId:      this.prodSelected[0].prodId },
+                ...this.prodSelected[0].prodCode      && { prodCode:    this.prodSelected[0].prodCode },
+                ...this.prodSeqSearchForm.prodCodeSeq && { prodCodeSeq: this.prodSeqSearchForm.prodCodeSeq },
+                ...this.procListSelected.procCode     && { procCode:    this.procListSelected.procCode },
+                ...this.procSelected                  && { targetState: this.procSelected }
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+
+            await axios.get(apiUrls.referProdSeqMany, axiosConfigObject)
+            .then(response => {
+                this.prodSeqData = response.data.resDt;
+                this.prodSeqFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                if(this.prodSeqData.length == 1) {
+                    this.prodSeqSelected = this.prodSeqData;
+                    this.$refs.prodSeqTable.selectRow(0);
+                }
+                this.isLoadingProdSeq = false;
+            })
+        },*/
+
+        prodSeqSelect(items) {
+            let res = [], resShow = []
+            for(let i in items) {
+                res.push(items[i]);
+                resShow.push(items[i].prodCodeSeq);
+            }
+            this.prodSeqSelected = res;
+            this.prodSeqSelectedShow = resShow;
+        },
+
+        async update() {
+            var reqDt = [];
+            if(this.prodSeqMng) {
+                //reqDt = this.prodSeqSelected;  
+                this.prodSeqSelected.forEach(element => {
+                    reqDt.push({
+                        prodSeqMng: this.prodSelected[0].prodSeqMng,
+                        prodCode:   element.prodCodeSeq,
+                        //quantity:   this.doneQty
+                    });
+                })
+            } else {
+                //reqDt = this.prodSelected[0];
+                reqDt.push({
+                    prodSeqMng: this.prodSelected[0].prodSeqMng,
+                    prodCode:   this.prodSelected[0].prodCode,
+                    quantity:   this.doneQty
+                });
+            }
+            if(confirm('更新しますか？')) {
+                let payload = {
+                    reqHd: {
+                        issueWarning: true,
+                        projId:   this.projSelected[0].projId,
+                        procCode: this.procListSelected.procCode,
+                        action:   this.procSelected,
+                        entryDatetime: this.procDate + 'T' + this.time + '.000000',
+                        userId:   this.$store.state.loginData.id
+                    },
+                    reqDt: reqDt
+                }
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                        }
+                    }
+                axios.post(apiUrls.registerProcess, payload, axiosConfigObject)
+                .then(response => {
+                    //this.prodSeqData = response.data.resDt;
+                    //this.prodSeqFields = this.createFields(response.data.resDtTitle);
+                    if(response.data.resultCode.charAt() == '1') {
+                        //this.message = response.data.resultMessage;
+                        alert(response.data.resultMessage);
+                        } else if(response.data.resultCode.charAt() == '2') {
+                            if(confirm('Warning ' + response.data.resultCode + '\n実行しますか？')) {
+                                let payload = {
+                                    reqHd: {
+                                        //issueWarning: true,
+                                        projId:   this.projSelected[0].projId,
+                                        procCode: this.procListSelected.procCode,
+                                        action:   this.procSelected,
+                                        entryDatetime: this.procDate + 'T' + this.time + '.000000',
+                                        userId:   this.$store.state.loginData.id
+                                    },
+                                    reqDt: reqDt
+                                }
+                                let axiosConfigObject = {
+                                    headers: {
+                                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                                        'Content-Type': 'application/json',
+                                    }
+                                }
+                                axios.post(apiUrls.registerProcess, payload, axiosConfigObject)
+                                .then(response => {
+                                    this.prodSeqData = response.data.resDt;
+                                    this.prodSeqFields = this.createFields(response.data.resDtTitle);
+                                    if(response.data.resultCode.charAt() == '1') {
+                                        //this.message = response.data.resultMessage;
+                                        alert(this.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    this.message = error.response.data;
+                                })
+                            }
+                    }
+                })
+                .catch(error => {
+                    this.message = error.response.data;
+                })
+                await this.prodFetch();
+                await this.procFetch();
+                await this.procListFetch();
+                await this.prodSeqFetch();
+            }
+            //this.back();
+        },
+
+        back() {
+            this.isShowProjScreen = false;
+            this.isShowProdScreen = false;
+            this.title = '製品工程完了登録・取消';
+            //this.clearData(['proj', 'prod', 'proc', 'procList', 'prodSeq', 'update']);
+        },
+
+        clearData(items) {
+            this.message = '';
+            items.forEach(element => {
+                if(element === 'proj') {
+                    /*
+                    this.projSearchForm = {
+                        projCode: '',
+                        projName: ''
+                    }*/
+                    this.projData = [];
+                    this.projFields = [];
+                    this.projSelectedItem = '';
+                    this.projSelected = [];
+                }
+                if(element === 'prod') {
+                    this.prodSearchForm = {
+                        prodCode: '',
+                        prodName: ''
+                    }
+                    this.prodData = [];
+                    this.prodFields = [];
+                    this.prodSelectedItem = '';
+                    this.prodSelected = [];
+                }
+                if(element === 'proc') {
+                    this.procData = [],
+                    this.procFields = []
+                }
+                if(element === 'procList') {
+                    this.procListData = [],
+                    this.procListFields = [],
+                    this.procListSelected = '',
+                    this.procSelected = 1
+                }
+                if(element === 'prodSeq') {
+                    this.prodSeqData = [],
+                    this.prodSeqFields = [],
+                    this.prodSeqSelected = [],
+                    this.prodSeqSelectedShow = []
+                }
+                if(element === 'update') {
+                    this.projSearchForm = {
+                        projCode: '',
+                        projName: ''
+                    }
+                }
+            });
+        },
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        },
+        resetProjForm() {
+            this.projSearchForm.projCode = '';
+            this.projSearchForm.projName = '';
+        },
+        resetProdForm() {
+            this.prodSearchForm.prodCode = '';
+            this.prodSearchForm.prodName = '';
+        },
+
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = {};
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        }
+
+    }
+}
+</script>

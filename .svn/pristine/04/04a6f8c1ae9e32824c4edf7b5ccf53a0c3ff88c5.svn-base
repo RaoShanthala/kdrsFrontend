@@ -1,0 +1,438 @@
+<template>
+  <div>
+    <b-card bg-variant="light">
+      <b-form>
+        <b-container >
+        <div  style=" display: inline-block">    
+          <br />
+
+          <b-form-row >      
+            <b-form-group label="工事名称:" label-cols-sm="5">
+                <b-form-select v-model="projName" :options="projNameOptions" @change="onChangeProjSelect()" ></b-form-select>         
+            </b-form-group>  
+            <b-form-group label="取込NO:" label-cols-sm="5">
+                <b-form-input v-model="importNo" disabled></b-form-input>         
+            </b-form-group>  
+          </b-form-row>
+          <div><p style="color: #ff0000;" id="projNameError"></p> </div>
+          <br />
+
+      
+
+        <div v-if="isProjectNamePresent" >
+         <div class="form-group">
+            <table><tr>
+               <td>  <label>集計分類(親)コード:</label> </td>
+               <td><b-form-radio-group v-model="aggTypeCode" :options="aggTypeCodeOptions"  @change="onChange1()" /> </td>
+            </tr></table>
+             <div><p style="color: #ff0000;" id="aggTypeCodeError"></p> </div>   
+         </div>            
+         <br />
+     
+         <div v-if="isLoadingaggUnitCode" class="form-group">
+            <table><tr>
+               <td>  <label>集計単位(親)コード:</label> </td>
+               <td style="padding-right: 50px"><b-form-select v-model="aggUnitCode" :options="aggUnitCodeOptions"  ></b-form-select>   </td>
+               <td><b-button id="add_aggUnitCode"  v-b-modal.aggUnitCode_modal>集計単位(親)コード登録</b-button></td>
+            </tr></table>
+             <div><p style="color: #ff0000;" id="aggUnitCodeError"></p> </div>   
+         </div>            
+         <br />
+
+        <b-modal
+        id="aggUnitCode_modal"
+        title="集計単位(親)コード登録"
+        @ok="add_aggUnitCode_modal">
+             <b-form>
+                <label for="agg_type_code">集計分類コード</label>
+                <b-form-input id="agg_type_code" v-model="agg_type_code"/>
+                <label for="agg_unit_code">集計単位コード</label>
+                <b-form-input id="agg_unit_code" v-model="agg_unit_code"/>
+                <label for="agg_unit_name">集計単位名称</label>
+                <b-form-input id="agg_unit_name" v-model="agg_unit_name"/>
+            </b-form>
+        </b-modal>
+
+         <div class="form-group">
+            <table><tr>
+               <td>  <label>集計分類(子)コード:</label> </td>
+               <td><b-form-select v-model="aggTypeCodeChild" :options="aggTypeCodeChildOptions" @change="onChange2()" ></b-form-select>   </td>
+            </tr></table>
+             <div><p style="color: #ff0000;" id="aggTypeCodeChildError"></p> </div>   
+         </div>            
+         <br />
+
+         
+
+           <div class="form-group"  v-if="isLoadingaggUnitCodeChild"  >
+            <table><tr>
+               <td>  <label>集計単位(子)コード</label> </td>
+               <td>
+                <ul class="checkbox-grid">
+                  <li v-for="(item, value) in aggUnitCodeChildOptions" :key="value">
+                    <input type='checkbox' v-model='aggUnitCodeChild' :value="item.value" >{{ item.text }}   
+                  </li>
+                </ul>  
+               </td>
+                <td style="padding-right: 50px"><b-button @click="Add" >集計単位(子)コード登録</b-button></td>
+            </tr></table>
+           </div>
+            <div><p style="color: #ff0000;" id="aggUnitCodeChildError"></p> </div>   
+                     
+         <br /> 
+       
+        </div>
+        </div> 
+        </b-container>
+      </b-form>
+    </b-card>
+
+    <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+    <div class="text-right mt-1">
+      <b-button @click="registerAgg" class="mr-1">登録</b-button>
+      <!--b-button variant="info" @click="backToProduct" to="/projects" class="mr-1">戻る</b-button-->
+    </div>
+  </div>
+</template>
+
+<style scoped>
+ .item { 
+   padding-left: 50px;
+   padding-right: 50px;
+   padding-top: 20px;
+}
+.checkbox-grid li {
+  display: block;
+  float: left;
+  padding: 5px;
+  width: 25%;
+
+}
+li{ 
+   display:block;
+   padding-right:10px;
+}
+label {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  text-align: right;
+  width: 150px;
+  line-height: 26px;
+  margin-bottom: 10px;
+  margin-right: 50px;
+}
+
+ #add_aggUnitCode {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+
+ export default {
+  data() {
+    return {
+      message: "",
+      appTypeData: [],
+      appUnitData: [],
+      projName:"0",
+      aggTypeCode:"setsu",
+      aggUnitCode:"0",
+      aggTypeCodeChild:"0",
+      importNo:0,
+      aggUnitCodeChild:[],
+      projNameOptions: [],
+      aggTypeCodeOptions: [],
+      aggTypeCodeChildOptions: [],
+      aggUnitCodeOptions: [],
+      aggUnitCodeChildOptions : [],
+      isProjectNamePresent: false,
+      isLoadingaggUnitCode: true,
+      isLoadingaggUnitCodeChild : false, 
+      projNamePresent: false, 
+      aggTypeCodePresent: false, 
+      aggUnitCodePresent:false,
+      aggTypeCodeChildPresent: false,
+      aggUnitCodeChildPresent: false
+    };
+  },
+  created: function() {
+    if(!this.$store.state.loginData.accessToken) {
+      this.$router.push('/');
+    }
+    this.getData();
+  }, 
+ 
+  methods: {     
+    getNow() {
+      let today = new Date(Date.now());
+      return today.toISOString().slice(0, 10);
+    },
+    
+    async onChangeProjSelect(){
+       if (this.projName === '0'){
+         this.isProjectNamePresent = false;
+       } else{
+          this.isProjectNamePresent = true; 
+          await this.getAggUnitListAll(this.projName,"setsu");
+       }    
+    },
+
+    async onChange1(){  
+      console.log(this.aggTypeCode) 
+      this.aggUnitCodeOptions = []; 
+      if (this.projName === '0'){
+         this.isProjectNamePresent = false;
+         alert("工事名称をまず選択お願いします") 
+      }else{    
+        if (this.aggTypeCode === '0'){
+          this.sLoadingaggUnitCode = false;
+        }else{
+          await this.getAggUnitListAll(this.projName,this.aggTypeCode);
+        } 
+      }   
+    },
+    async onChange2(){
+      if (this.projName  === '0'){  
+          alert("工事名称をまず選択お願いします")
+          this.aggTypeCodeChild="0";
+      }else{   
+      this.aggUnitCodeChildOptions = [];  
+      if (this.aggTypeCodeChild === '0'){
+        this.isLoadingaggUnitCodeChild = false;
+      }else {
+        await this.getAggUnitListForProj(this.aggTypeCodeChild);
+        this.isLoadingaggUnitCodeChild = true;
+      }  
+      } 
+    },
+
+    async getData(){
+      await this.getProjectList();
+      await this.getAggTypeList();
+    },
+
+    async getProjectList(){
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+      await axios.get(apiUrls.projectList, axiosConfigObject).then(response => {    
+        if(response.data.resultCode != '000') {
+          this.message = commonMethods.getResponseMessage(response);
+        }else{
+          this.projectData = response.data.resDt;
+          this.projNameOptions.push({text:"工事を選択してください", value:"0"}) 
+          for(var i = 0; i < this.projectData.length; i++){          
+            this.projNameOptions.push({text:this.projectData[i].projName, value:this.projectData[i].projId});                             
+          }
+          console.log(this.projNameOptions);
+        }
+      })
+      .catch(error => {
+        this.message = commonMethods.getErrorMessage(error);
+      })        
+    },
+
+    async getAggTypeList(){
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+      await axios.get(apiUrls.aggTypeList, axiosConfigObject).then(response => {    
+        if(response.data.resultCode != '000') {
+          this.message = commonMethods.getResponseMessage(response);
+        }else{
+          this.appTypeData = response.data.resDt;
+        //  this.aggTypeCodeOptions.push({text:"集計分類(親)コードを選択してください", value:"0"}); 
+          //this.aggTypeCodeOptions.push({text:"節", value:"setsu"}) ;
+          this.aggTypeCodeChildOptions.push({text:"集計分類(親)コードを選択してください", value:"0"}) ;
+          for(var i = 0; i < this.appTypeData.length; i++){          
+            this.aggTypeCodeOptions.push({text:this.appTypeData[i].aggTypeName, value:this.appTypeData[i].aggTypeCode}); 
+            this.aggTypeCodeChildOptions.push({text:this.appTypeData[i].aggTypeName, value:this.appTypeData[i].aggTypeCode});                            
+          }
+        }
+      })
+      .catch(error => {
+        this.message = commonMethods.getErrorMessage(error);
+      })        
+    },
+
+    async getAggUnitListAll(projId,selectedAggTypeCode){
+     
+      let payload = {
+            projId:     projId,
+            aggTypeCode:  selectedAggTypeCode
+      }  
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json',
+        },
+        params:  payload
+      }
+      await axios.get(apiUrls.aggUnitListAll, axiosConfigObject).then(response => {    
+        if(response.data.resultCode != '000') {
+          this.message = commonMethods.getResponseMessage(response);
+        }else{
+            this.aggUnitCodeOptions = [];
+          this.appUnitData = response.data.resDt;
+            this.isLoadingaggUnitCode = true; 
+            this.aggUnitCodeOptions.push({text:"集計単位(親)コードを選択してください", value:"0"}) 
+          for(var i = 0; i < this.appUnitData.length; i++){  
+                this.aggUnitCodeOptions.push({text:this.appUnitData[i].aggUnitName, value:this.appUnitData[i].aggUnitCode});
+                                           
+           }
+        }
+      })
+      .catch(error => {
+        this.message = commonMethods.getErrorMessage(error);
+      })        
+    },
+
+    async getAggUnitListForProj(selectedAggTypeCode){ 
+      let payload = {
+            aggTypeCode:  selectedAggTypeCode,
+            projId : this.projName
+      }  
+      let axiosConfigObject = {
+        headers: {
+          Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+          'Content-Type': 'application/json',
+        },
+        params:  payload
+      }
+      await axios.get(apiUrls.aggUnitList, axiosConfigObject).then(response => {    
+        if(response.data.resultCode != '000') {
+          this.message = commonMethods.getResponseMessage(response);
+        }else{
+          this.appUnitData = response.data.resDt;
+            this.isLoadingaggUnitCodeChild = true;         
+          for(var i = 0; i < this.appUnitData.length; i++){          
+            this.aggUnitCodeChildOptions.push({text:this.appUnitData[i].aggUnitName, value:this.appUnitData[i].aggUnitCode});                                            
+           }
+        }
+      })
+      .catch(error => {
+        this.message = commonMethods.getErrorMessage(error);
+      })        
+    },
+
+    registerAgg(){
+      this.message = "";
+      this.checkInput();
+        if (this.projNamePresent == true && this.aggTypeCodePresent &&  this.aggUnitCodePresent && this.aggTypeCodeChildPresent && this.aggUnitCodeChildPresent){
+          if (confirm("登録しますか？")) { 
+            //基本リクエストを作成する
+            let payload = {
+              transId: "",
+              resultCode: null,
+              resultMessage: null,
+              user: null,
+              terminal: null,
+              reqDateTime: null,
+              resDateTime: null,
+              reqHd: {
+                projId: this.projName,
+                aggTypeCodeParent: this.aggTypeCode,
+                aggTypeCodeChild: this.aggTypeCodeChild,
+                aggUnitCodeParent: this.aggUnitCode,
+                aggUnitCodeChild : this.aggUnitCodeChild,  
+                importNo: this.importNo    
+            },
+        };
+        console.log("-- payload  == " );
+        console.log(payload);
+      
+        let axiosConfigObject = {
+          headers: {
+            Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+            "Content-Type": "application/json",
+          },
+        };
+        axios.post(apiUrls.registerAggregate, payload, axiosConfigObject).then((response) => {
+            if (response.data.resultCode != "000") {
+              this.message = commonMethods.getResponseMessage(response);
+            } else {
+              alert(response.data.resultMessage);
+              this.$store.state.responseData = "";
+             // this.$router.push("aggregate");
+              commonMethods.clickMenuForward(this.$route.path, 'aggregate');
+            }
+          })
+          .catch((error) => {
+             this.message = commonMethods.getErrorMessage(error);
+          }); 
+        }  
+      }
+    },
+  
+    checkInput() {
+      var text1 = "";
+      if (this.projName  === '0') {
+        text1 = "工事名称を選択してください";
+        this.projNamePresent = false;
+      } else{
+        text1 = "";
+        this.projNamePresent = true; 
+      }
+      document.getElementById("projNameError").innerHTML = text1;
+     
+      text1 = "";
+      if (this.aggTypeCode  === '0') {
+        text1 = "集計分類(親)コードを選択してください";
+        this.aggTypeCodePresent = false;
+      } else{
+        text1 = "";
+        this.aggTypeCodePresent = true; 
+      }
+      document.getElementById("aggTypeCodeError").innerHTML = text1;
+
+      if (this.isLoadingaggUnitCode){
+        text1 = "";  
+        if (this.aggUnitCode  === '0') {
+          text1 = "集計単位(親)コードを選択してください";
+          this.aggUnitCodePresent = false;
+        } else{
+          text1 = "";
+          this.aggUnitCodePresent = true; 
+        }
+        document.getElementById("aggUnitCodeError").innerHTML = text1;
+      } 
+
+      text1 = "";
+      if (this.aggTypeCodeChild  === '0') {
+        text1 = "集計分類(子)コードを選択してください";
+        this.aggTypeCodeChildPresent = false;
+      } else{
+        text1 = "";
+        this.aggTypeCodeChildPresent = true; 
+      }
+      document.getElementById("aggTypeCodeChildError").innerHTML = text1;
+
+      if (this.isLoadingaggUnitCodeChild){
+        text1 = "";  
+        if (this.aggUnitCodeChild.length == 0) {
+          text1 = "集計単位(子)コードを選択してください";
+          this.aggUnitCodeChildPresent = false;
+        } else{
+          text1 = "";
+          this.aggUnitCodeChildPresent = true; 
+        }
+        document.getElementById("aggUnitCodeChildError").innerHTML = text1;
+      } 
+
+    },
+    
+  },
+};
+</script>

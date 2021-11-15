@@ -1,0 +1,287 @@
+<template>
+    <div>
+        <h1>新規登録画面</h1>
+    <div class="container-fluid">
+
+       <b-card bg-variant="light">
+        <!--b-form -->
+        <b-row>
+            <b-col class="col-md-5">
+            <!--div class="col-10" -->
+                <b-form-group label="ログインユーザ" label-for="input-user" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-user" v-model="view.loginUser"></b-form-input>
+                </b-form-group>
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="氏名" label-for="input-name" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-name" v-model="view.name"></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="パスワード" label-for="input-password" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-password" type="password" v-model="view.password"></b-form-input>
+                </b-form-group>
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="パスワード（確認）" label-for="inpu-password-confirm" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-password-confirm" type="password" v-model="view.passwordConfirm"></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="メールアドレス" label-for="input-email" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-email" type="email" v-model="view.email"></b-form-input>
+                </b-form-group>
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="開始日" label-for="input-date-start" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-start" type="date" v-model="view.startDate" max=“9999-12-31”></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="終了日" label-for="input-date-end" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-end" type="date" v-model="view.endDate" max=“9999-12-31”></b-form-input>
+                <br>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="工程管理" label-cols-sm="3" label-align-sm="right"></b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="権限" label-cols-sm="3" label-align-sm="right">
+                <b-form-select @change="processRoleChange(view.roles[0].roleLevel, $event)" :value="view.roles[0].roleLevel" :options="roleLevels"></b-form-select>
+                </b-form-group>
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="開始日" label-for="input-date-start-process" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-start-process" type="date" v-model="view.roles[0].userRoleStartDate" max=“9999-12-31”></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="終了日" label-for="input-date-end-process" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-end-process" type="date" v-model="view.roles[0].userRoleEndDate" max=“9999-12-31”></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="日報管理" label-cols-sm="3" label-align-sm="right"></b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+                <b-form-group label="権限" label-cols-sm="3" label-align-sm="right">
+                <b-form-select  @change="reportRoleChange(view.roles[1].roleLevel, $event)" :value="view.roles[1].roleLevel" :options="roleLevels"></b-form-select>
+                </b-form-group>
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="開始日" label-for="input-date-start-report" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-start-report" type="date" v-model="view.roles[1].userRoleStartDate" max=“9999-12-31”></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col class="col-md-5">
+            </b-col>
+            <b-col class="col-md-5">
+                <b-form-group label="終了日" label-for="input-date-end-report" label-cols-sm="3" label-align-sm="right">
+                <b-form-input id="input-date-end-report" type="date" v-model="view.roles[1].userRoleEndDate" max=“9999-12-31”></b-form-input>
+                </b-form-group>
+            </b-col>
+        </b-row>
+        <!--/b-form -->
+        </b-card>
+    </div>
+
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+
+        <div class="text-right mt-1">
+            <b-button @click="registerUser" class="mr-1">登録</b-button>
+            <b-button to="/users" class="mr-1">戻る</b-button>
+        </div>
+        
+    </div>
+</template>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+import security from '../common/security'
+export default {
+    data() {
+        return {
+            message: '',
+            view: {
+                loginUser:       'test',
+                password:        '123',
+                passwordConfirm: '123',
+                name:            'テスト',
+                email:           'test@google.com',
+                startDate:       '',
+                endDate:         '9999-12-31',
+                roles: [
+                    {
+                    roleId:            1,
+                    roleLevel:         0,
+                    userRoleStartDate: '',
+                    userRoleEndDate:   ''
+                    },
+                    {
+                    roleId:            2,
+                    roleLevel:         0,
+                    userRoleStartDate: '',
+                    userRoleEndDate:   ''
+                    }
+                ]
+            },
+            /*
+            processOptions: [
+                { value: 1, text: '管理者' },
+                { value: 2, text: '一般' },
+                { value: 3, text: 'ゲスト' },
+                { value: 0, text: '無し' }
+            ],
+            reportOptions: [
+                { value: 1, text: '管理者' },
+                { value: 2, text: '一般' },
+                { value: 3, text: 'ゲスト' },
+                { value: 0, text: '無し' }
+            ]
+            */
+            //roles: [],
+            roleLevels: []
+        }
+    },
+    created() {
+        this.view.startDate = this.getNow();
+        //this.setRoles();
+        this.setRoleLevels();
+    },
+    methods: {
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+        /*
+        setRoles() {
+            if (this.$store.rolesResDt) {
+                let resDt = this.$store.rolesResDt;
+                for(let i in resDt) { 
+                        this.roles.push({'value': resDt[i].roleId, 'text': resDt[i].roleName});
+                }
+                this.roles.push({ value: 0, text: '無し' });
+                this.roles.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.rolesResDt is nothing !');
+            }
+        },
+        */
+
+        setRoleLevels() {
+            if (this.$store.roleLevelsResDt) {
+                let resDt = this.$store.roleLevelsResDt;
+                for(let i in resDt) { 
+                    this.roleLevels.push({'value': resDt[i].codeNumeric, 'text': resDt[i].nameShort});
+                }
+                this.roleLevels.push({ value: '', text: '' });
+            } else {
+                console.log('setRoles() this.$store.roleLevelsResDt is nothing !');
+            }
+        },
+
+        processRoleChange(oldValue, newValue) {
+            if(!oldValue && newValue) {
+                this.view.roles[0].userRoleStartDate = this.view.startDate
+                this.view.roles[0].userRoleEndDate = this.view.endDate
+            }
+            if(oldValue && !newValue) {
+                this.view.roles[0].userRoleStartDate = ''
+                this.view.roles[0].userRoleEndDate = ''
+            }
+            this.view.roles[0].roleLevel = newValue
+        },
+
+        reportRoleChange(oldValue, newValue) {
+            if(!oldValue && newValue) {
+                this.view.roles[1].userRoleStartDate = this.view.startDate
+                this.view.roles[1].userRoleEndDate = this.view.endDate
+            }
+            if(oldValue && !newValue) {
+                this.view.roles[1].userRoleStartDate = ''
+                this.view.roles[1].userRoleEndDate = ''
+            }
+            this.view.roles[1].roleLevel = newValue
+        },
+
+        registerUser() {
+            this.message = ''
+            if (confirm('登録しますか？')) {
+                //基本リクエストを作成する
+                let payload = {
+                    transId: '',
+                    resultCode: null,
+                    resultMessage: null,
+                    user: null,
+                    terminal: null,
+                    reqDateTime: null,
+                    resDateTime: null,
+                    reqHd: {
+                        loginUser: this.view.loginUser,
+                        password:  security.getHash(this.view.password),
+                        name:      this.view.name,
+                        email:     this.view.email,
+                        startDate: this.view.startDate,
+                        endDate:   this.view.endDate
+                        }
+                }
+                //画面で権限レベルが指定されている(0以外)場合、リクエストにreqDtを追加する
+                if(this.view.roles[0].roleLevel >  0 || this.view.roles[1].roleLevel >  0) { payload.reqDt = [] }
+                if(this.view.roles[0].roleLevel >  0 && this.view.roles[1].roleLevel >  0) { payload.reqDt =  this.view.roles }
+                if(this.view.roles[0].roleLevel >  0 && this.view.roles[1].roleLevel == 0) { payload.reqDt[0] = this.view.roles[0] }
+                if(this.view.roles[0].roleLevel == 0 && this.view.roles[1].roleLevel >  0) { payload.reqDt[0] = this.view.roles[1] }
+
+                let axiosConfigObject = {
+                    headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    }
+                }
+
+                if(this.view.password !== this.view.passwordConfirm) {
+                    alert('パスワードとパスワード（確認）が一致していません。')
+                } else {
+                    axios.post(apiUrls.registUser, payload, axiosConfigObject)
+                    .then((response) => {
+                        if(response.data.resultCode != '000') {
+                            this.message = response.data.resultMessage
+                            }
+                        else {
+                            alert(response.data.resultMessage)
+                            this.$store.state.responseData = ''
+                            this.$router.push('users')
+                        }
+                    })
+                    .catch(error => {
+                        this.message = error.response.data
+                    })
+                }
+            }
+        }
+    }
+}
+</script>

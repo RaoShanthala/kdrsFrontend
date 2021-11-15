@@ -1,0 +1,523 @@
+<template>
+<div>
+    <b-card bg-variant="light" :class="classPrintHideProj" height="100px">
+        <b-row class="print-hide">  
+            <b-col class="col-md-11">   
+                <b-form inline class="mt-0">
+                    <b-form-group  label="工事コード" class="mr-3">
+                        <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+                    </b-form-group>
+                    <b-form-group label="工事名称" class="mr-3">
+                        <b-form-input id="projName" v-model="projSearchForm.projName"/>
+                    </b-form-group>
+                    <b-form-group class="mt-5 mb-4 mr-3">
+                        <b-form-radio-group v-model="projSearchForm.targetState" :options="projSearchForm.targetStateOptions"/>
+                    </b-form-group>
+                    <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日From" class="mt-3 mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+                    </b-form-group>
+                    <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日To" class="mt-3 mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+                    </b-form-group>
+                    <b-form-group  v-if="projSearchForm.targetState==4" label="工事完了日From" class="mt-3 mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+                    </b-form-group>
+                    <b-form-group v-if="projSearchForm.targetState==4" label="工事完了日To" class="mt-3 mr-3">
+                        <b-datepicker today-button reset-button close-button
+                            label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                            placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+                    </b-form-group>
+                    <b-form-group v-if="projSearchForm.targetState==2 || projSearchForm.targetState==4" class="mt-5">
+                        <b-button @click="projSearchClick(null)" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                    </b-form-group>
+                    <b-form-group v-if="!(projSearchForm.targetState==2 || projSearchForm.targetState==4)" class="mt-4">
+                        <b-button @click="projSearchClick(null)" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+                    </b-form-group>
+                </b-form>
+            </b-col>
+            <!-- <b-col class="col-md-1">
+                <div class="text-right mt-1" v-if="showShinkiButton">
+                    <b-button @click="registerProject" class="mr-1 mt-5">新規</b-button>  
+                </div>
+            </b-col> -->
+        </b-row> 
+        <div v-if="maintenanceMode" :class="classPrintHideProj">
+            <div v-if="projData.length">
+                <b-table ref="tableRef"
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap proj-table"
+                    :sticky-header="tableHeight"
+                    no-border-collapse
+                    responsive
+                    striped
+                    selected-variant="info"
+                    selectable
+                    select-mode="single"
+                    @row-selected="projSelect"
+                    :items="projData"
+                    :fields="projFields">
+                    <template #cell(update)="row">
+                        <b-link class="button print-hide" v-on:click="updateProject(row.item.projId)">更新/削除</b-link> 
+                    </template> 
+                </b-table>
+                <!-- <div class="text-right mt-1 print-hide" v-if="showShinkiButton">
+                    <b-button @click="printProjTable" class="mr-1 mt-0">ページ印刷</b-button>
+                </div> -->
+                <b-row align-h="end" class="my-0 print-hide" v-if="showShinkiButton">
+                    <b-col class="col-md-2">
+                        <p class="print-hide ml-1">工事を選択してください</p>
+                    </b-col>
+                    <b-col class="col-md-8"/>
+                    <b-col class="col-md-2">
+                        <b-container class="d-flex justify-content-end">
+                            <b-button @click="printProjTable" class="mr-0">ページ印刷</b-button>
+                        </b-container>
+                    </b-col>
+                </b-row>
+            </div>
+        </div>
+        <div v-else>
+            <div v-if="projData.length">
+                <b-table ref="tableRef"
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    :sticky-header="tableHeight"
+                    no-border-collapse
+                    responsive
+                    striped
+                    selected-variant="info"
+                    selectable
+                    select-mode="single"
+                    @row-selected="projSelect"
+                    :items="projData"
+                    :fields="projFields"/>
+            </div>
+        </div>
+
+    </b-card>
+    <div v-if="isLoadingProj" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+</div>
+</template>
+
+<style scoped>
+    .button {
+        font: 11px Arial;
+        text-decoration: none;
+        background-color: #7E7E7E; /* #817d7d; */
+        color: #FFFFFF;
+        padding: 4px 20px 4px 20px;
+        border-top: 1px solid #CCCCCC;
+        border-right: 1px solid #333333;
+        border-bottom: 1px solid #333333;
+        border-left: 1px solid #CCCCCC;
+    }
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '@/common/commonMethods';
+
+export default {
+    props: ['projSettings', 'projInput', 'classPrintHideProj', 'revertTableContent'],
+    watch:{
+        revertTableContent(){
+            this.tableRevert();
+        }
+    },    
+    data() {
+        return {
+            titleProj: '工事一覧',
+            projSearchForm: {
+                projCode:  '',
+                projName:  '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                startDateBegin: '',
+                endDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            },
+            tableHeight: this.projSettings?.tableHeight || '175px',
+            maintenanceMode: this.projSettings?.maintenanceMode || false,
+            projData: [],
+            projFields: [],
+            isLoadingProj: false,
+            clickCount: 1,
+            selectedRowProjId:'',
+            showShinkiButton: this.projSettings?.addButtonMode || false,
+            currentMenuName:'',
+            message:'',
+        }
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        } 
+        this.currentMenuName = commonMethods.getCurrentMenu();
+
+        let savedSelectedRowProjId = commonMethods.loadCommonArea(this.currentMenuName + "_SelectedRowProjId");
+       // alert ("savedSelectedRowProjId " +savedSelectedRowProjId)
+       
+        if (this.maintenanceMode == true && savedSelectedRowProjId > -1){
+          //  alert ("AAAAA");
+           let savedProjCode = commonMethods.loadCommonArea(this.currentMenuName + "_ProjCode");
+           let savedProjName = commonMethods.loadCommonArea(this.currentMenuName + "_ProjName");
+           let savedTargetState = commonMethods.loadCommonArea(this.currentMenuName + "_TargetState");
+        //   let savedSelectedRowProjId = commonMethods.loadCommonArea(this.currentMenuName + "_SelectedRowProjId");
+          // alert ("SAved Proj Code == " + savedProjCode);
+           if (savedTargetState && savedTargetState == 2){
+              let savedStartDate = commonMethods.loadCommonArea(this.currentMenuName + "_StartDateBegin");
+              let savedEndDate = commonMethods.loadCommonArea(this.currentMenuName + "_EndDateBegin");
+              commonMethods.deleteCommonArea(this.currentMenuName + "_StartDateBegin");
+              commonMethods.deleteCommonArea(this.currentMenuName + "_EndDateBegin");
+              if (savedStartDate){
+                this.projSearchForm.startDateBegin = savedStartDate;
+              }
+              if (savedEndDate){
+                this.projSearchForm.endDateBegin = savedEndDate;
+              }
+           }else if (savedTargetState && savedTargetState == 4){
+              let savedStartDate = commonMethods.loadCommonArea(this.currentMenuName + "_StartDateComplete");
+              let savedEndDate = commonMethods.loadCommonArea(this.currentMenuName + "_EndDateComplete");
+              commonMethods.deleteCommonArea(this.currentMenuName + "_StartDateComplete");
+              commonMethods.deleteCommonArea(this.currentMenuName + "_EndDateComplete");
+              if (savedStartDate){
+                this.projSearchForm.startDateComplete = savedStartDate;
+              }
+              if (savedEndDate){
+                this.projSearchForm.endDateComplete = savedEndDate;
+              }
+           }
+
+            commonMethods.deleteCommonArea(this.currentMenuName + "_ProjCode");
+            commonMethods.deleteCommonArea(this.currentMenuName + "_ProjName");
+            commonMethods.deleteCommonArea(this.currentMenuName + "_TargetState");
+            commonMethods.deleteCommonArea(this.currentMenuName + "_SelectedRowProjId");
+            
+  
+            if (savedProjCode){
+                this.projSearchForm.projCode =  savedProjCode;
+              //  alert ("this.projSearchForm.projCode " + this.projSearchForm.projCode);
+            }
+            if (savedProjName){
+                this.projSearchForm.projName = savedProjName;
+            }
+            if (savedTargetState){
+                this.projSearchForm.targetState = savedTargetState;
+            }
+            if (savedSelectedRowProjId){
+                this.selectedRowProjId = savedSelectedRowProjId;
+            }  
+            
+            if (savedProjCode || savedProjName || savedTargetState || savedSelectedRowProjId ){
+             //   alert (" Calling method projSearch");
+                this.projSearch(null); 
+            }       
+       }else{
+          //  alert ("BBBBB");
+            if (this.projInput.projCode){
+                this.projSearchForm.projCode =  this.projInput.projCode;
+            }
+            if (this.projInput.projName){
+                this.projSearchForm.projName =  this.projInput.projName;
+            }
+            if (this.projInput.targetState){
+                this.projSearchForm.targetState = this.projInput.targetState;
+            }
+            if (this.projInput.targetState && this.projInput.targetState == 2){
+                if (this.projInput.startDateBegin){
+                    this.projSearchForm.startDateBegin = this.projInput.startDateBegin;
+                }
+                if (this.projInput.endDateBegin){
+                    this.projSearchForm.endDateBegin = this.projInput.endDateBegin;
+                }
+            }
+            if (this.projInput.targetState && this.projInput.targetState == 4){
+                if (this.projInput.startDateComplete){
+                    this.projSearchForm.startDateComplete = this.projInput.startDateComplete;
+                }
+                if (this.projInput.endDateComplete){
+                    this.projSearchForm.endDateComplete = this.projInput.endDateComplete;
+                }
+            }
+            if (this.projInput.selectedRowProjId){
+              this.selectedRowProjId = this.projInput.selectedRowProjId;
+            }  
+        
+            if (this.projInput.projCode || this.projInput.projName || this.projInput.targetState || this.projInput.startDateBegin || this.projInput.endDateBegin){
+                this.projSearch(null);          
+            }            
+            this.projInput.projCode='';
+            this.projInput.projName='';
+            this.projInput.targetState='';
+            this.projInput.startDateBegin = '';
+            this.projInput.endDateBegin = '';
+            this.projInput.selectedRowProjId='';       
+      
+       }
+    }, 
+
+    // mounted() {
+    //     window.addEventListener('resize', () => {
+    //         this.table_height = window.innerHeight - 380 + 'px';
+    //     })
+    // },
+
+    methods: {
+        tableRevert(){
+          this.projFields = this.projFieldsCopy;
+        //   this.revertTableContent = false;
+          this.$parent.revertTableContent = false;
+        },
+
+        async projSearchClick() {
+            console.log('projSearchClick Start !');
+            await this.projSearch();
+            // console.log('projSearch end !');
+            if (this.isShowProjTable != true) {
+                return;
+            }
+            if (this.maintenanceMode == false) {
+                return;
+            }
+
+            //let titleProj = this.titleProj;
+            //let projFields = this.projFields;
+            // this.isShowProjTable = true;
+
+            // commonMethods.sleep(100, 1, function () {
+            //     //工事一覧表テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+            //     commonMethods.printPrepare('proj-table', projFields.length, titleProj, '');
+            // });
+            // this.prodData = [];
+            // this.prodFields = [];
+            // //this.$refs.refProjTable.selectRow(0);
+            // console.log('projSearchClick End !');
+        },        
+        async projSearch(searchMode) {
+            //console.log(this.tableHeight)
+            this.projData = [];
+            this.isLoadingProj = true;
+            this.isShowProjTable = false;
+            this.message = '';
+            //this.selectedRowProjId = "";
+
+            let startDate, endDate;
+            if (this.projSearchForm.targetState == 2) {
+                startDate = this.projSearchForm.startDateBegin;
+                endDate = this.projSearchForm.endDateBegin;
+            } else if (this.projSearchForm.targetState == 4) {
+                startDate = this.projSearchForm.startDateComplete;
+                endDate = this.projSearchForm.endDateComplete;
+            } else {
+                startDate = '';
+                endDate = '';
+            }
+            let payload;
+            if(searchMode) {
+                payload = {
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},  
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.projName    && { projName:   this.projSearchForm.projName },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},
+                    ...startDate && {targetStartDate: startDate},
+                    ...endDate && {targetEndDate:   endDate}
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt;
+                
+                this.projFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response)
+                    this.$emit('emitShowOtherData', false);
+                    this.selectedRowProjId = "";
+                } else {
+                    this.isShowProjTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+                if (this.selectedRowProjId){
+                    const row = this.projData.findIndex(x => x.projId === this.selectedRowProjId);
+                    if ( row > -1){
+                        this.$refs.tableRef.selectRow(row);
+                        //scrolls down to the position of selected row
+                        const tbody = this.$refs.tableRef.$el.querySelector('tbody');
+                        const selectRow = tbody.querySelectorAll('tr')[row];
+                        selectRow.scrollIntoView();
+                    }else{
+                        this.selectedRowProjId = "";
+                    }    
+                }
+                this.$emit('searchData', this.projSearchForm);
+                this.$emit('projSearchButton', this.clickCount++);
+                this.$emit("emitSelctedProjId", this.selectedRowProjId)
+               
+            })
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProjParams', item[0]);
+                this.selectedRowProjId = item[0].projId;
+            } else {
+                this.$emit('emittedProjParams', {});
+            }
+        },
+
+        registerProject() {
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProjCode", this.projSearchForm.projCode);
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProjName", this.projSearchForm.projName);
+            commonMethods.saveCommonArea(this.currentMenuName + "_TargetState", this.projSearchForm.targetState);
+            commonMethods.saveCommonArea(this.currentMenuName + "_SelectedRowProjId", this.selectedRowProjId);
+            
+            this.$store.state.searchForm = this.searchForm
+            commonMethods.clickMenuForward(this.$route.path, 'registerproject');
+        },
+
+        updateProject(item) {
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProjCode", this.projSearchForm.projCode);
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProjName", this.projSearchForm.projName);
+            commonMethods.saveCommonArea(this.currentMenuName + "_TargetState", this.projSearchForm.targetState);
+            commonMethods.saveCommonArea(this.currentMenuName + "_SelectedRowProjId", item);
+             if (this.projSearchForm.targetState && this.projSearchForm.targetState == 2){
+                commonMethods.saveCommonArea(this.currentMenuName + "_StartDateBegin", this.projSearchForm.startDateBegin);
+                commonMethods.saveCommonArea(this.currentMenuName + "_EndDateBegin", this.projSearchForm.endDateBegin);
+            }else if (this.projSearchForm.targetState && this.projSearchForm.targetState == 4){    
+                commonMethods.saveCommonArea(this.currentMenuName + "_StartDateComplete", this.projSearchForm.startDateComplete);
+                commonMethods.saveCommonArea(this.currentMenuName + "_EndDateComplete", this.projSearchForm.endDateComplete);
+            }  
+           
+            this.$store.state.searchForm = this.searchForm
+
+            let payload = {
+                projId: item
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            axios.get(apiUrls.referProjectMany, axiosConfigObject).then(response => {
+                if(response.data.resultCode != '000') {
+                    console.log(response.data.resultMessage);
+                    this.message = commonMethods.getResponseMessage(response);
+                }else{                   
+                    this.$store.state.responseData = response.data.resDt[0]; 
+                    commonMethods.clickMenuForward(this.$route.path, 'projectupdate');
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })       
+        },
+
+        resetProjSearchForm() {
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            }
+        },
+
+        printProjTable () {
+            if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                // this.printing = true;
+                this.projFieldsCopy = [];
+                this.projFieldsCopy = this.projFields;
+                this.projFields = this.projFieldsCopy.filter(field => !field.required); 
+                
+                let titleProj = this.titleProj;
+                let projFields = this.projFields;
+                commonMethods.printPrepare('proj-table', projFields.length, titleProj, '');
+
+                // this.classPrintHideProj = '';    // プロパティへの設定は親でないと効かない
+                this.$emit('emitProjPrintButton', this.clickCount++);
+
+                //let docTitle = document.title;  // タイトルを退避
+                //document.title = '';          // タイトルを表示しないように漢字スペースをセット（空文字、半角スペースだとUrlがタイトルに入る）
+                commonMethods.sleep(100, 1, function () {
+                //     // 100ミリ秒*1回、待機後確認メッセージを表示
+                        // commonMethods.printDesingHandler('proj-table', true);
+                        window.print();
+                        // commonMethods.printDesingHandler('proj-table', false);
+                });
+            }
+        },
+       
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            if(this.maintenanceMode) {
+                // a.push( {'key': 'update', 'label': ''} );
+                a.push( {'key': 'update', 'label': '', 'required': 'true' } )
+            }
+            return a;
+        }
+    }
+}
+</script>

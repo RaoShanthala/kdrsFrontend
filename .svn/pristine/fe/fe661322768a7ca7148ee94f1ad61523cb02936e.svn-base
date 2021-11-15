@@ -1,0 +1,187 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+        <b-form inline>
+            <b-form-group  label="工事コード" class="mr-3">
+                <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+            </b-form-group>
+            <b-form-group label="工事名称" class="mr-3">
+                <b-form-input id="projName" v-model="projSearchForm.projName"/>
+            </b-form-group>
+            <b-form-group class="mt-5 mb-4 mr-3">
+                <b-form-radio-group v-model="projSearchForm.targetState" :options="projSearchForm.targetStateOptions"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日From" class="mt-3 mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日To" class="mt-3 mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+            </b-form-group>
+            <b-form-group  v-if="projSearchForm.targetState==4" label="工事完了日From" class="mt-3 mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==4" label="工事完了日To" class="mt-3 mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==2 || projSearchForm.targetState==4" class="mt-5 mr-1">
+                <b-button @click="projSearch(null)" class="mr-1">検索</b-button>
+                <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+            </b-form-group>
+            <b-form-group v-if="!(projSearchForm.targetState==2 || projSearchForm.targetState==4)" class="mt-4 mr-1">
+                <b-button @click="projSearch(null)" class="mr-1">検索</b-button>
+                <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+            </b-form-group>
+        </b-form>
+        <div v-if="projData.length">
+        <b-table
+            head-variant="light"
+            class="table-sm table-bordered text-nowrap mb-4"
+            :sticky-header="tableHeight"
+            no-border-collapse
+            responsive
+            striped
+            selected-variant="info"
+            selectable
+            select-mode="single"
+            @row-selected="projSelect"
+            :items="projData"
+            :fields="projFields"/>
+        </div>
+    </b-card>
+    <div v-if="isLoadingProj" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+    props: ['projSettings'],
+    data() {
+        return {
+            projSearchForm: {
+                projCode: '',
+                projName: '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                startDateBegin: '',
+                endDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            },
+            tableHeight: this.projSettings && this.projSettings.tableHeight || '175px',
+            projData: [],
+            projFields: [],
+            isLoadingProj: false,
+            clickCount: 1
+        }
+    },
+    methods: {
+        async projSearch(searchMode) {
+            console.log(this.tableHeight)
+            this.projData = [];
+            this.isLoadingProj = true;
+            let startDate, endDate;
+            if (this.projSearchForm.targetState == 2) {
+                startDate = this.projSearchForm.startDateBegin;
+                endDate = this.projSearchForm.endDateBegin;
+            } else if (this.projSearchForm.targetState == 4) {
+                startDate = this.projSearchForm.startDateComplete;
+                endDate = this.projSearchForm.endDateComplete;
+            } else {
+                startDate = '';
+                endDate = '';
+            }
+            let payload;
+            if(searchMode) {
+                payload = {
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},  
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.projName    && { projName:   this.projSearchForm.projName },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},
+                    ...startDate && {targetStartDate: startDate},
+                    ...endDate && {targetEndDate:   endDate}
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt;
+                this.projFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+                this.$emit('projSearchButton', this.clickCount++);
+            })
+        },
+        projSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProjParams', item[0]);
+            } else {
+                this.$emit('emittedProjParams', {});
+            }
+
+        },
+
+        resetProjSearchForm() {
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            }
+        },
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        }
+    }
+}
+</script>

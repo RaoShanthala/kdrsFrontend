@@ -1,0 +1,55 @@
+<template>
+    <div>
+        <comp-proj-search
+            :proj-settings="projSettings"
+            v-on:emittedProjParams="emitProjEvent"
+            v-on:projSearchButton="projSearchButtonEvent"/>
+      
+        <comp-prod-proc-plan-search
+            v-if="isShowProdProcPlanSearch && projSelected.projId"
+            :proj-params="projSelected"/>
+    </div>
+</template>
+
+<script>
+import compProjSearch from "@/components/compProjSearch.vue";
+import compProdProcPlanSearch from "@/components/compProdProcPlanSearch.vue";
+export default {
+    components: {
+        compProjSearch,
+        compProdProcPlanSearch
+    },
+    data() {
+        return {
+            projSettings: { maintenanceMode: true },
+            projSelected: {},
+            isShowProdProcPlanSearch: false,
+            projSearchButtonCount: 0
+        }
+    },
+    watch:{
+        projSelected: function(newValue) {
+            if(newValue.projId) {
+                this.isShowProdProcPlanSearch = false;
+                //this.clearData(['prodSeq', 'procList']);
+                setTimeout(()=>this.isShowProdProcPlanSearch = true, 1);
+            } else {
+                this.isShowProdProcPlanSearch = false;
+                //this.clearData(['prodSeq', 'procList']);
+            }
+        },
+        projSearchButtonCount: function() {
+            //this.clearData(['prodSeq', 'procList']);
+            this.projSelected = {};
+        },
+    },
+    methods: {
+        emitProjEvent(value) {
+            this.projSelected = value;
+        },
+        projSearchButtonEvent(value) {
+            this.projSearchButtonCount = value;
+        }
+    }
+}
+</script>

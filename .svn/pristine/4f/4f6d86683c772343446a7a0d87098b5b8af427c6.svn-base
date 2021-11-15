@@ -1,0 +1,91 @@
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+import Login    from '../views/Login.vue'
+import Menu     from '../views/Menu.vue'
+//ユーザメンテ画面
+import Users    from '../views/User/UserMaintenance.vue'
+import UserUpdate   from '../views/User/UserUpdate.vue'
+import UserRegister from '../views/User/UserRegister.vue'
+//製品工程完了登録・取消画面
+import Process from '../views/ProcessMaintenance.vue'
+//製品/工程作成画面
+import ProdProc from '../views/ProdProcMaintenance.vue'
+//工事メンテ画面
+import Projects from '../views/Project/ProjectMaintenance.vue'
+import RegisterProject from '../views/Project/ProjectRegister.vue'
+import ProjectUpdate from '../views/Project/ProjectUpdate.vue'
+//製品メンテ画面
+import Products from '../views/Product/ProductMaintenance.vue'
+import ProductSearch from '../views/Product/ProductSearch.vue'
+import RegisterProduct from '../views/Product/ProductRegister.vue'
+import ProductUpdate from '../views/Product/ProductUpdate.vue'
+//製品メンテ画面
+import Stdproduct from '../views/StdProd/StdProductMaintenance.vue'
+import RegisterStdProduct from '../views/StdProd/StdProdRegister.vue'
+import StdproductUpdate from '../views/StdProd/StdProdUpdate.vue'
+//標準集計メンテ画面
+import Stdaggregate from '../views/StdAggregate/StdAggregateMaintenance.vue'
+import RegisterStdAggregateType from '../views/StdAggregate/StdAggregateTypeRegister.vue'
+import RegisterStdAggregateUnit from '../views/StdAggregate/StdAggregateUnitRegister.vue'
+import UpdateStdAggregateType from '../views/StdAggregate/StdAggregateTypeUpdate.vue'
+import UpdateStdAggregateUnit from '../views/StdAggregate/StdAggregateUnitUpdate.vue'
+//集計メンテ画面
+import Aggregate from '../views/Aggregate/AggregateMaintenance.vue'
+import RegisterAggregate from '../views/Aggregate/AggregateRegister.vue'
+import UpdateAggregate from '../views/Aggregate/AggregateUpdate.vue'
+//物件一覧進捗表示
+import Status from '../views/ProjectStatus.vue'
+//データ一覧表
+import ProjectTable from '../views/ProjectTable.vue'
+import ProductTable from '../views/ProductTable.vue'
+//Teklaデータ登録
+import ImportTekla from '../views/ImportTekla.vue'
+//テスト画面
+import Test from '../views/Test.vue'
+//サーバテスト画面
+import ServerTest from '../views/ServerTest.vue'
+//製品工程予定登録
+import ProdProcPlanRegister from '../views/ProdProcPlanRegister.vue'
+
+Vue.use(VueRouter)
+
+const routes = [
+  {path: '/',                name: 'Login',           meta: {title: 'ログイン',         prevPath: ''}, component: Login},
+  {path: '/menu',            name: 'Menu',            meta: {title: 'メニュー',         prevPath: ''}, component: Menu},
+  {path: '/users',           name: 'Users',           meta: {title: 'ユーザメンテ',     prevPath: '/menu'}, component: Users},
+  {path: '/userupdate',      name: 'UserUpdate',      meta: {title: '更新/削除画面',    prevPath: '/users'}, component: UserUpdate},
+  {path: '/projects',        name: 'Projects',        meta: {title: '工事メンテ',       prevPath: '/menu'}, component: Projects},
+  {path: '/userregister',    name: 'UserRegister',    meta: {title: '新規登録画面',     prevPath: '/users'}, component: UserRegister},
+  {path: '/prodproc',        name: 'ProdProc',        meta: {title: '製品/工程作成',    prevPath: '/menu'}, component: ProdProc},
+  {path: '/projectupdate',   name: 'ProjectUpdate',   meta: {title: '更新/削除画面',    prevPath: '/projects'}, component: ProjectUpdate},
+  {path: '/productupdate',   name: 'ProductUpdate',   meta: {title: '更新/削除画面',    prevPath: '/productsearch'}, component: ProductUpdate},
+  {path: '/process',         name: 'Process',         meta: {title: '製品工程進捗登録', prevPath: '/menu'}, component: Process},
+  {path: '/projectstatus',   name: 'Status',          meta: {title: '進捗表示',         prevPath: '/menu'}, component: Status},
+  {path: '/projecttable',    name: 'ProjectTable',    meta: {title: '工事別進捗一覧',   prevPath: '/menu'}, component: ProjectTable},
+  {path: '/producttable',    name: 'ProductTable',    meta: {title: '製品一覧',         prevPath: '/menu'}, component: ProductTable},
+  {path: '/productsearch',   name: 'ProductSearch',   meta: {title: '製品検索',         prevPath: '/products'}, component: ProductSearch},
+  {path: '/importtekla',     name: 'ImportTekla',     meta: {title: 'Teklaデータ登録',  prevPath: '/menu'}, component: ImportTekla},
+  {path: '/registerproject', name: 'RegisterProject', meta: {title: '新規登録画面',     prevPath: '/projects'}, component: RegisterProject},
+  {path: '/registerproduct', name: 'RegisterProduct', meta: {title: '新規登録画面',     prevPath: '/productsearch'}, component: RegisterProduct},
+  {path: '/registerstdprod', name: 'RegisterStdProduct', meta: {title: '新規登録画面',  prevPath: '/stdproduct'}, component: RegisterStdProduct},
+  {path: '/registeragg',     name: 'RegisterAgg',     meta: {title: '集計登録画面',  prevPath: '/aggregate'}, component: RegisterAggregate}, 
+  {path: '/updateagg',       name: 'UpdateAgg',      meta: {title: '集計更新/削除画面',  prevPath: '/aggregate'}, component: UpdateAggregate}, 
+  {path: '/registerstdagg',  name: 'RegisterStdAgg',  meta: {title: '標準集計分類登録画面',  prevPath: '/stdaggregate'}, component: RegisterStdAggregateType},
+  {path: '/registerstdaggunit',  name: 'RegisterStdAggUnit',  meta: {title: '標準集計単位登録画面',  prevPath: '/stdaggregate'}, component: RegisterStdAggregateUnit},
+  {path: '/updatestdaggunit',  name: 'UpdateStdAggUnit',  meta: {title: '標準集計単位更新/削除画面',  prevPath: '/stdaggregate'}, component: UpdateStdAggregateUnit}, 
+  {path: '/updatestdagg',    name: 'UpdateStdAgg',  meta: {title: '標準集計分類更新/削除画面',  prevPath: '/stdaggregate'}, component: UpdateStdAggregateType}, 
+  {path: '/products',        name: 'Products',        meta: {title: '製品メンテ',       prevPath: '/menu'}, component: Products},
+  {path: '/stdproduct',      name: 'Stdproduct',      meta: {title: '標準製品メンテ',    prevPath: '/menu'}, component: Stdproduct},
+  {path: '/stdaggregate',    name: 'Stdaggregate',    meta: {title: '標準集計メンテ',    prevPath: '/menu'}, component: Stdaggregate},
+  {path: '/aggregate',       name: 'Aggregate',       meta: {title: '集計メンテ',       prevPath: '/menu'}, component: Aggregate},
+  {path: '/stdProductUpdate',name: 'StdproductUpdate', meta: {title: '標準製品メンテ',    prevPath: '/stdproduct'}, component: StdproductUpdate},
+  {path: '/test',            name: 'Test',            meta: {title: 'テスト画面',       prevPath: '/menu'}, component: Test},
+  {path: '/servertest',      name: 'ServerTest',      meta: {title: 'サーバテスト画面',       prevPath: '/servertest'}, component: ServerTest},
+  {path: '/prodprocplanregister',      name: 'prodprocplanregister',      meta: {title: '製品工程予定登録',       prevPath: '/menu'}, component: ProdProcPlanRegister},
+  
+]
+
+const router = new VueRouter({ routes })
+
+export default router

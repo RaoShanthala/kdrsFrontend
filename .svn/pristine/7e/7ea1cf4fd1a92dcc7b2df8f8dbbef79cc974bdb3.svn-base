@@ -1,0 +1,179 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+        <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="郵便番号" class="mr-2">
+                   <b-form-input v-model="searchForm.zipcode"/>
+                </b-form-group>
+                <div  id="flexButton">
+                   <b-button @click="codeCheck" class="mr-1">検索</b-button>
+                   <b-button variant="outline-primary" @click="resetProjForm">クリア</b-button>
+                </div>
+            </b-form>
+        </b-card>
+
+        <br/>
+        <div v-if="addressDetails">
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">都道府県コード : {{prefCode}}</label>
+            </b-col>
+          </b-form-row>
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">都道府県名 : {{address1}}</label>
+            </b-col>
+          </b-form-row>
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">市区町村名 : {{address2}}</label>
+            </b-col>
+          </b-form-row>
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">町域名 : {{address3}}</label>
+            </b-col>
+          </b-form-row>  
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">都道府県名カナ : {{kana1}}</label>
+            </b-col>
+          </b-form-row> 
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">市区町村名カナ : {{kana2}}</label>
+            </b-col>
+          </b-form-row> 
+          <b-form-row>
+            <b-col class="col-md-5">
+                <label class="label">町域名カナ : {{kana3}}</label>
+            </b-col>x
+          </b-form-row>     
+        </div>  
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '郵便検索',
+            searchForm: {
+                zipcode: ''
+            },
+            addressDetails: false,
+           
+            message: '',
+            table_height: window.innerHeight - 360 + 'px',
+            address1: '',
+            address2: '',
+            address3: '',
+            prefCode: '',
+            kana1: '',
+            kana2: '',
+            kana3: ''
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+   
+    methods: {
+        //工事検索処理
+        async stdprodFetch() {
+            this.clearData(['postData']);
+            this.addressDetails = false;
+            let payload = {
+                ...this.searchForm.zipcode   && { zipcode:   this.searchForm.zipcode }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referServerData, axiosConfigObject)
+            .then(response => {                  
+                console.log(response.data.results[0]);
+                console.log(response.data.message);
+                console.log(response.data.status);
+                var result = response.data.results[0];
+                this.prefCode = result.prefcode
+                this.address1 = result.address1;
+                this.address2 = result.address2;
+                this.address3 = result.address3;
+                this.kana1 = result.kana1;
+                this.kana2 = result.kana2;
+                this.kana3 = result.kana3;
+                this.addressDetails = true;
+            })
+           .catch((error) => {
+                // this.message = (error.response || {}).data;
+                this.message = commonMethods.getErrorMessage(error);
+                this.message = "無効な郵便番号"
+            })       
+        },
+
+        async codeCheck() {
+            await this.stdprodFetch();      
+        },
+
+         clearData() {
+            this.message = '';                
+            this.zipcode = '';
+            this.address1 = '';
+            this.address2 = '';
+            this.address3 = '';
+            this.prefCode = '';
+            this.kana1 = '';
+            this.kana2 = '';
+            this.kana3 = '';
+        },
+
+     
+        resetProjForm() {
+            this.searchForm.zipcode = '';
+            this.addressDetails = false;
+            this.clearData();
+        },
+       
+
+    }
+}
+</script>

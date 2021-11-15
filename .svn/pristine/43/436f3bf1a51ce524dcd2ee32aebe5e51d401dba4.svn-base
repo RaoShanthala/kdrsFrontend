@@ -1,0 +1,334 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+    <b-form inline class="mb-1">
+        <b-form-group label="製品コード" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodCode"/>
+        </b-form-group>
+        <b-form-group label="製品名称" class="mr-2">
+        <b-form-input v-model="prodSearchForm.prodName"/>
+        </b-form-group>
+        <b-form-group label="基準日" class="mr-2">
+                <b-datepicker
+                    today-button
+                    reset-button
+                    close-button
+                    label-today-button="今日"
+                    label-reset-button="クリア"
+                    label-close-button="キャンセル"
+                    placeholder="日付を選択してください"
+                    v-model="prodSearchForm.targetDate"/>
+        </b-form-group>
+        <div style="margin-bottom: -2rem">
+        <b-button @click="prodSearch(null)" >検索</b-button>
+        </div>
+    </b-form>
+
+
+    <div v-if="prodData.length">
+        <p class="my-4">ダブルクリックで日付をコピー（Ctrl+C）してペスト（Ctrl+V）</p>
+        <div class="table-wrapper">
+        <b-table
+            id="res-table"
+            class="table-sm table-bordered text-nowrap"
+            head-variant="light"
+            no-border-collapse
+            :items="prodData">
+             <template slot="thead-top">
+                <tr>
+                    <th
+                    v-for="item in resDtTitle[0]"  :rowspan="item[2]=='rowspan'? item[1] : null" :colspan="item[2]=='colspan'? item[1] : null" :key="item[0]+Math.random()">{{item[0]}}
+                    </th>
+                </tr>
+                <tr>
+                    <th
+                    v-for="item in resDtTitle[1]" :key="item[0]+Math.random()">{{item}}
+                    </th>
+                </tr>
+            </template>
+            <template v-slot:[`cell(${n})`]="data" v-for="n in updateColumns">
+                <b-form-input :key="data[n]" :style="inputStyle" type="date" max="9999-12-31" :value="data.item[n]=='****-**-**'?'':data.item[n]" @change="updateItem"/>
+            </template>
+        </b-table>
+    </div>
+        <b-button v-if="prodData.length" @click="update">更新</b-button>
+    </div>
+    </b-card>
+    <div v-if="isLoadingProd" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+</div>
+</template>
+
+<style scoped>
+.table-wrapper {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: 400px;
+}
+
+#res-table tr th,
+#res-table tr td{
+    vertical-align: middle;
+    text-align: center;
+    padding: 4px;
+}
+
+#res-table thead tr:nth-child(1) th {
+    position: sticky;
+    top: 0px;
+}
+#res-table thead tr:nth-child(2) th {
+   position: sticky;
+    top: 26px;
+}
+
+</style>
+
+<script>
+import commonMethods from '../common/commonMethods';
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+export default {
+    props: ['prodSettings', 'projParams'],
+    data() {
+        return {
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                targetDate: '',
+            },
+            message: '',
+            updateData: [],
+            resDt: {},
+            resHd: {},
+            backupData: [],
+            updateColumns: [],
+            resDtTitle: [],
+            tableHeight: this.prodSettings && this.prodSettings.tableHeight || '400px',
+            prodData: [],
+            prodFields: [],
+            isLoadingProd: false,
+            clickCount: 1,
+            inputStyle: 'width:170px',
+         }
+    },
+    methods: {
+        async prodSearch(searchMode) {
+            this.prodData = [];
+            this.isLoadingProd = true;
+            this.message = '';
+            if(searchMode) {
+                var payload = {
+                    ...this.projParams.projId && { projId:   this.projParams.projId },
+                    ...this.projParams.projCode && { projCode:   this.projParams.projCode },
+                    ...this.prodSearchForm.prodCode && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projParams.projId && { projId:   this.projParams.projId },
+                    ...this.projParams.projCode   && { projCode:   this.projParams.projCode  },
+                    ...this.projParams.projName   && { projName:   this.projParams.projName },
+                    ...this.prodSearchForm.prodCode    && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.prodName    && { prodName:   this.prodSearchForm.prodName },
+                    ...this.prodSearchForm.targetState && {targetState: + this.prodSearchForm.targetState},
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.registerProdProcPlan, axiosConfigObject)
+            .then(response => {
+                let idx_l = Object.entries(response.data.resDtTitle).findIndex(item => item[0] === 'listProgress');
+                let idx_h = idx_l +  response.data.resDtTitle.listProgress.length*2 - 1;
+                for( let i=idx_l; i<=idx_h; i++) {
+                    this.updateColumns.push(i);
+                }
+                this.resDt = response.data.resDt;
+                this.resHd = response.data.resHd;
+                if(this.resDt.length) {
+                    var tabData = this.createTableData(response.data.resDtTitle, response.data.resDt);
+                    this.resDtTitle = [tabData[0], tabData[1]];
+                    this.prodData = tabData[2];
+                }
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('prodSearchButton', this.clickCount++);
+                if(this.resDt.length) {
+                    this.backupData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+                    this.updateData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+
+                    //ダブルクリックで日付をコピペ
+                    let dateInputs = document.getElementById('res-table').querySelectorAll('[type="date"]');
+                    dateInputs.forEach(element => {
+                        // ダブルクリックイベントを登録し、それが発火した時に入力タイプを一旦TEXTに変える
+                        element.addEventListener('dblclick', () => {
+                            element.type = 'text';
+                            // .select()（選択状態）メソッドが直ぐに動かないのでタイムアウトを設定
+                            setTimeout(() => {
+                                element.select();
+                            })
+                        });
+                        // フォカストイベントで入力タイプをDATEに戻す
+                        element.addEventListener('focusout', () => {
+                            element.type = 'date';
+                        });
+                    });
+                    let headerRows = document.getElementById('res-table').getElementsByTagName('thead')[0];
+                    headerRows.removeChild(headerRows.lastChild);
+                }
+            })
+        },
+
+        prodSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProdParams', item[0]);
+            } else {
+                this.$emit('emittedProdParams', {});
+            }
+        },
+
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        },
+
+        createTableData(resDtTitle, resDt) {
+            //非表示データのキー取得
+            var titleKeys = Object.keys(resDtTitle);
+            var dataKeys = Object.keys(resDt[0]);
+            var difference = dataKeys.filter(x => titleKeys.indexOf(x) === -1);
+            //ヘッダー二段化
+            var headerUp = [];
+            var headerDown = [];
+            Object.entries(resDtTitle).forEach(element => {
+                if(element[0] == 'listProgress') {
+                element[1].forEach(element => {
+                    var splittedElement = element.trim().split(/\s+/);
+                    headerUp.push([splittedElement[0], splittedElement.length - 1, 'colspan']);
+                    for(var i=1; i<splittedElement.length; i++) {
+                    headerDown.push(splittedElement[i]);
+                    }
+                });
+                } else {
+                    headerUp.push([element[1],2, 'rowspan']);
+                }
+            });
+            //テーブルデータ展開
+            var tableData = [];
+            var rowData = [];
+            resDt.forEach(element => {
+                Object.entries(element).forEach(element => {
+                    if(!difference.includes(element[0])) {
+                    if(element[0] == 'listProgress') {
+                        element[1].forEach(element => {
+                        var splittedElement = element.trim().split(/\s+/);
+                        splittedElement.forEach(element => {
+                            rowData.push(element);
+                        });
+                        });
+                    } else {
+                        rowData.push(element[1]);
+                    }
+                    }
+                });
+                tableData.push(rowData);
+                rowData = [];
+            });
+            return [headerUp, headerDown, tableData];
+        },
+
+        extractTableData(data) {
+            //const data = [...document.querySelectorAll('.form-control')].map(element => element.value);
+            let chunkSize = 10;
+            let res = [];
+            for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                res.push(chunk);
+            }
+            return res;
+        },
+
+        updateItem() {
+            this.updateData = [...document.getElementById('res-table').querySelectorAll('.form-control')].map(element => element.value);
+        },
+
+        update() {
+            let listProcCode = this.resHd.listProcCode;
+            let listprodId = this.resDt.map(element => element.prodId);
+            let upData = this.extractTableData(this.updateData);
+            let bkData = this.extractTableData(this.backupData);
+
+            let payload = {
+                reqHd: {
+                    projId: this.projParams.projId
+                },
+                reqDt: []
+            };
+
+            let index = -1;
+            for(let i=0; i<listprodId.length; i++) {
+                for(let j=0; j<listProcCode.length; j++) {
+                    if(upData[i][j*2] !== bkData[i][j*2] || upData[i][j*2+1] !== bkData[i][j*2+1]) {
+                        index ++;
+                        payload.reqDt[index] = {};
+                        payload.reqDt[index].prodId = listprodId[i];
+                        payload.reqDt[index].listProgress = [];
+                        payload.reqDt[index].listProgress.push({
+                            procCode: listProcCode[j],
+                            startPlanDate: upData[i][j*2],
+                            endPlanDate: upData[i][j*2+1]
+                        });
+                    }
+                }
+            }
+            
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                }
+            }
+
+            axios.post(apiUrls.updateProdProcPlan, payload, axiosConfigObject)
+                    .then((response) => {
+                        if(response.data.resultCode != '000') {
+                            this.message = commonMethods.getResponseMessage(response);
+                        }
+                        else {
+                            alert(response.data.resultMessage)
+                            //this.$store.state.responseData = ''
+                        }
+                    })
+                    .catch(error => {
+                        this.message = commonMethods.getErrorMessage(error);
+                    })
+                    .finally(() => {
+                        this.prodSearch(null);
+                    })
+        }
+    }
+}
+</script>

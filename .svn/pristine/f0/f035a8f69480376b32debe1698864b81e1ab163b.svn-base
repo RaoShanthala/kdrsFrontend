@@ -1,0 +1,311 @@
+<template>
+    <div>
+         <proj-search :projInput="projInput"  
+            v-on:emittedProjParams="emitProjEvent"
+            v-on:projSearchButton="projSearchButtonEvent"
+            v-on:searchData="searchData" />
+
+        <div v-if="isShowProdSearch">
+            <b-card bg-variant="light">
+                <b-row class="my-1 print-hide">
+                    <b-col class="col-md-5">
+                        <span class="mr-4"><strong>工事コード：</strong>{{ project.projCode }}</span>
+                        <strong>工事名称：</strong>{{ project.projName }}
+                    </b-col>
+                    <b-col class="col-md-7">
+                        <b-button @click="getProdProcProgEnd()" class="mr-1">検索</b-button>
+                    </b-col>
+                </b-row>
+<!--
+                <b-form inline class="mt-2">
+                   <b-form-group label="製品コード" class="mr-2">
+                      <b-form-input v-model="prodSearchForm.prodCode"/>
+                   </b-form-group>
+                   <b-form-group label="製品名称Ｂ" class="mr-2">
+                      <b-form-input v-model="prodSearchForm.prodName"/>
+                   </b-form-group>
+                   <div id="flexButton">
+                      <b-button @click="getProdProcProgEnd()">検索</b-button>
+                   </div>
+                </b-form>
+-->
+                <div v-if="prodData.length">
+                    <b-table
+                        head-variant="light"
+                        sticky-header="500"
+                        class="table-sm table-bordered text-nowrap" 
+                        responsive
+                        :items="prodData"
+                        :fields="prodFields">
+                    </b-table>
+                </div>
+                <b-row class="my-1 print-hide">
+                    <b-col class="col-md-11"/>
+                    <b-col class="col-md-1">
+                        <b-button @click="csvProdTable" class="mr-0">CSV出力</b-button>
+                    </b-col>
+                </b-row>
+            </b-card>
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>   
+        </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>  
+</template>
+
+<style scoped>
+#flexButton {
+    margin-bottom: -2rem;
+}
+.button {
+  font: 11px Arial;
+  text-decoration: none;
+  background-color: #7E7E7E; /* #817d7d; */
+  color: #FFFFFF;
+  padding: 4px 20px 4px 20px;
+  border-top: 1px solid #CCCCCC;
+  border-right: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  border-left: 1px solid #CCCCCC;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../common/apiUrls'
+import commonMethods from '../common/commonMethods'
+import projSearch from "@/components/ProjSearch.vue";
+
+export default {
+    components: {
+        projSearch
+    },   
+    data() {
+        return {  
+            projInput: {
+                projCode: '',
+                projName: '',
+                targetState:'',
+                selectedRowProjId:''
+            },
+            //工事関連データ   
+            //prodSearchForm: {
+            //    prodCode: '',
+            //    prodName: ''
+            //},
+            isShowProdSearch: false,
+            //isShowProjScreen: false,
+            prodData: [],
+            prodFields: [],
+            project:[],
+    
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            projSearchButtonCount: 0,
+            isLoadingProd: false,
+            //showDetail:'',         
+        }
+    },
+   
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        
+        // console.log("Entered function")
+        // console.log (this.$store.state.responseData);
+        if(this.$store.state.responseData) {
+            this.projInput.projCode = commonMethods.loadCommonArea("ProductSearchProjCode");
+            this.projInput.projName = commonMethods.loadCommonArea("ProductSearchProjName");
+            this.projInput.targetState = commonMethods.loadCommonArea("ProductSearchTargetState");
+            this.projInput.selectedRowProjId = commonMethods.loadCommonArea("ProductSearchSelectedRowProjId");
+
+            commonMethods.deleteCommonArea("ProductSearchProjCode");
+            commonMethods.deleteCommonArea("ProductSearchProjName");
+            commonMethods.deleteCommonArea("ProductSearchTargetState");
+            commonMethods.deleteCommonArea("ProductSearchSelectedRowProjId");
+
+            // await this.$nextTick();
+        
+            this.project = this.$store.state.responseData
+            //let savedProdCode = commonMethods.loadCommonArea('ProdProdCode');
+            //let savedProdName = commonMethods.loadCommonArea('ProdProdName');
+            //this.showDetail = commonMethods.loadCommonArea('ProdShowDetail');
+            //commonMethods.deleteCommonArea('ProdProdCode');
+            //commonMethods.deleteCommonArea('ProdProdName');
+            //commonMethods.deleteCommonArea('ProdShowDetail');
+            //if (savedProdCode){
+            //   this.prodSearchForm.prodCode =  savedProdCode;
+            //}
+            //if (savedProdName){
+            //   this.prodSearchForm.prodName = savedProdName;
+            //}
+            /*else if (this.project){
+               this.getProjectProductList(1);
+            }else{
+               this.message = "製品はありません" 
+            }  */           
+        }       
+    },
+
+    async mounted(){
+      window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+      })  
+      
+      await this.$nextTick(); // waits for the component to load
+
+      //if (this.project.projName && this.project.projCode && this.showDetail == "true"){
+        //if (this.prodSearchForm.prodCode || this.prodSearchForm.prodName){
+        //  this.getProductData();
+        //}else{
+        //  this.getProductData(1);
+        //}
+      //}  
+    },
+   
+    methods: {
+
+        emitProjEvent(value) {
+            if (value.projId){
+              this.project = value;     
+              this.isShowProdSearch = true;
+              this.projInput.selectedRowProjId = value.projId;
+              this.prodData = [];
+
+            }else{
+                this.project=[];
+                this.isShowProdSearch = false;
+            }      
+        },
+
+        searchData(data){
+            this.projInput.projCode = data.projCode;
+            this.projInput.projName = data.projName;
+            this.projInput.targetState = data.targetState;
+        },
+
+        projSearchButtonEvent(value) {
+             this.projSearchButtonCount = value;
+        },
+/*
+        async getProductData(mode){
+          if (mode){  
+            await this.getProjectProductList(1);
+          }else{
+             await this.getProjectProductList(); 
+          }  
+        },
+*/
+        async getProdProcProgEnd() {
+            //console.log('Calling getProdProcProgEnd Method !');
+            this.message = '';
+            this.isLoadingProd = true;
+            this.$store.state.searchForm = this.searchForm
+            let payload =  {
+                projId:   this.projInput.selectedRowProjId,
+            }
+            //console.log ("PAYLOAD =====   ")
+            //console.log(payload);  
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload}
+
+            await axios.get(apiUrls.prodProcProgEnd, axiosConfigObject).then(response => {    
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.prodData = response.data.resDt;
+                    // this.prodFields =  this.createFields(response.data.resDtTitle, [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]);
+                    this.prodFields =  this.createFields(response.data.resDtTitle);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+            })         
+        },
+
+        back() {
+            // this.isShowProjScreen = true;
+            // this.isShowProdScreen = false;
+            // this.title = '工事登録・更新・取消';
+            this.clearData(['proj', 'update']);
+        },
+
+        clearData(items) {
+            this.message = '';
+            items.forEach(element => {
+                if(element === 'proj') {
+                    this.prodData = [];
+                    this.prodFields = [];
+                }
+             
+                // if(element === 'update') {
+                //     this.prodSearchForm = {
+                //         prodCode: '',
+                //         prodName: ''
+                //     }
+                // }
+            });
+        },
+
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },     
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            //a.push( {'key': 'update', 'label': ''} )
+            return a;
+        },
+
+        //resetProjForm() {
+        //    this.prodSearchForm.prodCode = '';
+        //    this.prodSearchForm.prodName = '';
+        //},  
+
+        csvProdTable () {
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('CSVファイルをしますが、よろしいでしょうか？')) {
+                    //window.print();
+                    //const parsedData = json2csv({data: prodData});
+                    //console.log(parsedData)
+//                    const csvData = this.arrToCSV(array)
+                }
+                //document.title = docTitle;      // タイトルを元に戻す
+            });
+        },
+        arrToCSV(arr) {
+            let csvData = 'data:text/csv;charset=utf-8,'; /// 最初にcsvDataに出力方法を追加しておく
+            arr.forEach(a => {
+                const row = a.join(',');
+                csvData += row + '\r\n';
+            });
+            return csvData;
+        }
+    }
+}
+</script>

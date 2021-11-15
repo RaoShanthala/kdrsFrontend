@@ -1,0 +1,433 @@
+<template>
+    <div>
+        <h1>{{ title }}</h1>
+
+        <!--工事検索-->
+        <div v-if="!(this.isShowProjScreen )">
+            <b-card bg-variant="light">
+                <b-form inline>
+                     <b-form-group label="工事コード" class="mr-2">
+                        <b-form-input v-model="aggregateSearchForm.projCode"/>
+                     </b-form-group>
+                     <b-form-group label="集計分類コード" class="mr-2">
+                        <b-form-input v-model="aggregateSearchForm.aggTypeCode"/>
+                     </b-form-group>
+                     <div  id="flexButton">
+                        <b-button @click="aggregateCheck" class="mr-1">検索</b-button>
+                        <b-button variant="outline-primary" @click="resetForm">クリア</b-button> 
+                     </div>
+                </b-form>
+            </b-card>      
+
+            <div class="text-right mt-1">
+                <b-button @click="registerAgg" class="mr-1">新規</b-button>
+                <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+            </div> 
+
+            <br />
+       
+            <div v-if="aggSelected.length">
+                <b-table 
+                    head-variant="light" 
+                    sticky-header = "200px" 
+                    class="table-sm table-bordered text-nowrap"
+                    hover selectable select-mode="single" 
+                    :striped="striped" 
+                    :no-border-collapse="noCollapse"
+                    selected-variant="info"
+                    :items="aggSelected" 
+                    :fields="aggFields"
+                    @row-selected="rowClickGetDetails">
+                    <template #cell(update)="row">
+                        <b-button size="sm" @click="updateAgg(row)">更新/削除</b-button>
+                    </template>  
+                </b-table>
+                       
+            </div>
+
+            <div v-if="isLoadingData" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+              
+        </div>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+
+        <div v-if="isShowAggDetail"  >
+            <b-card bg-variant="light">
+                <b-row>
+                    <b-col>
+                        <h3 class="mb-4">{{ titleDetail }}</h3>     
+                    </b-col>
+                </b-row>
+                <b-row>    
+                    <b-col >
+                        <b-form inline class="mt-1">
+                            <span class="mr-4 mt-1"><strong>物件名称: </strong>{{this.projNameSelected}}</span>
+                            <span class="space"><strong>集計分類コード - 名称：</strong>{{ this.aggTypeCodeSelected }} - {{ this.aggTypeNameSelected }}</span>
+                            <span class="space"><strong>集計単位コード - 名称：</strong>{{ this.aggUnitCodeSelected }} - {{ this.aggUnitNameSelected }}</span>
+                        </b-form>
+                        <!--div class="text-right mt-1">
+                          <b-button @click="registerAggUnit" class="mr-1">新規</b-button>
+                        </div -->  
+                    </b-col>  
+                </b-row>
+                
+                <br/>
+                <div v-if="aggDetailData.length" > 
+                    
+                     <b-table
+                        head-variant="light" 
+                        sticky-header = "200px" 
+                        class="table-sm table-bordered text-nowrap"
+                        hover selectable select-mode="single"    
+                        :striped="striped" 
+                        :no-border-collapse="noCollapse"
+                        selected-variant="info"
+                        :items="aggDetailData" 
+                        :fields="aggDetailFields">
+                        <template #cell(update)="row">
+                        <b-button size="sm" @click="deleteAggunitAggunit(row)">削除</b-button>
+                    </template>  
+                     </b-table>
+                </div>        
+            </b-card>         
+        </div>
+        <b-alert class="mt-4" v-if="messageDetail" show variant="danger">{{ messageDetail }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+.form-inline {
+    margin-bottom: 1rem;
+}
+.form-inline div {
+    margin-right: 1rem;
+}
+.form-inline label {
+    justify-content: left;
+}
+#flexButton {
+    margin-bottom: -2rem;
+}
+#emptySpace {
+    display: block;
+    height: 4rem;
+}
+.row{
+    margin-left: 0;
+    margin-right: 0;
+}
+.col, .col-4 {
+    padding: 0;
+    margin-left: 0;
+}
+.space{
+  padding-left: 30px ;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '集計検索',
+            titleDetail : '集計詳細',
+           // prodSeqMng: 0, //0:数量管理、1:個別管理
+           // prodModel: 0, //0:パッケージモデル 1:北二モデル
+            //工事関連データ
+            aggregateSearchForm: {
+                projCode: '',
+                aggTypeCode: ''
+            },
+            isShowProjScreen: false,
+            aggFields: [],
+            aggSelectedItem: '',
+            aggSelected: [],
+    
+            message: '',
+            messageDetail:'',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            striped: true,
+            noCollapse: true,
+            isLoadingData: false,
+            isShowAggDetail: false,
+            projNameSelected:'',
+            projIdSelected : '',
+            aggTypeCodeSelected :'',
+            aggUnitCodeSelected : '',
+            aggTypeNameSelected :'',
+            aggUnitNameSelected : '',
+            aggDetailData: [],
+            aggDetailFields: []
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        let savedProjCode = commonMethods.loadCommonArea('AggProjCode');
+        let savedTypeCode = commonMethods.loadCommonArea('AggTypeCode');
+        let savedProjId = commonMethods.loadCommonArea('AggProjId');
+        let savedProjName = commonMethods.loadCommonArea('AggProjName');
+        let savedUnitCode = commonMethods.loadCommonArea('AggUnitCode');
+        let savedTypeCodeSel = commonMethods.loadCommonArea('AggTypeCodeSel');
+        commonMethods.deleteCommonArea('AggProjCode');
+        commonMethods.deleteCommonArea('AggTypeCode');
+        commonMethods.deleteCommonArea('AggProjId');
+        commonMethods.deleteCommonArea('AggProjName');
+        commonMethods.deleteCommonArea('AggUnitCode');
+        commonMethods.deleteCommonArea('AggTypeCodeSel');
+
+        if (savedProjCode){
+           this.aggregateSearchForm.projCode =  savedProjCode;
+        }
+        if (savedTypeCode){
+            this.aggregateSearchForm.aggTypeCode = savedTypeCode;
+        }
+        if (savedProjCode || savedTypeCode) {
+            this.aggregateCheck();
+            console.log ("aggTypeCode == " + savedTypeCode);
+            if (savedProjId && savedUnitCode && savedTypeCodeSel){
+               this.projNameSelected = savedProjName;
+               this.projIdSelected = savedProjId;
+               this.aggTypeCodeSelected = savedTypeCodeSel;
+               this.aggUnitCodeSelected = savedUnitCode;
+               this.isShowAggDetail = true;
+               this.getData();
+            }
+        }
+        
+    },
+   
+    methods: {
+        //工事検索処理
+        async aggregateFetch() {
+            this.isLoadingData = true;
+            this.aggData= '';
+            this.aggFields = [];
+            this.aggSelected = [];
+            this.message = '';
+            let payload = {
+                ...this.aggregateSearchForm.projCode   && { projCode:   this.aggregateSearchForm.projCode },
+                ...this.aggregateSearchForm.aggTypeCode   && { aggTypeCode:   this.aggregateSearchForm.aggTypeCode },
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referAggDataMany, axiosConfigObject).then(response => {
+                this.aggData = response.data.resDt;
+                console.log("Respose DATA ---------------- ");
+                console.log(response.data);
+                this.aggFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingData = false;
+            })
+        },
+
+        async getData(){
+            await this.getAggDetailData();
+        },
+
+        async aggregateCheck() {
+            await this.aggregateFetch();
+            if(this.aggData.length > 0) {
+                this.aggSelected = this.aggData;
+            } else {
+                this.isShowAggDetail = false;
+                this.message = "no data";
+                console.log("no data");
+            }
+        },
+
+        async rowClickGetDetails(item){
+           this.projNameSelected = ''; 
+           this.projIdSelected = '';
+           this.aggTypeCodeSelected = '';
+           this.aggUnitCodeSelected = '';
+           this.aggTypeNameSelected = '';
+           this.aggUnitNameSelected = '';
+           this.isShowAggDetail = '';
+           this.isShowAggDetail = false;
+           console.log (item);
+          if(item[0]) {
+            this.projNameSelected = item[0].projName;
+            this.projIdSelected = item[0].projId;
+            this.aggTypeCodeSelected = item[0].aggTypeCode;
+            this.aggUnitCodeSelected = item[0].aggUnitCode;
+            this.aggTypeNameSelected = item[0].aggTypeName;
+            this.aggUnitNameSelected = item[0].aggUnitName;
+            this.isShowAggDetail = true;
+            await this.getAggDetailData();
+           } else {
+            this.isShowAggDetail = false;
+           }
+        },
+
+        async getAggDetailData(){
+            this.aggDetailData = [];
+            this.aggDetailFields = [];
+            let payload = {
+               aggTypeParCode: this.aggTypeCodeSelected,
+               aggUnitParCode: this.aggUnitCodeSelected,
+               projId :this.projIdSelected
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referAggUnitAggUnitMany, axiosConfigObject).then(response => {
+                this.aggDetailData = response.data.resDt;
+                this.aggDetailFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingData = false;
+            })
+        },    
+
+    async deleteAggunitAggunit(row){
+      if (confirm('削除しますか？')) {
+        let payload = {
+          tranId:        '',
+            resultCode:    null,
+            resultMessage: null,
+            user:          null,
+            terminal:      null,
+            reqDateTime:   null,
+            resDateTime:   null,
+            reqHd: {
+              aggTypeParCode: this.aggTypeCodeSelected,
+              aggUnitParCode: this.aggUnitCodeSelected,
+              projId :this.projIdSelected,
+              aggTypeChiCode: row.item.aggTypeChiCode,
+              aggUnitChiCode: row.item.aggUnitChiCode
+            }
+        }
+
+        console.log ("this.aggTypeCodeSelected, " + this.aggTypeCodeSelected);
+        console.log ("this.aggUnitCodeSelected, " + this.aggUnitCodeSelected);
+        console.log ("this.this.projIdSelected, " + this.projIdSelected);
+        console.log ("this.typeChiCode, " +  row.item.aggTypeChiCode);
+        console.log ("this.unitChiCode, " + row.item.aggUnitChiCode);
+
+        let axiosConfigObject = {
+          headers: {
+            Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+            'Content-Type': 'application/json',
+          },
+          data:    payload
+        }
+        axios.delete(apiUrls.removeAggunitAggunit, axiosConfigObject).then((response) => {
+          if(response.data.resultCode != '000') {
+            this.messageDetail = commonMethods.getResponseMessage(response);
+          } else {
+            alert(response.data.resultMessage)
+            this.getAggDetailData();
+          }
+        })
+        .catch(error => {
+          this.messageDetail = commonMethods.getErrorMessage(error);
+        })
+      }
+    },
+
+    updateAgg(row){
+        commonMethods.saveCommonArea('AggProjCode', this.aggregateSearchForm.projCode);
+        commonMethods.saveCommonArea('AggTypeCode', this.aggregateSearchForm.aggTypeCode);
+        commonMethods.saveCommonArea('AggProjId', this.projIdSelected);
+        commonMethods.saveCommonArea('AggProjName', this.projNameSelected);
+        commonMethods.saveCommonArea('AggUnitCode', this.aggUnitCodeSelected);
+        commonMethods.saveCommonArea('AggTypeCodeSel', this.aggTypeCodeSelected);
+        var data = {
+            projId:row.item.projId,
+            projCode:row.item.projCode,
+            projName:row.item.projName,
+            aggTypeCode:row.item.aggTypeCode,
+            aggUnitCode:row.item.aggUnitCode
+        }
+        console.log ("data == " + data);
+        this.$store.state.responseData  = data; 
+        commonMethods.clickMenuForward(this.$route.path, 'updateagg');
+       
+    },
+
+        registerAgg(){
+            commonMethods.saveCommonArea('AggProjCode', this.aggregateSearchForm.projCode);
+            commonMethods.saveCommonArea('AggTypeCode', this.aggregateSearchForm.aggTypeCode);
+            commonMethods.saveCommonArea('AggProjId', this.projIdSelected);
+            commonMethods.saveCommonArea('AggProjName', this.projNameSelected);
+            commonMethods.saveCommonArea('AggUnitCode', this.aggUnitCodeSelected);
+            commonMethods.saveCommonArea('AggTypeCodeSel', this.aggTypeCodeSelected);
+            this.$store.state.aggregateSearchForm = this.aggregateSearchForm
+            this.$store.state.responseData = ''
+            //this.$router.push('registerstdprod')
+            commonMethods.clickMenuForward(this.$route.path, 'registeragg');
+        },
+
+        back() {
+            this.isShowProjScreen = true;
+            // this.isShowProdScreen = false;
+            // this.title = '工事登録・更新・取消';
+            this.clearData(['proj', 'update']);
+        },
+
+        getNow() {
+            let today = new Date(Date.now())
+            return today.toISOString().slice(0,10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        //カラム作成・並べ替え関数
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            return a;
+        },
+        
+        resetForm() {
+            this.aggregateSearchForm.projCode = '';
+            this.aggregateSearchForm.aggTypeCode = '';
+        },
+    }
+}
+</script>

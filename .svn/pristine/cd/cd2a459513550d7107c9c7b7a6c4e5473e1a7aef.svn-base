@@ -1,0 +1,77 @@
+import store from '../store/index'
+import router from '../router/index'
+
+//カラム作成・並べ替え関数
+function createFields(obj, order) {
+    let a = []
+    let b = []
+    for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ) }
+    if(order) {
+        for(let i in order) { b.push(a[order[i]]) }
+        return b
+    }
+    return a
+}
+
+function clickMenuForward(menuCurrentPath, menuForwardPath) {
+    store.dispatch('pushMenuPath', menuCurrentPath);
+    router.push({path: menuForwardPath});
+}
+
+function clickMenuBack() {
+    // vue からの呼び出しは、次のとおり！
+    //let menuBackPath = this.$store.getters.getLastMenuPath;
+    //this.$store.dispatch('popMenuPath');
+    //this.$router.push({path: menuPath});
+    let menuBackPath = store.getters.getLastMenuPath;
+    store.dispatch('popMenuPath');
+    router.push({path: menuBackPath});
+}
+
+function saveCommonArea(key, val) {
+    //this.$store.dispatch('saveCommonArea', { commonKey: key, commonVal: val });
+    store.dispatch('saveCommonArea', { commonKey: key, commonVal: val });
+}
+
+function loadCommonArea(key) {
+    //let menuPath = this.$store.getters.loadCommonArea(commonKey);
+    //console.log('menuPath=' + menuPath);
+    return store.getters.loadCommonArea(key);
+}
+
+function deleteCommonArea(key) {
+    //this.$store.dispatch('deleteCommonArea', commonKey);
+    store.dispatch('deleteCommonArea', key);
+    //menuPath = this.$store.getters.loadCommonArea(commonKey);
+    //console.log('menuPath=' + menuPath);
+}
+
+function getResponseMessage(response) {
+    return response.data.resultCode + ": " + response.data.resultMessage;
+}
+
+function getErrorMessage(error) {
+    return error.response.data.status.code + ": " + error.response.data.status.message;
+}
+
+function sleep(delay, iteration, callbackFunc) {
+    // delay（ミリ秒） * iteration = 待機時間
+    var count = 0;
+    // delayミリ秒間隔で無名関数をiterationの回数実行
+    var id = setInterval(function () {
+        count++;
+        // 経過時間（delay * count） >= 待機時間の場合、待機終了。
+        if (count >= iteration) {
+            // タイマー停止
+            clearInterval(id);
+            // 完了時、コールバック関数を実行
+            if (callbackFunc) callbackFunc();
+        }
+    }, delay);
+}
+
+export default {
+    createFields, clickMenuForward, clickMenuBack,
+    saveCommonArea, loadCommonArea, deleteCommonArea,
+    getResponseMessage, getErrorMessage, sleep
+}

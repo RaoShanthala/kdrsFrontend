@@ -1,0 +1,255 @@
+<template>
+    <div>
+        <!--h1>{{ title }}</h1-->
+        <b-card bg-variant="light">
+            <b-form inline>
+                <b-form-group label="標準製品名称" class="mr-2">
+                   <b-form-input v-model="stdprodSearchForm.stdprodName"/>
+                </b-form-group>
+                <div  id="flexButton">
+                   <b-button @click="stdprodCheck" class="mr-1">検索</b-button>
+                   <b-button variant="outline-primary" @click="resetProjForm">クリア</b-button>
+                 </div>
+                <div id="flexButton"  style=" margin-left: auto; ">
+                  <b-button @click="registerStdProd" class="mr-1"  >新規</b-button>
+                  <!--b-button  variant="info" to ="/menu">戻る</b-button-->
+                </div> 
+            </b-form>
+            
+
+            <br/>
+            <div v-if="prodSelected.length">
+                <b-table
+                    head-variant="light"
+                    class="table-sm table-bordered text-nowrap"
+                    responsive
+                    :items="prodSelected"
+                    :fields="stdProdFields"
+                >
+                    <template #cell(update)="row">
+                        <!--b-button size="sm" @click="updateStdProd(row.item.stdProdId)">更新/削除</b-button-->
+                        <b-link class="button" v-on:click="updateStdProd(row.item.stdProdId)">更新/削除</b-link>
+                    </template>  
+                </b-table>          
+            </div>
+
+            <div v-if="isLoadingProj" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert class="mt-4" v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+
+#flexButton {
+    margin-bottom: -2rem;
+}
+.button {
+  font: 11px Arial;
+  text-decoration: none;
+  background-color: #7E7E7E; /* #817d7d; */
+  color: #FFFFFF;
+  padding: 4px 20px 4px 20px;
+  border-top: 1px solid #CCCCCC;
+  border-right: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  border-left: 1px solid #CCCCCC;
+}
+</style>
+
+<script>
+import axios from 'axios'
+import apiUrls from '../../common/apiUrls'
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            title: '標準製品登録・更新・取消',
+            //工事関連データ
+            stdprodSearchForm: {
+                stdprodName: ''
+            },
+            isShowProjScreen: false,
+            stdprodData: [],
+            prodSelectedItem: '',
+            prodSelected: [],
+            isLoadingProj: false,
+            message: '',
+            time: this.getTime(),
+            table_height: window.innerHeight - 360 + 'px',
+            stdProdFields: [],
+            currentMenuName:''
+        }
+    },
+    
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 360 + 'px'
+        })
+    },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        this.currentMenuName = commonMethods.getCurrentMenu();
+        let savedStdProdName = commonMethods.loadCommonArea(this.currentMenuName + "_ProdName");
+        commonMethods.deleteCommonArea(this.currentMenuName + "_ProdName");
+        let returnFromInsertUpdate = commonMethods.loadCommonArea('ReturnFromInsertUpdate');
+        commonMethods.deleteCommonArea('ReturnFromInsertUpdate');
+        console.log(" returnFromInsertUpdate " + returnFromInsertUpdate);
+        if (savedStdProdName || returnFromInsertUpdate){
+            console.log(" returnFromInsertUpdate " + returnFromInsertUpdate);
+            this.stdprodSearchForm.stdprodName = savedStdProdName;
+            this.stdprodCheck();
+        }           
+    },
+   
+    methods: {
+        //工事検索処理
+        async stdprodFetch() {
+            this.clearData(['stdprodData']);
+            this.isLoadingProj = true;
+            let payload = {
+                ...this.stdprodSearchForm.stdprodName   && { stdprodName:   this.stdprodSearchForm.stdprodName }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload
+            }
+            await axios.get(apiUrls.referStdProductMany, axiosConfigObject)
+            .then(response => {
+                 if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                }else if (response.data.resultCode == '001') {
+                   this.message = commonMethods.getResponseMessage(response); 
+                }else{
+                    this.stdprodData = response.data.resDt;
+                    // this.stdProdFields = this.createTableFields(response.data.resDtTitle);
+                    this.stdProdFields = [];
+                    this.stdProdFields = this.createTableFields(response.data.resDtTitle);
+                }    
+            })
+           .catch((error) => {
+                //this.message = (error.response || {}).data;
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+            })
+        },
+
+        async stdprodCheck() {
+            await this.stdprodFetch();
+            if(this.stdprodData.length > 0) {
+              // console.log("Not empty");
+               this.prodSelected = this.stdprodData;
+             } /*else{
+                this.message = "no data";
+                console.log("no data");
+            }*/
+        },
+
+        registerStdProd() {
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProdName",this.stdprodSearchForm.stdprodName );
+            this.$store.state.stdprodSearchForm = this.stdprodSearchForm
+            this.$store.state.responseData = ''
+            //this.$router.push('registerstdprod')
+            commonMethods.clickMenuForward(this.$route.path, 'registerstdprod');
+        },
+
+        updateStdProd(item) {
+            commonMethods.saveCommonArea(this.currentMenuName + "_ProdName",this.stdprodSearchForm.stdprodName );
+             this.$store.state.stdprodSearchForm = this.stdprodSearchForm
+
+            let payload = {
+                stdProdId: item
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+                params:  payload}
+            axios.get(apiUrls.referStdProductOne, axiosConfigObject)
+            .then(response => {
+                if(response.data.resultCode != '000') {
+                    console.log(response.data.resultMessage);
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    console.log(response.data);
+                    this.$store.state.responseData = response.data.resDt;   
+                    console.log("moving to update page");   
+                    //this.$router.push('projectupdate');
+                    commonMethods.clickMenuForward(this.$route.path, 'stdProductUpdate');
+                }
+            })
+          .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            }) 
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.prodSelectedItem = item[0];
+            }
+            else {
+                this.prodSelectedItem = '';
+            }
+        },
+
+        back() {
+            this.isShowProjScreen = true;
+            this.clearData();
+        },
+
+        clearData() {
+            this.message = '';                
+            this.stdprodData = [];
+            this.test = [];
+            this.prodSelectedItem = '';
+            this.prodSelected = [];   
+         
+        },
+        getNow() {
+            let today = new Date(Date.now())
+            //return today.toISOString().slice(0, 10);
+            let diff = today.getTimezoneOffset() * 60 * 1000;    // -540 * 60 * 1000 = -32400000 (ミリ秒)
+            let localToday = new Date(today - diff);
+            return localToday.toISOString().slice(0, 10)
+        },
+
+        getTime() {
+            let today = new Date(Date.now())
+            return today.toTimeString().slice(0,8)
+        },
+
+        //カラム作成・並べ替え関数
+        createTableFields(obj, order) {
+            console.log("createTableFields");
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            a.push( {'key': 'update', 'label': ''} )
+            console.log(a);
+            return a;
+        },
+
+        resetProjForm() {
+            this.stdprodSearchForm.stdprodName = '';
+        },       
+
+    }
+}
+</script>

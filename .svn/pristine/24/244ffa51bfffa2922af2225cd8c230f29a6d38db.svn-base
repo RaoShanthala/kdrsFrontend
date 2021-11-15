@@ -1,0 +1,227 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+        <b-form inline>
+            <b-form-group  label="工事コード" class="mr-2">
+                <b-form-input id="projCode" v-model="projSearchForm.projCode"/>
+            </b-form-group>
+            <b-form-group label="工事名称" class="mr-3">
+                <b-form-input id="projName" v-model="projSearchForm.projName"/>
+            </b-form-group>
+            <b-form-group class="mt-5 mb-1 mr-2">
+                <b-form-radio-group v-model="projSearchForm.targetState" :options="projSearchForm.targetStateOptions"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日From" class="mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.startDateBegin"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==2" label="工事着手日To" class="mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.endDateBegin"/>
+            </b-form-group>
+            <b-form-group  v-if="projSearchForm.targetState==4" label="工事完了日From" class="mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.startDateComplete"/>
+            </b-form-group>
+            <b-form-group v-if="projSearchForm.targetState==4" label="工事完了日To" class="mr-3">
+                <b-datepicker today-button reset-button close-button
+                    label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                    placeholder="日付を選択してください" v-model="projSearchForm.endDateComplete"/>
+            </b-form-group>
+            <b-form-group class="mr-1" style="margin-top:2rem;">
+                <b-button @click="projSearch(null)" class="mr-1">検索</b-button>
+                <b-button variant="outline-primary" @click="resetProjSearchForm">クリア</b-button>
+            </b-form-group>
+        </b-form>
+        <div v-if="projData.length">
+        <b-table ref="tableRef"
+            head-variant="light"
+            class="table-sm table-bordered text-nowrap"
+            :sticky-header="tableHeight"
+            no-border-collapse
+            responsive
+            striped
+            selected-variant="info"
+            selectable
+            select-mode="single"
+             @row-selected="projSelect"
+            :items="projData"
+            :fields="projFields"/>
+        </div>
+    </b-card>
+    <div v-if="isLoadingProj" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+
+export default {
+    props: ['projSettings', 'projInput'],
+    data() {
+        return {
+            projSearchForm: {
+                projCode:  '',
+                projName:  '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                startDateBegin: '',
+                endDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            },
+            tableHeight: this.projSettings && this.projSettings.tableHeight || '175px',
+            projData: [],
+            projFields: [],
+            isLoadingProj: false,
+            clickCount: 1,
+            selectedRowProjId:'',
+        }
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        } 
+       // alert ("ProjSearch projInput " + this.projInput.projCode + " " + this.projInput.projName + " " + this.projInput.selectedRowProjId)
+        if (this.projInput) {  
+            if (this.projInput.projCode){
+                this.projSearchForm.projCode =  this.projInput.projCode;
+            }
+            if (this.projInput.projName){
+                this.projSearchForm.projName =  this.projInput.projName;
+            }
+            if (this.projInput.targetState){
+                this.projSearchForm.targetState = this.projInput.targetState;
+            }
+            if (this.projInput.selectedRowProjId){
+              this.selectedRowProjId = this.projInput.selectedRowProjId;
+            }  
+        
+            if (this.projInput.projCode || this.projInput.projName || this.projInput.targetState){
+                this.projSearch(null);          
+            }            
+            this.projInput.projCode='';
+            this.projInput.projName='';
+            this.projInput.targetState='';
+            this.projInput.selectedRowProjId='';       
+        }    
+    }, 
+
+    methods: {
+         async projSearch(searchMode) {
+            //console.log(this.tableHeight)
+            this.projData = [];
+            this.isLoadingProj = true;
+            let startDate, endDate;
+            if (this.projSearchForm.targetState == 2) {
+                startDate = this.projSearchForm.startDateBegin;
+                endDate = this.projSearchForm.endDateBegin;
+            } else if (this.projSearchForm.targetState == 4) {
+                startDate = this.projSearchForm.startDateComplete;
+                endDate = this.projSearchForm.endDateComplete;
+            } else {
+                startDate = '';
+                endDate = '';
+            }
+            let payload;
+            if(searchMode) {
+                payload = {
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},  
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projSearchForm.projCode    && { projCode:   this.projSearchForm.projCode },
+                    ...this.projSearchForm.projName    && { projName:   this.projSearchForm.projName },
+                    ...this.projSearchForm.targetState && {targetState: + this.projSearchForm.targetState},
+                    ...startDate && {targetStartDate: startDate},
+                    ...endDate && {targetEndDate:   endDate}
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProjectMany, axiosConfigObject)
+            .then(response => {
+                this.projData = response.data.resDt;
+                
+                this.projFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+            })
+            .catch(error => {
+                this.message = error.response.data;
+            })
+            .finally(() => {
+                this.isLoadingProj = false;
+                this.$emit('searchData', this.projSearchForm);
+                this.$emit('projSearchButton', this.clickCount++);
+                if (this.selectedRowProjId){
+                    const row = this.projData.findIndex(x => x.projId === this.selectedRowProjId);
+                    this.$refs.tableRef.selectRow(row);
+
+                   //scrolls down to the position of selected row
+                    const tbody = this.$refs.tableRef.$el.querySelector('tbody');
+                    const selectRow = tbody.querySelectorAll('tr')[row];
+                    selectRow.scrollIntoView();
+                }
+            })
+        },
+
+        projSelect(item) {
+            if(item[0]) {
+                this.$emit('emittedProjParams', item[0]);
+            } else {
+                this.$emit('emittedProjParams', {});
+            }
+    
+        },
+
+        resetProjSearchForm() {
+            this.projSearchForm = {
+                projCode: '',
+                projName: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                startDateBegin: '',
+                endDateBegin: '',
+                targetState: this.projSettings && this.projSettings.targetState || 5,
+                targetStateOptions: [
+                    { value: 1, text: '工事未着手' },
+                    { value: 2, text: '工事着手' },
+                    { value: 3, text: '工事未完了' },
+                    { value: 4, text: '工事完了' },
+                    { value: 5, text: '工事すべて' }]
+            }
+        },
+        
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        }
+    }
+}
+</script>

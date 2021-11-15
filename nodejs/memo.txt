@@ -1,0 +1,120 @@
+●node.jsを取得する方法
+node.jsのダウンロード先
+https://nodejs.org/
+node.jsをインストールした後、node（node.js自体）とnpm(node.jsパッケージマネージャー）コマンドを使えるようになる。
+バージョンチェック
+>node --version
+>npm --version
+※現在はnode v14.15.1、npm 6.14.8
+
+●既存Vue.jsプロジェクトを起動・ビルドする方法
+①プロジェクト直下にはnode_modulesフォルダーが配置されていない場合（その以外の場合は不要）
+>npm install
+以上のコマンドを実行した後、package.jsonを基にnode_modulesフォルダーが作成される（該当ライブラリがインポートされる）。
+②node.jsの起動（ポート番号：80で起動）
+>npm run serve -- --port 80
+③ビルド（disフォルダにビルド結果が作成される）
+>npm run build
+
+●新規Vue.jsプロジェクトを作成する方法（既存のプロジェクトを起動する場合は不要）
+①npmを使ってVue CLI（コマンドラインインタフェース）をインストールする
+（最初一回だけグローバル（-g）でインストールして今後のプロジェクトを作成するときに①ステップが不要）
+>npm install -g @vue/cli
+Vue CLIをインストールした後、vueコマンドを使えるようになる。
+バージョンチェック
+>vue --version
+※現在は@vue/cli 4.5.9
+②新規Vue.jsプロジェクト（プロジェクト名はhello-world）を作成する
+>vue create hello-world
+以上のコマンドを実行した後、hello-worldフォルダー直下には、
+node_modules（node.jsライブラリ集）とpackage.json（プロジェクト依存関係）を含めた基本構造が構築される。
+
+●パイソンによる起動（node.jsの起動の代わり）
+>python -m http.server
+
+●実行環境の作成（ビルドの詳細）
+frontend\vuejs>npm run build
+
+> kitani-frontend@0.1.0 build C:\Projects\kpms\dev\frontend\vuejs
+> vue-cli-service build
+
+
+/  Building for production...
+  When setting `useBuiltIns: 'usage'`, polyfills are automatically imported when needed.
+  Please remove the direct import of `core-js` or use `useBuiltIns: 'entry'` instead.
+\  Building for production...
+
+ WARNING  Compiled with 3 warnings                                                                               9:21:40
+
+ warning
+
+asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets:
+  js/chunk-vendors.26663698.js (1.2 MiB)
+
+ warning
+
+entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  app (1.49 MiB)
+      css/chunk-vendors.b41565e1.css
+      js/chunk-vendors.26663698.js
+      css/app.8eef0927.css
+      js/app.3ae65652.js
+
+
+ warning
+
+webpack performance recommendations:
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+
+  File                                   Size                                  Gzipped
+
+  dist\js\chunk-vendors.26663698.js      1230.40 KiB                           289.32 KiB
+  dist\js\app.3ae65652.js                82.79 KiB                             13.19 KiB
+  dist\css\chunk-vendors.b41565e1.css    212.89 KiB                            31.40 KiB
+  dist\css\app.8eef0927.css              1.18 KiB                              0.44 KiB
+
+  Images and other types of assets omitted.
+
+ DONE  Build complete. The dist directory is ready to be deployed.
+ INFO  Check out deployment instructions at https://cli.vuejs.org/guide/deployment.html
+
+
+C:\Projects\kpms\dev\frontend\vuejs>serve -s dist
+'serve' は、内部コマンドまたは外部コマンド、
+操作可能なプログラムまたはバッチ ファイルとして認識されていません。
+
+●作成した実行環境の起動（node.js）
+
+frontend\vuejs>npm install -g serve
+C:\Users\yasui\AppData\Roaming\npm\serve -> C:\Users\yasui\AppData\Roaming\npm\node_modules\serve\bin\serve.js
++ serve@11.3.2
+added 78 packages from 39 contributors in 7.182s
+
+frontend\vuejs>serve -s dist
+
+   ┌───────────────────────────────────────────────┐
+   │                                               │
+   │   Serving!                                    │
+   │                                               │
+   │   - Local:            http://localhost:5000   │
+   │   - On Your Network:  http://10.0.2.15:5000   │
+   │                                               │
+   │   Copied local address to clipboard!          │
+   │                                               │
+   └───────────────────────────────────────────────┘
+
+●作成した実行環境の起動（python）
+frontend\vuejs>cd dist
+frontend\vuejs\dist>python -m http.server
+Serving HTTP on :: port 8000 (http://[::]:8000/) ...
+::1 - - [01/Mar/2021 09:46:36] "GET / HTTP/1.1" 200 -
+::1 - - [01/Mar/2021 09:46:36] "GET /css/app.8eef0927.css HTTP/1.1" 200 -
+::1 - - [01/Mar/2021 09:46:36] "GET /css/chunk-vendors.b41565e1.css HTTP/1.1" 200 -
+::1 - - [01/Mar/2021 09:46:36] "GET /js/app.3ae65652.js HTTP/1.1" 200 -
+::1 - - [01/Mar/2021 09:46:36] "GET /js/chunk-vendors.26663698.js HTTP/1.1" 200 -
+::1 - - [01/Mar/2021 09:46:37] "GET /favicon.ico HTTP/1.1" 200 -
+

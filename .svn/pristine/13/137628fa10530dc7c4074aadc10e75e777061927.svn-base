@@ -1,0 +1,160 @@
+<template>
+<div>
+  <h3>セル結合・入力</h3>
+    <b-table-simple small bordered caption-top responsive class="text-nowrap">
+    <caption>製品一覧表</caption>
+    <b-thead head-variant="light">
+      <b-tr>
+        <b-th rowspan="2" class="text-center">製品名称</b-th>
+        <b-th rowspan="2" class="text-center">製品数量</b-th>
+        <b-th colspan="6" class="text-center">切断・穴あけ</b-th>
+        <b-th colspan="6" class="text-center">仮組立</b-th>
+        <b-th colspan="6" class="text-center">溶接・本溶接</b-th>
+        <b-th colspan="6" class="text-center">仕上げ</b-th>
+        <b-th colspan="6" class="text-center">検査数量</b-th>
+      </b-tr>
+      <b-tr>
+        <b-th>開始</b-th>
+        <b-th>完了</b-th>
+        <b-th>中止</b-th>
+        <b-th>不良</b-th>
+        <b-th>開始日</b-th>
+        <b-th>完了日</b-th>
+        <b-th>開始</b-th>
+        <b-th>完了</b-th>
+        <b-th>中止</b-th>
+        <b-th>不良</b-th>
+        <b-th>開始日</b-th>
+        <b-th>完了日</b-th>
+        <b-th>開始</b-th>
+        <b-th>完了</b-th>
+        <b-th>中止</b-th>
+        <b-th>不良</b-th>
+        <b-th>開始日</b-th>
+        <b-th>完了日</b-th>
+        <b-th>開始</b-th>
+        <b-th>完了</b-th>
+        <b-th>中止</b-th>
+        <b-th>不良</b-th>
+        <b-th>開始日</b-th>
+        <b-th>完了日</b-th>
+        <b-th>開始</b-th>
+        <b-th>完了</b-th>
+        <b-th>中止</b-th>
+        <b-th>不良</b-th>
+        <b-th>開始日</b-th>
+        <b-th>完了日</b-th>
+      </b-tr>
+    </b-thead>
+    <b-tbody>
+      <b-tr>
+        <b-td>A-756</b-td>
+        <b-td>10</b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="success">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="warning">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="danger">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="danger">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="success">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+      </b-tr>
+      <b-tr>
+        <b-td>A-757</b-td>
+        <b-td>10</b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td variant="warning">3</b-td>
+        <b-td>4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td variant="danger">2</b-td>
+        <b-td>3</b-td>
+        <b-td>4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="danger">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="danger">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td>1</b-td>
+        <b-td>2</b-td>
+        <b-td>3</b-td>
+        <b-td variant="success">4</b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+        <b-td><b-form-input v-model="date" type="date"></b-form-input></b-td>
+      </b-tr>
+    </b-tbody>
+    <b-tfoot>
+      <b-tr>
+        <b-td colspan="32" variant="secondary">
+          合計: <b>2</b>
+        </b-td>
+      </b-tr>
+    </b-tfoot>
+    </b-table-simple>
+
+  <h3>部品化</h3>
+  <p>工事検索と製品検索はそれぞれ部品になっていて、工事を選択した場合には工事コードと名前がイベントで工事から受け取ってパラメータとして製品検索に渡している。工事が選択されていない場合は空白。</p>
+    <proj-search v-on:emittedProjParams="emitProjEvent"/>
+    <prod-search :proj-params="projParams"/>
+
+</div>
+</template>
+
+<script>
+import projSearch from "@/components/ProjSearch.vue";
+import prodSearch from "@/components/ProdSearch.vue";
+export default {
+  components: {
+    projSearch,
+    prodSearch
+  },
+
+    data() {
+        return {
+          projParams: {
+            projCode: '',
+            projName: ''
+          },
+            date: ''
+        }
+    },
+    methods: {
+      emitProjEvent(value) {
+        this.projParams = value;
+      }
+    }
+}
+</script>

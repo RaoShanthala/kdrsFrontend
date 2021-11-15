@@ -1,0 +1,187 @@
+<template>
+<div>
+    <b-card bg-variant="light">
+        <b-form inline class="mt-1">
+            <!-- <span class="mr-4 mt-1"><strong>工事ID：</strong>{{ projParams.projId }}</span> -->
+            <span class="mr-4 mt-1"><strong>工事コード：</strong>{{ projParams.projCode }}</span>
+            <strong>工事名称：</strong>{{ projParams.projName }}
+                    <span class="mr-5"></span>
+                    <!-- <b-form-radio-group plain @change="prodFlagChange" v-model="prodFlag" :options="prodFlagOptions"/> -->
+                    <b-form-radio-group class="mr-4" @change="prodFlagChange" v-model="prodFlag" :options="prodFlagOptions"/>
+        </b-form>
+        <b-form inline class="mb-1">
+            <b-form-group :label="labelProdCode" class="mr-2">
+            <b-form-input v-model="prodSearchForm.prodCode"/>
+            </b-form-group>
+            <b-form-group :label="labelProdName" class="mr-2">
+            <b-form-input v-model="prodSearchForm.prodName"/>
+            </b-form-group>
+            <b-form-group label="基準日" class="mr-2">
+                    <b-datepicker
+                        today-button
+                        reset-button
+                        close-button
+                        label-today-button="今日"
+                        label-reset-button="クリア"
+                        label-close-button="キャンセル"
+                        placeholder="日付を選択してください"
+                        v-model="prodSearchForm.targetDate"/>
+            </b-form-group>
+            <div style="margin-bottom: -2rem">
+            <b-button @click="prodSearch(null)" >検索</b-button>
+            </div>
+        </b-form>
+        <div v-if="prodData.length">
+            <b-table
+                ref="prodTable"
+                head-variant="light"
+                class="table-sm table-bordered text-nowrap"
+                :sticky-header="tableHeight"
+                striped
+                no-border-collapse
+                responsive
+                selected-variant="info"
+                selectable
+                select-mode="single"
+                @row-selected="prodSelect"
+                :items="prodData"
+                :fields="prodFields"/>
+        </div>
+    </b-card>
+    <div v-if="isLoadingProd" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>検索中...</strong>
+    </div>
+    <b-alert class="mt-4 print-hide" v-if="message" show variant="danger">{{ message }}</b-alert>
+</div>
+</template>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['prodSettings', 'projParams', 'searchTrigger'],
+    data() {
+        return {
+            prodSearchForm: {
+                prodCode: '',
+                prodName: '',
+                targetDate: '',
+            },
+            prodFlag: 1,
+            prodFlagOptions: [
+                { value: 1, text: '製品' },
+                { value: 0, text: '部品' }
+            ],
+            labelProdCode: '製品コード',
+            labelProdName: '製品名称',
+            tableHeight: this.prodSettings && this.prodSettings.tableHeight || '300px',
+            searchTriggerComp: this.searchTrigger || false,
+            prodData: {},
+            prodFields: {},
+            isLoadingProd: false,
+            clickCount: 1,
+            prodTableSelectedRow: -1,
+            message:''
+        }
+    },
+    watch: {
+        searchTrigger: function () {
+            this.searchTriggerComp = this.searchTrigger;
+            if(this.searchTriggerComp) {
+                this.prodSearch(null);
+                setTimeout(() => this.searchTriggerComp = false);
+            }
+        }
+    },
+    methods: {
+        prodFlagChange() {
+            if (this.prodFlag == 1) {
+                this.labelProdCode = '製品コード';
+                this.labelProdName = '製品名称';
+            } else {
+                this.labelProdCode = '部品コード';
+                this.labelProdName = '部品名称';
+            }
+
+            this.prodData = {};
+            this.message = ''
+            this.$emit('emitProdFlagChange', this.prodFlag);
+        },
+
+        async prodSearch(searchMode) {
+            this.prodData = [];
+            this.isLoadingProd = true;
+            this.message = '';
+            this.prodTableSelectedRow = -1;
+
+            if (searchMode) {
+                var payload = {
+                    // ...this.projParams.projCode && { projCode:   this.projParams.projCode },
+                    ...this.projParams.projId   && { projId:   this.projParams.projId  },
+                    ...this.prodSearchForm.prodCode && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            } else {
+                payload = {
+                    searchMode: searchMode,
+                    ...this.projParams.projId   && { projId:   this.projParams.projId  },
+                    prodFlag: this.prodFlag,
+                    ...this.prodSearchForm.prodCode    && { prodCode:   this.prodSearchForm.prodCode },
+                    ...this.prodSearchForm.prodName    && { prodName:   this.prodSearchForm.prodName },
+                    // ...this.prodSearchForm.targetState && {targetState: + this.prodSearchForm.targetState},
+                    ...this.prodSearchForm.targetDate && { targetDate:   this.prodSearchForm.targetDate }
+                }
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProductMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = response.data.resDt;
+                this.prodFields = this.createFields(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = response.data.resultMessage;
+                    }
+                if(this.prodTableSelectedRow >= 0) {
+                   setTimeout(() => this.$refs.prodTable.selectRow(this.prodTableSelectedRow));
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('prodSearchButton', this.clickCount++);
+             })
+        },
+
+        prodSelect(item) {
+            if(this.$refs.prodTable.selectedRows.length) {
+                this.prodTableSelectedRow = this.$refs.prodTable.selectedRows.length - 1;
+            }
+            if(item[0]) {
+                this.$emit('emitProdSelect', item[0]);
+            } else {
+                this.$emit('emitProdSelect', {});
+            }
+        },
+
+        createFields(obj, order) {
+            let a = [];
+            let b = [];
+            for(let i in obj) { a.push( {'key': i, 'label': obj[i]} ); }
+            if(order) {
+                for(let i in order) { b.push(a[order[i]]); }
+                return b;
+            }
+            return a;
+        }
+    }
+}
+</script>

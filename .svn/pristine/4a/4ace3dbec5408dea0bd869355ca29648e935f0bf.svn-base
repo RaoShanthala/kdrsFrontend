@@ -1,0 +1,457 @@
+<template>
+    <!--製品進捗一覧-->
+    <!-- h1 v-if="isShowProdChoice" class="print-hide">{{ titleProd }}</h1 -->
+    <!-- div v-if="isShowProdChoice"  :class="classPrintHideProd" -->
+    <div>
+        <b-card bg-variant="light">
+            <b-row class="print-hide">
+                <!--b-col>
+                    <h4 class="mb-4">{{ titleProd }}</h4>
+                </b-col -->
+                <b-col class="col-md-12">
+                    <b-form inline class="mt-1">
+                        <span class="mr-4 mt-1"><strong>工事コード：</strong>{{ prodSearchForm.projCode }}</span>
+                        <strong>工事名称：</strong>{{ prodSearchForm.projName }}
+                        <!-- <span class="mr-4 mt-1"><strong>{{ prodSearchForm.aggTypeCodeTitle }}</strong>{{ prodSearchForm.aggTypeCode }}</span> -->
+                        <span class="ml-4 mr-0 mt-1"><strong>{{ prodSearchForm.aggTypeNameTitle }}</strong>{{ prodSearchForm.aggUnitCode }}</span>
+                    </b-form>
+                    <b-form v-if="prodSearchForm.aggUnitCode" inline class="mt-1 mb-2">
+                    </b-form>
+                    <b-form v-else inline class="mt-0">
+                        <b-form-group  label="製品コード" class="mr-3">
+                            <b-form-input id="prodCode" v-model="prodSearchForm.prodCode"/>
+                        </b-form-group>
+                        <b-form-group label="製品名称" class="mr-3">
+                            <b-form-input id="prodName" v-model="prodSearchForm.prodName"/>
+                        </b-form-group>
+                        <b-form-group class="mt-5 mb-4 mr-3">
+                            <b-form-radio-group v-model="prodStatus" :options="prodStatusOptions"/>
+                        </b-form-group>
+                        <b-form-group v-if="prodStatus==1" label="製品着手日From" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="prodSearchForm.startDateBegin"/>
+                        </b-form-group>
+                        <b-form-group v-if="prodStatus==1" label="製品着手日To" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="prodSearchForm.endDateBegin"/>
+                        </b-form-group>
+                        <b-form-group v-if="prodStatus==3" label="製品完了日From" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="prodSearchForm.startDateComplete"/>
+                        </b-form-group>
+                        <b-form-group v-if="prodStatus==3" label="製品完了日To" class="mt-3 mr-3">
+                            <b-datepicker today-button reset-button close-button
+                                label-today-button="今日" label-reset-button="クリア" label-close-button="キャンセル"
+                                placeholder="日付を選択してください" v-model="prodSearchForm.endDateComplete"/>
+                        </b-form-group>
+                        <b-form-group v-if="prodStatus==1 || prodStatus==3" class="mt-5 mr-1">
+                            <b-button @click="prodSearchClick" class="mr-1">検索</b-button>
+                            <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="!(prodStatus==1 || prodStatus==3)" class="mt-4 mr-1">
+                            <b-button @click="prodSearchClick" class="mr-1">検索</b-button>
+                            <b-button variant="outline-primary" @click="resetProdSearchForm">クリア</b-button>
+                        </b-form-group>
+                    </b-form>
+                </b-col>
+            </b-row>
+
+            <!-- div v-if="projSelected && prodData.length" -->
+            <div v-show="isShowProdTable" :class="classPrintHideProd">
+                <!-- p><strong>製品分類一覧、全製品分類、選択製品分類オプション</strong></p -->
+                <b-table head-variant="light" sticky-header = "500px" class="table-sm table-bordered text-nowrap prod-table"
+                    hover v-if="prodSearchForm && prodData.length" :striped="striped" :no-border-collapse="noCollapse"
+                    :items="prodData" :fields="prodFields"/>
+                <b-row align-h="end" class="my-0 print-hide">
+                    <b-col class="col-md-10"/>
+                    <b-col class="col-md-2">
+                        <b-container class="d-flex justify-content-end">
+                            <b-button @click="printProdTable" class="mr-0">ページ印刷</b-button>
+                            <!-- b-button variant="primary" :disabled="!projSelected" @click="prodSearch">製品</b-button -->
+                        </b-container>
+                    </b-col>
+                </b-row>
+            </div>
+            <div v-if="isLoadingProd" class="text-center text-danger my-2">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>検索中...</strong>
+            </div>
+        </b-card>
+        <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+    </div>
+</template>
+
+<style scoped>
+    @media print {
+        .print-hide {
+            display: none;
+        }
+        .card {
+            border: none;
+        }
+    }
+    @page {
+        size:auto;
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+import axios from 'axios';
+import apiUrls from '../common/apiUrls';
+import commonMethods from '../common/commonMethods'
+
+export default {
+    props: ['prodInput', 'classPrintHideProd', ],
+
+    data() {
+        return {
+            titleProd: '製品進捗一覧',
+            striped: true,
+            noCollapse: true,
+            //製品関連データ
+            prodSearchForm: {
+                projId: '',
+                projCode: '',
+                projName: '',
+                prodCode: '',
+                prodName: '',
+                targetState: '',
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: '',
+                aggTypeCode: '',
+                aggTypeName: '',
+                aggUnitCode: '',
+                aggUnitName: '',
+                aggTypeCodeTitle: '',
+                aggTypeNameTitle: '',
+            },
+
+            prodStatus: 4,
+            prodStatusOptions: [
+                { value: 0, text: '製品未着手' },
+                { value: 1, text: '製品着手' },
+                { value: 2, text: '製品未完了' },
+                { value: 3, text: '製品完了' },
+                { value: 4, text: '製品すべて' }
+            ],
+            prodData: [],
+            prodFields: [],
+
+            isShowProdChoice: true,
+            isShowProdTable: false,
+            message: '',
+            table_height: window.innerHeight - 380 + 'px',
+            isLoadingProd: false,
+            clickCount: 1,
+        }
+    },
+    mounted() {
+        window.addEventListener('resize', () => {
+            this.table_height = window.innerHeight - 380 + 'px';
+        })
+        window.addEventListener('beforeprint', () => {
+            // if(document.getElementsByClassName('proj-table').length) {
+            //     let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+            //     doubleHeadTable.children[0].removeAttribute('hidden');
+            //     doubleHeadTable.children[1].removeAttribute('hidden');
+            // }
+            if (this.classPrintHideProd != 'print-hide') {
+                // 自分のコンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+                if(document.getElementsByClassName('prod-table').length) {
+                    let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+                    // for (let i=0; i < doubleHeadTable.children.length; i++) {
+                    //     doubleHeadTable.children[i].removeAttribute('hidden');
+                    // }
+                    doubleHeadTable.children[0].removeAttribute('hidden');
+                    doubleHeadTable.children[1].removeAttribute('hidden');
+                    doubleHeadTable.children[2].removeAttribute('hidden');
+                }
+            }
+        })
+        window.addEventListener('afterprint', () => {
+            // if(document.getElementsByClassName('proj-table').length) {
+            //     let doubleHeadTable = document.getElementsByClassName('proj-table')[0].children[0].children[0];
+            //     doubleHeadTable.children[0].setAttribute('hidden', '');
+            //     doubleHeadTable.children[1].setAttribute('hidden', '');
+            // }
+            if (this.classPrintHideProd != 'print-hide') {
+                // 自分のコンポーネントの印刷ボタンがクリックされたときのみ処理を行う
+                if(document.getElementsByClassName('prod-table').length) {
+                    let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+                    // for (let i=0; i < doubleHeadTable.children.length; i++) {
+                    //     doubleHeadTable.children[i].setAttribute('hidden', '');    
+                    // }
+                    doubleHeadTable.children[0].setAttribute('hidden', '');
+                    doubleHeadTable.children[1].setAttribute('hidden', '');
+                    doubleHeadTable.children[2].setAttribute('hidden', '');
+                }
+            }
+        })
+    },
+
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        // console.log("compProdStatus created: ");
+        this.isShowProdTable = false;
+        if (this.prodInput) {
+            let exist = 0;
+            if (this.prodInput.projId) {
+                this.prodSearchForm.projId = this.prodInput.projId;
+            }  
+            if (this.prodInput.projCode) {
+                this.prodSearchForm.projCode =  this.prodInput.projCode;
+            }
+            if (this.prodInput.projName) {
+                this.prodSearchForm.projName =  this.prodInput.projName;
+            }
+            if (this.prodInput.prodCode) {
+                exist++; this.prodSearchForm.prodCode = this.prodInput.prodCode;
+            }  
+            if (this.prodInput.prodName) {
+                exist++; this.prodSearchForm.prodName = this.prodInput.prodName;
+            }  
+            if (this.prodInput.targetState) {
+                this.prodSearchForm.targetState = this.prodInput.targetState;
+            }
+            if (this.prodInput.startDateBegin) {
+                exist++; this.prodSearchForm.startDateBegin = this.prodInput.startDateBegin;
+            }
+            // console.log('exist=' + exist);
+            if (this.prodInput.endDateBegin) {
+                exist++; this.prodSearchForm.endDateBegin = this.prodInput.endDateBegin;
+            }
+            if (this.prodInput.startDateComplete) {
+                exist++; this.prodSearchForm.startDateComplete = this.prodInput.startDateComplete;
+            }
+            if (this.prodInput.endDateComplete) {
+                exist++; this.prodSearchForm.endDateComplete = this.prodInput.endDateComplete;
+            }
+
+            if (this.prodInput.aggTypeCode) {
+                this.prodSearchForm.aggTypeCode = this.prodInput.aggTypeCode;
+            }
+            if (this.prodInput.aggTypeNameTitle) {
+                this.prodSearchForm.aggTypeNameTitle = this.prodInput.aggTypeNameTitle;
+            } else {
+                switch (this.prodInput.aggTypeCode) {
+                    case 'Area':
+                        this.prodSearchForm.aggTypeNameTitle = '工区：'; break;
+                    case 'Section':
+                        this.prodSearchForm.aggTypeNameTitle = '節：'; break;
+                    case 'Floor':
+                        this.prodSearchForm.aggTypeNameTitle = 'フロア：'; break;
+                    case 'Member':
+                        this.prodSearchForm.aggTypeNameTitle = '部材種類：'; break;
+                    default:
+                        this.prodSearchForm.aggTypeNaggTypeNameTitleame = '全て：'; break;
+                }
+
+            }
+            if (this.prodInput.aggUnitCode) {
+                exist++; this.prodSearchForm.aggUnitCode = this.prodInput.aggUnitCode;
+            }
+            if (this.prodInput.aggUnitName) {
+                this.prodSearchForm.aggUnitName = this.prodInput.aggUnitName;
+            }
+        
+            if (exist > 0) {
+                this.prodSearchClick();          
+            }            
+            // this.prodInput.projId='';       
+            // this.prodInput.projCode='';
+            // this.prodInput.projName='';
+            this.prodInput.prodCode='';
+            this.prodInput.prodName='';
+            this.prodInput.targetState='';
+            this.prodInput.startDateBegin;
+            this.prodInput.endDateBegin;
+            this.prodInput.startDateComplete;
+            this.prodInput.endDateComplete;
+        }    
+    }, 
+    methods: {
+        resetProdSearchForm() {
+            this.prodSearchForm = {
+                prodCode: '',
+                prodName: '',
+                startDateBegin: '',
+                startDateComplete: '',
+                endDateComplete: '',
+                endtDateBegin: ''
+            }
+            //this.$store.state.searchForm = this.searchForm
+        },
+
+        async prodSearchClick() {
+            await this.prodSearch();
+            if (this.isShowProdTable != true) {
+                return;
+            }
+            let titleProd = this.titleProd;
+            let frm = this.prodSearchForm;
+            let prodFields = this.prodFields;
+            commonMethods.sleep(100, 1, function () {
+                //製品一覧テーブルのヘッダーを取得（documentが作成されるまで待機する必要がある）
+                let doubleHeadTable = document.getElementsByClassName('prod-table')[0].children[0].children[0];
+                //入れ子を挿入
+                let text = document.createTextNode(`工事コード：${frm.projCode}、工事名称：${frm.projName}、${frm.aggTypeNameTitle}${frm.aggUnitCode}`);
+                let tr = document.createElement('tr');
+                let th = document.createElement('th');
+
+                tr.setAttribute('hidden', '');
+                th.appendChild(text);
+                th.setAttribute('colspan', prodFields.length);
+                tr.appendChild(th);
+                doubleHeadTable.prepend(tr);
+
+                text = document.createTextNode(titleProd);
+                tr = document.createElement('tr');
+                th = document.createElement('th');
+                tr.setAttribute('hidden', '');
+                th.appendChild(text);
+                th.setAttribute('style', 'text-align:center; font-size: 2em;');
+                th.setAttribute('colspan', prodFields.length);
+                tr.appendChild(th);
+                doubleHeadTable.prepend(tr);
+
+                tr = document.createElement('tr');
+                th = document.createElement('th');
+                tr.setAttribute('hidden', '');
+                th.setAttribute('style', 'padding-top: 2em;');
+                th.setAttribute('colspan', prodFields.length);
+                tr.appendChild(th);
+                doubleHeadTable.prepend(tr);
+            });
+        },
+
+        async prodSearch() {
+            this.message = '';
+            this.isLoadingProd = true;
+            this.isShowProdTable = false;
+            
+            this.prodData = [];
+            this.prodFields = [];
+            let startDate = ''
+            let endDate = '' 
+
+            if (this.prodStatus == 1) {
+                startDate = this.prodSearchForm.startDateBegin
+                endDate = this.prodSearchForm.endDateBegin
+            } else if (this.prodStatus == 3) {
+                startDate = this.prodSearchForm.startDateComplete
+                endDate = this.prodSearchForm.endDateComplete
+            }
+            let payload = {
+                ...this.prodSearchForm.projId && {projId:           this.prodSearchForm.projId},
+                ...this.prodSearchForm.prodCode && {prodCode:       this.prodSearchForm.prodCode},
+                ...this.prodSearchForm.prodName && {prodName:       this.prodSearchForm.prodName},
+                targetState: this.prodStatus + 1,
+                ...startDate && {targetStartDate: startDate},
+                ...endDate && {targetEndDate:   endDate},
+                ...this.prodSearchForm.aggTypeCode && {aggTypeCode: this.prodSearchForm.aggTypeCode},
+                ...this.prodSearchForm.aggUnitCode && {aggUnitCode: this.prodSearchForm.aggUnitCode},
+            }
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                    },
+                params:  payload}
+            await axios.get(apiUrls.referProdProcMany, axiosConfigObject)
+            .then(response => {
+                this.prodData = this.remakeResDt(response.data.resDt);
+                this.prodFields = this.remakeResDtTitle(response.data.resDtTitle);
+                if(response.data.resultCode != '000') {
+                    this.message = commonMethods.getResponseMessage(response);
+                } else {
+                    this.isShowProdTable = true;
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+            .finally(() => {
+                this.isLoadingProd = false;
+                this.$emit('emitProdSearchButton', this.clickCount++);
+            })
+        },
+
+        printProdTable () {
+            // this.classPrintHideProd = '';    // プロパティへの設定は親でないと効かない
+            this.$emit('emitProdPrintButton', this.clickCount++);
+
+            //let docTitle = document.title;  // タイトルを退避
+            //document.title = '';          // タイトルを表示しないように漢字スペースをセット（空文字、半角スペースだとUrlがタイトルに入る）
+            commonMethods.sleep(100, 1, function () {
+                // 100ミリ秒*1回、待機後確認メッセージを表示
+                if (confirm('印刷プレビューをしますが、よろしいでしょうか？')) {
+                    window.print();
+                }
+                //document.title = docTitle;      // タイトルを元に戻す
+            });
+        },
+        //明細データ再編成関数
+        remakeResDt(obj) {
+            let c = [];
+            for (let y in obj) {
+                let a = {};
+                for(let i in obj[y]) {
+                    if (obj[y][i] instanceof Array) {
+                        for(let n in obj[y][i]) {
+                            a[i + n] = obj[y][i][n];
+                        }
+                    } else {
+                        a[i] = obj[y][i];
+                    }
+                }
+                c.push(a);
+            }
+            return c;
+        },
+        //カラム作成・並べ替え関数
+        remakeResDtTitle(obj, order) {
+            let a = []
+            let b = []
+            for(let i in obj) {
+                if (obj[i] instanceof Array) {
+                    for(let n in obj[i]) {
+                        a.push( {'key': i + n, 'label': obj[i][n]} );
+                    }
+                } else {
+                    if (i != 'listProgress') {
+                        a.push( {'key': i, 'label': obj[i]} );
+                    } else {
+                        a.push( {'key': 'listProgress0', 'label': '工程１'} );
+                        a.push( {'key': 'listProgress1', 'label': '工程２'} );
+                        a.push( {'key': 'listProgress2', 'label': '工程３'} );
+                        a.push( {'key': 'listProgress3', 'label': '工程４'} );
+                        a.push( {'key': 'listProgress4', 'label': '工程５'} );
+                        /*
+                        a['listProgress0'] = '工程１';
+                        a['listProgress1'] = '工程２';
+                        a['listProgress2'] = '工程３';
+                        a['listProgress3'] = '工程４';
+                        a['listProgress4'] = '工程５';
+                        */
+                    }
+                }
+            }
+            if(order) {
+                for(let i in order) {
+                    b.push(a[order[i]])
+                }
+                return b
+            }
+            return a
+        },
+    }
+}
+</script>

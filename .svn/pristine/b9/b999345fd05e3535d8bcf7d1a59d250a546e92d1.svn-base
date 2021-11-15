@@ -1,0 +1,172 @@
+<template>
+  <div>
+    <b-card bg-variant="light">
+      <b-form>
+        <b-container >
+          <br/>
+          <br/>
+          <div  style="width:800px; margin:0 auto;"> 
+            <b-form-row>
+                <b-col class="col-md-8">
+                    <b-form-group label="製品分類コード" label-for="input-type-code" label-cols-sm="6" label-cols-lg="3" label-align-sm="center">
+                        <b-form-input  v-model="aggTypeCode" disabled></b-form-input>
+                    </b-form-group>
+                </b-col>      
+            </b-form-row>
+            <b-form-row>
+                <b-col class="col-md-8">
+                    <b-form-group label="集計分類名" label-for="input-type-name" label-cols-sm="6" label-cols-lg="3" label-align-sm="center">
+                        <b-form-input  v-model="aggTypeName"></b-form-input>
+                        <div><p style="color: #ff0000;" id="aggTypeNameError"></p> </div>
+                    </b-form-group>
+                </b-col>      
+            </b-form-row>
+          </div>
+        </b-container>
+      </b-form>
+    </b-card>
+    <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
+    <div class="text-right mt-1">
+      <b-button :disabled="!responseData" @click="updateData" class="mr-1">更新</b-button>
+      <b-button :disabled="!responseData" @click="deleteAggType" class="mr-1">削除</b-button>
+      <!--b-button variant="info" @click="$store.state.responseData = ''; $router.push('projects')" class="mr-1">戻る</b-button-->
+    </div>  
+  </div>
+</template>
+
+<script>
+import axios from "axios";
+import apiUrls from "../../common/apiUrls";
+import commonMethods from '../../common/commonMethods'
+
+export default {
+    data() {
+        return {
+            message: "",
+            text1: "",
+            aggTypeCode: "",   
+            aggTypeName: "",  
+            aggTypeCodePresent:false,
+            aggTypeNamePresent:false,
+        };    
+    },
+    created: function() {
+        if(!this.$store.state.loginData.accessToken) {
+            this.$router.push('/')
+        }
+        console.log("Entered function")
+        console.log (this.$store.state.responseData);   
+
+        if(this.$store.state.responseData) {       
+          this.responseData = this.$store.state.responseData
+           this.aggTypeCode = this.responseData.aggTypeCode
+           this.aggTypeName = this.responseData.aggTypeName
+        }   
+     },    
+ 
+    methods: {
+      
+        getNow() {
+            let today = new Date(Date.now());
+            return today.toISOString().slice(0, 10);
+        },
+
+        checkInput() {
+            this.text1 = "";
+            if (!this.aggTypeName) {
+                this.text1 = "集計分類名を入力してください";
+                this.aggTypeNamePresent = false;
+            } else {
+                this.text1 = "";
+                this.aggTypeNamePresent = true; 
+            } 
+            document.getElementById("aggTypeNameError").innerHTML = this.text1;     
+        },
+
+    deleteAggType() {
+      if (confirm('削除しますか？')) {
+        let payload = {
+          tranId:        '',
+            resultCode:    null,
+            resultMessage: null,
+            user:          null,
+            terminal:      null,
+            reqDateTime:   null,
+            resDateTime:   null,
+            reqHd: {
+              aggTypeCode: this.aggTypeCode
+            }
+        }
+        let axiosConfigObject = {
+          headers: {
+            Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+            'Content-Type': 'application/json',
+          },
+          data:    payload
+        }
+        axios.delete(apiUrls.removeStdAggType, axiosConfigObject).then((response) => {
+          if(response.data.resultCode != '000') {
+            this.message = commonMethods.getResponseMessage(response);
+          } else {
+            alert(response.data.resultMessage)
+            this.$store.state.responseData = ''
+            //this.$router.push('projects')
+            commonMethods.clickMenuBack();
+          }
+        })
+        .catch(error => {
+          this.message = commonMethods.getErrorMessage(error);
+        })
+      }
+    },
+
+    updateData() {
+        this.message = "";
+        this.checkInput();   
+        if (this.aggTypeNamePresent == true) {
+            if (confirm("更新しますか？")) {
+                // console.log (this.selected);  
+                //基本リクエストを作成する
+                let payload = {
+                    transId: "",
+                    resultCode: null,
+                    resultMessage: null,
+                    user: null,
+                    terminal: null,
+                    reqDateTime: null,
+                    resDateTime: null,
+                    reqHd: {
+                        aggTypeCode: this.aggTypeCode,
+                        aggTypeName: this.aggTypeName
+                    },
+                };
+
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization: "Bearer " + this.$store.state.loginData.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                };
+                axios
+                .post(apiUrls.updateStdAggType, payload, axiosConfigObject)
+                .then((response) => {
+                    console.log(response.data);
+                    if (response.data.resultCode != "000") {
+                        this.message = commonMethods.getResponseMessage(response);
+                    } else {
+                        alert(response.data.resultMessage);
+                        //this.$router.push('productsearch')
+                        commonMethods.clickMenuBack();
+                    }
+                })
+                .catch((error) => {
+                    //this.message = (error.response || {}).data;
+                    //console.log((error.response || {}).data);
+                    this.message = commonMethods.getErrorMessage(error);
+                });
+            } 
+        } 
+    },
+  },
+};
+</script>         
