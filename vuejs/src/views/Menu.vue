@@ -155,8 +155,8 @@ h1, .btn {
 </style>
 
 <script>
-import axios from 'axios'
-import apiUrls from '../common/apiUrls'
+//import axios from 'axios'
+//import apiUrls from '../common/apiUrls'
 import commonMethods from '../common/commonMethods'
 
 export default {
@@ -164,6 +164,7 @@ export default {
         return {
             enabledTooltip: false,
             disabledTooltip: true,
+            menuInfoByName: {},
         }
     },
     watch: {
@@ -172,28 +173,15 @@ export default {
             }
     },
     created: async function() {
-        /*let modeTest = commonMethods.loadCommonArea('modeTest')
-        if (modeTest) {
-            this.isShowTest = true;
-            this.showStdProduct = true;
-            this.showStdAggregate = true;
-            this.showAggProduct = true;
-            this.showAggregate = true;
-        }*/
-        if (!commonMethods.loadCommonArea('progressBackColorScreen')) {
-            await this.referNameCollectionMany('ProgressBackColorScreen');
+        this.menuInfoByName = commonMethods.loadCommonArea('menuInfoByName');
+       let enabledTooltip = commonMethods.loadCommonArea('enabledTooltip');
+        if (enabledTooltip != null) {
+            this.enabledTooltip = enabledTooltip;
         }
-        if (!commonMethods.loadCommonArea('menuRoutesByPath')) {
-            // メニュのpathからnameとtitleが取得できるように連想配列を作成し共通領域にセーブ
-            let menuRoutes = {};
-            let routes = this.$router.options.routes;
-            for(let route in routes) {
-                // console.log('route=' + route + ', routes[route]=' + routes[route]);
-                // console.log('routes[route].path=' + routes[route].path + ', routes[route].name=' + routes[route].name + ', routes[route].meta.title=' + routes[route].meta.title);
-                menuRoutes[routes[route].path] = {'name': routes[route].name, 'title': routes[route].meta.title}
-            }
-            commonMethods.saveCommonArea('menuRoutesByPath', menuRoutes);
-        }
+    },
+    destroyed: function() {
+        console.log('destroyed 1');
+        commonMethods.saveCommonArea('enabledTooltip', this.enabledTooltip);
     },
     methods: {
         window:onload = function() {  
@@ -253,7 +241,7 @@ export default {
             commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
         },
 
-        async referNameCollectionMany(nameSectionValue) {
+       /* async referNameCollectionMany(nameSectionValue) {
             let axiosConfigObject = {
                 headers: {
                     Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
@@ -280,7 +268,7 @@ export default {
             .catch(error => {
                 this.message = commonMethods.getErrorMessage(error);
             })
-        },
-    }
+        },*/
+    } 
 }
 </script>

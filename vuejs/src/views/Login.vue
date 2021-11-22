@@ -71,6 +71,8 @@ export default {
         async clickLogin() {
             await this.login();
             if (this.$store.state.loginData.id != '') {
+                this.createMenuInfo();
+                await this.referNameCollectionMany();
                 commonMethods.saveCommonArea('modeTest', false)
                 this.$router.push({path: '/menu'});
             }
@@ -106,8 +108,10 @@ export default {
                 this.message = commonMethods.getErrorMessage(error);
             })
         },
-        clickMenu() {
+        async clickMenu() {
             this.isShowAccessToken = false;
+            this.createMenuInfo();
+            await this.referNameCollectionMany();
             commonMethods.saveCommonArea('modeTest', true)
             this.$router.push({path: '/menu'});
         },
@@ -123,7 +127,85 @@ export default {
             this.$store.rolesResDt = null;
             this.$store.roleLevelsResDt = [];
             this.$store.roleLevelsResDt = null;
-        }
+        },
+
+     async referNameCollectionMany() {
+            var reqDt = [];
+            reqDt.push({nameSection: 'ProgressBackColorScreen'});
+            reqDt.push({nameSection: 'VisibleMenuItem'});
+
+            //基本リクエストを作成する
+            let payload = {
+                transId: "",
+                resultCode: null,
+                resultMessage: null,
+                user: null,
+                terminal: null,
+                reqDateTime: null,
+                resDateTime: null,
+                reqDt: reqDt,
+            };
+            let axiosConfigObject = {
+                headers: {
+                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }
+            await axios.post(apiUrls.referNameCollectionByPost, payload, axiosConfigObject).then((response) => {
+                if(response.data.resultCode == '000') {
+                    // console.log('response.data.resultCode=' + response.data.resultCode);
+                    // 画面名をキーにした製品と工程の背景色を取得
+                    let progressBackColorScreen = commonMethods.convertProgressBackColorScreen('ProgressBackColorScreen', response.data.resDt);
+                    // 共通領域に背景色をセーブ
+                    commonMethods.saveCommonArea('progressBackColorScreen', progressBackColorScreen);
+                    // 画面名をキーにしてメニュ表示の可否を取得
+                    let visibleMenuItem = this.getNameSection('VisibleMenuItem', response.data.resDt);
+                    let menuInfoByName = commonMethods.loadCommonArea('menuInfoByName');
+                    for (let name in visibleMenuItem) {
+                        if (menuInfoByName[name]) {
+                            menuInfoByName[name].visible = visibleMenuItem[name].nameLong == 'true' ? true : false;
+                        }
+                    }
+                    // メニュ表示の可否を変更したmenuInfoByNameを共通領域にセーブ
+                    commonMethods.saveCommonArea('menuInfoByName', menuInfoByName);
+                    return;
+                } else {
+                    this.message = commonMethods.getResponseMessage(response);
+                }
+            })
+            .catch(error => {
+                this.message = commonMethods.getErrorMessage(error);
+            })
+        },
+        // メニュのpathからnameとtitle、nameからpathとtitleとvisibleが取得できる連想配列を作成し共通領域にセーブ
+        createMenuInfo() {
+            let menuInfoByPath = {};
+            let menuInfoByName = {};
+            let routes = this.$router.options.routes;
+            for(let route in routes) {
+                // console.log('route=' + route + ', routes[route]=' + routes[route]);
+                // console.log('routes[route].path=' + routes[route].path + ', routes[route].name=' + routes[route].name + ', routes[route].meta.title=' + routes[route].meta.title);
+                menuInfoByPath[routes[route].path] = {'name': routes[route].name, 'title': routes[route].meta.title}
+                menuInfoByName[routes[route].name] = {'path': routes[route].path, 'title': routes[route].meta.title, 'visible': true}
+            }
+            commonMethods.saveCommonArea('menuInfoByPath', menuInfoByPath);
+            commonMethods.saveCommonArea('menuInfoByName', menuInfoByName);
+        },
+        // resDt.nameSection と resDtNameSection が一致する行の resDt.nameAlpha をキーにして、resDt.nameLongを値とした連想配列を返す
+        getNameSection(resDtNameSection, resDt) {
+            if (resDt != null) {
+                let arrayNameSection = {};
+                for(let r in resDt) {
+                    let row = resDt[r];
+                    // console.log('getNameSection() nameSection=' + row['nameSection'] + ', nameAlpha=' + row['nameAlpha'] + ', nameShort=' + row['nameShort'] + ', nameLong=' + row['nameLong']);
+                    if (row['nameSection'] == resDtNameSection) {
+                        // console.log('getNameSection() nameAlpha=' + row['nameAlpha']);
+                        arrayNameSection[row['nameAlpha']] = {'nameLong': row['nameLong']};
+                    }
+                }
+                return arrayNameSection;
+            }
+        }        
     }
 }
 </script>

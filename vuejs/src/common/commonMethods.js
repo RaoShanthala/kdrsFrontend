@@ -44,8 +44,8 @@ function getCurrentMenuName() {
     // console.log('this.$router=' + this.$router);    // this.$router=undefined   <-vue内でしか取得できない!
     // console.log('this.$router.options.routes=' + this.$router.options.routes);
     // let menuCurrentName = this.$router.options.routes.find(e => e.path === menuCurrentPath).name;
-    let menuRoutes = loadCommonArea('menuRoutesByPath');
-    let menuRoute = menuRoutes[menuCurrentPath];
+    let menuInfoByPath = loadCommonArea('menuInfoByPath');
+    let menuRoute = menuInfoByPath[menuCurrentPath];
     // console.log('path=' + menuCurrentPath +', name=' + menuRoute.name + ', Title=' + menuRoute.title);
     return menuRoute.name;
 }
