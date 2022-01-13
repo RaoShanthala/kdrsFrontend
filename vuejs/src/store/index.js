@@ -8,8 +8,10 @@ const store = new Vuex.Store({
         loginData: {
             id:           '',
             username:     '',
-            email:        '',
-            roles:        [],
+            companyCode:  '',
+            companyId:    '',
+            status : '',
+            authorities:   [],
             accessToken: ''
         },
         searchForm:     '',

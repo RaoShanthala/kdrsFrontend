@@ -5,10 +5,10 @@
             <div class="col-lg-3 col-md-2"></div>
             
             
-            <div class="col-lg-6 col-md-8">
-               <!--div class="col-lg-12 super-admin-link">
-                   <a href="#" @click="gotoSuperUserLogin" class="link-primary">スーパーユーザーログイン</a>       
-                </div-->
+            <div class="col-lg-6 col-md-8 login-box">
+               <div class="col-lg-12 super-admin-link">
+                   <a href="#" @click="gotoLogin" class="link-primary">管理者・ユーザーログイン</a>       
+                </div>
         
                 <!--div class="col-lg-12 login-title">
                     管理者・ユーザー
@@ -20,20 +20,13 @@
                             <div class="form-group">
                                 <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
                                     <b-input-group-prepend is-text><b-icon icon="person-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin" required></b-form-input>
+                                    <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin"></b-form-input>
                                 </b-input-group>
                             </div>
                             <div class="form-group">
                                 <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
                                     <b-input-group-prepend is-text><b-icon icon="lock-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin" required></b-form-input>
-                                </b-input-group>
-                            </div>
-
-                            <div class="form-group">
-                                <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
-                                    <b-input-group-prepend is-text><b-icon icon="building"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="企業コード" v-model="companyCode" type="text" @keyup.enter="enterLogin" required></b-form-input>
+                                    <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin"></b-form-input>
                                 </b-input-group>
                             </div>
               
@@ -42,7 +35,7 @@
                         <div class=" mb-2 mr-sm-2 mb-sm-0">
                             <b-button @click="clickLogin" @keyup.ctrl.enter="ctrlEnterLogin" v-if="!this.$store.state.loginData.accessToken">送信</b-button>
                         </div>
-                        <br> 
+                        <br>
                         <div  class="mb-2 mr-sm-2 mb-sm-0" v-if="message">
                           <div>  
                            <b-alert show variant="danger">{{message}}</b-alert>
@@ -50,8 +43,7 @@
                         </div>
                            
 
-                        <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken && !this.modalShow" >
-                            <b-alert show variant="danger">{{this.aggUnitCode}}</b-alert>
+                        <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken">
                             <b-button @click="logout">ログアウト</b-button>
                                 <b-table :items="[this.$store.state.loginData]" :fields="fields"></b-table>
                             <b-button @click="clickMenu" variant="info">メニュー</b-button>
@@ -61,35 +53,47 @@
                 <div class="col-lg-3 col-md-2"></div>
             </div>
         </div>
-
-        <div v-if="this.modalShow">
-            <b-modal hide-footer>
-                <b-form>
-                         <label for="aggUnitCode">単位コード</label>
-                            <b-form-input id="aggUnitCode" v-model="aggUnitCode" />
-                        <div style="float: right">
-                            <b-button class="mr-1" @click="addNewDataAggUnit">登録 </b-button>
-                            <b-button class="mr-1" @click="closeTypeModal">取消</b-button>
-                        </div>
-                </b-form>
-            </b-modal>
-        </div>
-       
-
-
-        
  </div>
  </template>
-
-   
+     
       
 <style scoped>
-
- #message {
+#message {
     margin-top: 1rem;
 }
 table {
     margin-top: 1rem;
+}
+
+.login-box {
+    margin-top: 75px;
+    height: auto;
+    background: #f1f4f5;
+    text-align: center;
+   
+}
+
+.super-admin-link {
+    margin-top: 5px;
+    text-align: right;
+    font-size: 15px;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+
+.link:hover {
+  color: #4808f7;
+}
+
+.login-title {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 30px;
+    letter-spacing: 2px;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #0e0f0f;
 }
 
 .login-form {
@@ -97,7 +101,18 @@ table {
     text-align: left;
 }
 
-
+input{
+    background-color: #ECF0F5;
+    
+    border-color:#abaeaf;
+    border-top: 0px;
+    border-radius: 0px;
+    font-weight: bold;
+    outline: 0;
+    margin-bottom: 20px;
+    padding-left: 0px;
+    color: #ECF0F5;
+}
 
 .form-group {
     margin-bottom: 40px;
@@ -115,8 +130,27 @@ label {
     letter-spacing: 1px;
 }
 
+.login-btm {
+    float: left;
+}
 
+.login-button {
+    padding-right: 0px;
+    text-align: right;
+    margin-bottom: 25px;
+}
+
+.login-text {
+    text-align: left;
+    padding-left: 0px;
+    color: #A2A4A4;
+}
+
+.loginbttm {
+    padding: 0px;
+}
 </style>
+
 <script>
 import axios from 'axios'
 import apiUrls from '../common/apiUrls'
@@ -130,29 +164,23 @@ export default {
            // username: '',
             email: '',
             password: '',
-            companyCode: '',
             fields:  [
-                    { key:   'username',    label: 'ユーザ名/メールアドレス' }, 
-                    { key:   'password',    label: 'パスワード' },
-                    { key:   'companyCode', label: '企業コード' }, 
-                    { key:   'companyId',   label: '企業Id'},
-                    { key:   'status',      label: 'ステータス'},
-                    { key:   'authorities', label: '権限' }, 
+                    { key:   'username',    label: 'ユーザ名' }, 
+                    { key:   'email',       label: 'メールアドレス' }, 
+                    { key:   'password',    label: 'パスワード' }, 
+                    { key:   'roles',       label: 'ロール' }, 
                     { key:   'accessToken', label: 'トークン' } 
                     ],
             message: '',
             isShowAccessToken: false,
-            
-            modalShow: false,
-
-            aggUnitCode: "test",
-
-            
         }
     },
     methods: {
-        enterLogin(bvModalEvt) {
-            this.clickLogin(bvModalEvt) ;
+        gotoLogin(){
+            this.$router.push({path: '/'});
+        },
+        enterLogin() {
+            this.clickLogin() ;
         },
         validateEmail() {
             this.message='';
@@ -160,35 +188,13 @@ export default {
                 this.message= 'Please enter a valid email address';
             } */
         },
-        async showDialog(bvModalEvt){
-            bvModalEvt.preventDefault();
-            alert ("bvModalEvt");
-            this.modalShow = true;
-            alert (this.modalShow);
-        },
-        async clickLogin(bvModalEvt) {
+        async clickLogin() {
             await this.login();
             if (this.$store.state.loginData.id != '') {
-                let superadmin = this.$store.state.loginData.authorities.includes("1_superadmin");
-                let admin = this.$store.state.loginData.authorities.includes("2_admin");
-                let user = this.$store.state.loginData.authorities.includes("3_user");
-                if (this.$store.state.loginData.authorities.length == 1){
-                    this.createMenuInfo();
-                    await this.referNameCollectionMany();
-                    commonMethods.saveCommonArea('modeTest', false) 
-                   if (superadmin){
-                       alert ("SuperAdmin");
-                       this.$router.push({path: '/superadminmenu'});
-                   }else if (admin){
-                       this.$router.push({path: '/adminmenu'});
-                   }else{
-                       this.$router.push({path: '/usermenu'});
-                   }
-                }else if (this.$store.state.loginData.authorities.length === 2 && user && admin) {
-                    alert ("Both user and admin")
-                    await this.showDialog(bvModalEvt);                                    
-                }
-              
+                this.createMenuInfo();
+                await this.referNameCollectionMany();
+                commonMethods.saveCommonArea('modeTest', false)
+                this.$router.push({path: '/superadminmenu'});
             }
         },
         ctrlEnterLogin() {
@@ -198,22 +204,17 @@ export default {
         async login() {
             //let hashed_password = bcrypt.hashSync(this.password, 10)
             //let hashed_password = this.getHash(this.password)
-           // this.checkInput();
             let hashed_password = security.getHash(this.password)
             this.message = ''
-            await axios.post(apiUrls.signIn,{
+            await axios.post(apiUrls.signIn,
+            {
                 //username: this.username,
                 email: this.email,
-                password: hashed_password,
-                companyCode: this.companyCode
+                password: hashed_password
             })
             .then(response => {
                 response.data.password = hashed_password
                 this.$store.state.loginData = response.data
-                   
-                 alert (this.$store.state.loginData.id);
-                 alert (this.$store.state.loginData.authorities);
-                 alert (this.$store.state.loginData.companyCode);
                 /*
                 requestParams.httpRequestHeaders = {
                     Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
@@ -233,16 +234,14 @@ export default {
             this.createMenuInfo();
             await this.referNameCollectionMany();
             commonMethods.saveCommonArea('modeTest', true)
-            this.$router.push({path: '/menu'});
+            this.$router.push({path: '/superadminmenu'});
         },
         logout() {
             this.$store.state.loginData = {
                 id:          '',
                 username:    '',
                 email:       '',
-                companyCode: '',
-                companyId: '',
-                authority:       [],
+                roles:       [],
                 accessToken: ''
             }
             this.$store.rolesResDt = [];

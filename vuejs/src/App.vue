@@ -18,7 +18,7 @@
                         </b-button>
                         <b-button
                             variant="info"
-                            v-if="$route.name == 'Menu'"
+                            v-if="$route.name == 'Menu' ||  $route.name =='SuperadminMenu'"
                             @click="clicklogout"
                             >Logout
                         </b-button>

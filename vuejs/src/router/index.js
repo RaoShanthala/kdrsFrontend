@@ -2,7 +2,11 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 
 import Login    from '../views/Login.vue'
-import Menu     from '../views/Menu.vue'
+import SuperadminLogin from '../views/SuperadminLogin'
+import AdminMenu     from '../views/AdminMenu.vue'
+import UserMenu     from '../views/UserMenu.vue'
+import SuperadminMenu from '../views/SuperadminMenu.vue'
+import ShowModel from '../views/Modal.vue'
 
 import ImportPDF from '../views/ImportPDF.vue'
 
@@ -21,8 +25,11 @@ Vue.use(VueRouter)
 
 const routes = [
     {path: '/',                         name: 'Login',                      meta: {title: 'ログイン',                 prevPath: ''},      component: Login},
-    {path: '/menu',                     name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: Menu},
-    
+    {path: '/super',                    name: 'SuperAdminLogin',            meta: {title: 'ログイン',                 prevPath: ''},      component: SuperadminLogin},
+    {path: '/adminmenu',                name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: AdminMenu},
+    {path: '/usermenu',                name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: UserMenu},
+    {path: '/superadminmenu',           name: 'SuperadminMenu',             meta: {title: 'メニュー',                 prevPath: ''},      component: SuperadminMenu},
+    {path: '/showmodel',           name: 'Model',             meta: {title: 'Model',                 prevPath: ''},      component: ShowModel},
     {path: '/importPDF',                name: 'ImportPDF',                  meta: {title: 'PDFデータ作成',            prevPath: '/menu'}, component: ImportPDF},
 
     {path: '/construction',             name: 'Construction',               meta: {title: '工事メンテ',               prevPath: '/menu'}, component: Construction}, 
