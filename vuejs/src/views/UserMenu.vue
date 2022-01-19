@@ -2,52 +2,62 @@
   <div>
     <div class="text-right" style="height: 5px">
             <b-form-checkbox v-model="enabledTooltip">説明</b-form-checkbox>
+            <div v-if="this.$store.userAdminFlag == 'userAdmin'" >
+                <span style="text-decoration:underline; font-weight:bold;"> 
+                    <a class="btn-primary" @click="gotoAdminMenu"> 管理者メニュー </a>
+                </span>
+            </div>    
     </div>
+    
+     
     <div class="menu-container">
         <b-row>
             
             <b-col class="col-md-3">
                 <b-button-group vertical>
-                    <!-- 工事月別日報一覧 -->
-                    <b-button id="constructionreports" @click="clickMenuForward('/constructionreports')" class="mb-3">{{findRouteTitle('/constructionreports')}}</b-button>
-                    <!-- 工区別進捗表示 -->
-                    <b-button id="constructionorders" @click="clickMenuForward('/constructionorders')" class="mb-3">{{findRouteTitle('/constructionorders')}}</b-button>
+                    <!-- 製品工程進捗登録 -->
+                    <!--b-button @click="clickMenuForward('/process')" class="mb-3">{{findRouteTitle('/process')}}</b-button-->
+                    <b-button id="selfUpdate" @click="clickMenuForward('/kojinupdate')" class="mb-3">{{findRouteTitle('/kojinupdate')}}</b-button>
                 </b-button-group>
              </b-col>
             <b-col class="col-md-3">
                 <b-button-group vertical>
-                    <!-- ユーザメンテ -->
-                    <b-button id="users" @click="clickMenuForward('/users')" class="mb-3">{{findRouteTitle('/users')}}</b-button>
-                    <!-- 工事/製品メンテ -->
+                    <!-- 工事データ履歴 -->
+                    <b-button id="constructionHistory" @click="clickMenuForward('/constructiondatahistory')" class="mb-3">{{findRouteTitle('/constructiondatahistory')}}</b-button>
+                    <!-- 日報データ履歴 -->
+                    <b-button id="reportHistory" @click="clickMenuForward('/reportdatahistory')" class="mb-3">{{findRouteTitle('/reportdatahistory')}}</b-button>
+                    <b-button id="workHistory" @click="clickMenuForward('/workdatahistory')" class="mb-3">{{findRouteTitle('/workdatahistory')}}</b-button>
                     <!--b-button @click="clickMenuForward('/products')" class="mb-3">{{findRouteTitle('/products')}}</b-button-->
                 </b-button-group>
             </b-col>
-            <b-tooltip :disabled.sync="disabledTooltip" target="users" triggers="hover" placement="bottom" variant="primary">
+            <b-tooltip :disabled.sync="disabledTooltip" target="selfUpdate" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        システムを利用するユーザを登録/更新/削除します。
+                        個人情報を更新します。
                     </font>
                 </div>
             </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="construction" triggers="hover" placement="bottom" variant="primary">
+            <b-tooltip :disabled.sync="disabledTooltip" target="constructionHistory" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        工事情報を更新/削除し、工事の選択により<br>
-                        プライベート工事情報を更新/削除します。
+                        ログインユーザにより工事情報履歴<br>
+                        データが表示されます。
                     </font>
                 </div>
             </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="constructionreports" triggers="hover" placement="bottom" variant="primary">
+            <b-tooltip :disabled.sync="disabledTooltip" target="reportHistory" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        工事別の月別日報一覧。
+                        ログインユーザにより日報情報履歴<br>
+                        データが表示されます。
                     </font>
                 </div>
             </b-tooltip>
-             <b-tooltip :disabled.sync="disabledTooltip" target="constructionorders" triggers="hover" placement="bottom" variant="primary">
+             <b-tooltip :disabled.sync="disabledTooltip" target="workHistory" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        工事別の月別作業一覧。
+                        ログインユーザにより変更作業情報履歴<br>
+                        データが表示されます。
                     </font>
                 </div>
             </b-tooltip>
@@ -232,6 +242,10 @@ export default {
             ////window.history.pushState(null, null, '/menu');
             //this.$router.push({path: menuForwardPath});
             commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
+        },
+
+        gotoAdminMenu(){
+           this.$router.push({path: '/adminmenu'});
         },
 
        /* async referNameCollectionMany(nameSectionValue) {

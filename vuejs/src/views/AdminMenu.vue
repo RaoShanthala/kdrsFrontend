@@ -2,6 +2,11 @@
   <div>
     <div class="text-right" style="height: 5px">
             <b-form-checkbox v-model="enabledTooltip">説明</b-form-checkbox>
+            <div v-if="this.$store.userAdminFlag == 'userAdmin'" >
+                <span style="text-decoration:underline; font-weight:bold;"> 
+                    <a class="btn-primary" @click="gotoUserMenu"> ユーザメニュー </a>
+                </span>
+            </div>
     </div>
     <div class="menu-container">
         <b-row>
@@ -9,9 +14,9 @@
             <b-col class="col-md-3">
                 <b-button-group vertical>
                     <!-- 製品工程進捗登録 -->
-                    <!--b-button @click="clickMenuForward('/process')" class="mb-3">{{findRouteTitle('/process')}}</b-button-->
-                    <b-button id="construction" @click="clickMenuForward('/construction')" class="mb-3">{{findRouteTitle('/construction')}}</b-button>
+                    <b-button id="selfUpdate" @click="clickMenuForward('/kojinupdate')" class="mb-3">{{findRouteTitle('/kojinupdate')}}</b-button>
                 </b-button-group>
+        
             </b-col>
             <b-col class="col-md-3">
                 <b-button-group vertical>
@@ -23,12 +28,19 @@
              </b-col>
             <b-col class="col-md-3">
                 <b-button-group vertical>
+                    <!-- 工事メンテ -->
+                    <b-button id="construction" @click="clickMenuForward('/construction')" class="mb-3">{{findRouteTitle('/construction')}}</b-button>
                     <!-- ユーザメンテ -->
                     <b-button id="users" @click="clickMenuForward('/users')" class="mb-3">{{findRouteTitle('/users')}}</b-button>
-                    <!-- 工事/製品メンテ -->
-                    <!--b-button @click="clickMenuForward('/products')" class="mb-3">{{findRouteTitle('/products')}}</b-button-->
-                </b-button-group>
+                 </b-button-group>
             </b-col>
+            <b-tooltip :disabled.sync="disabledTooltip" target="selfUpdate" triggers="hover" placement="bottom" variant="primary">
+                <div class="text-left">
+                    <font size=5>
+                        個人情報を更新します。
+                    </font>
+                </div>
+            </b-tooltip>
             <b-tooltip :disabled.sync="disabledTooltip" target="users" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
@@ -239,6 +251,10 @@ export default {
             ////window.history.pushState(null, null, '/menu');
             //this.$router.push({path: menuForwardPath});
             commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
+        },
+
+        gotoUserMenu(){
+           this.$router.push({path: '/usermenu'});
         },
 
        /* async referNameCollectionMany(nameSectionValue) {

@@ -2,31 +2,31 @@
     <div>
         <b-card bg-variant="light">
             <b-row>
+                    
+            </b-row>    
+            <b-row>
                 <b-col class="col-md-10">
+                    <b-form inline class="mt-1">
+                        <span class="mr-4 mt-1"><strong>企業コード：</strong>{{this.$store.state.loginData.companyCode}}</span>
+                        <!--strong>企業名称：</strong>{{this.$store.state.loginData.companyId}} -->
+                        <span class="mr-5"></span>
+                        <!-- <b-form-radio-group plain @change="prodFlagChange" v-model="prodSearchForm.prodFlag" :options="prodFlagOptions"/> -->
+                        <!-- <b-form-radio-group class="mr-4" @change="prodFlagChange" v-model="prodSearchForm.prodFlag" :options="prodFlagOptions"/> -->
+                    </b-form>
                     <b-form inline>
-                        <b-form-group label="ログインユーザ" class="mr-2">
-                        <b-form-input id="input-user" v-model="searchForm.loginUser"/>
+                        <b-form-group label="姓" class="mr-2">
+                            <b-form-input id="input-sei" v-model="searchForm.sei"/>
                         </b-form-group>
-                        <b-form-group label="氏名" class="mr-2">
-                        <b-form-input id="input-name" v-model="searchForm.name"/>
+                        <b-form-group label="名" class="mr-2">
+                            <b-form-input id="input-mei" v-model="searchForm.mei"/>
                         </b-form-group>
-                        <b-form-group label="業務" class="mr-2">
-                        <b-form-select id="input-work" v-model="searchForm.role" :options="roles"/>
+                        <b-form-group label="状態" class="mr-4">
+                            <b-form-select id="input-status" v-model="searchForm.status" :options="statusList"/>
                         </b-form-group>
-                        <b-form-group label="役割" class="mr-2">
-                        <b-form-select id="input-role" v-model="searchForm.roleLevel" :options="roleLevels"/>
+                        <b-form-group label="削除済" class="mr-2">
+                            <b-form-checkbox v-model="searchForm.deleted"/>
                         </b-form-group>
-                        <b-form-group label="基準日">
-                            <b-datepicker
-                                today-button
-                                reset-button
-                                close-button
-                                label-today-button="今日"
-                                label-reset-button="クリア"
-                                label-close-button="キャンセル"
-                                placeholder="日付を選択してください"
-                                v-model="searchForm.date"/>
-                            </b-form-group>
+                       
                         <div id="flexButton">
                         <b-button @click="searchUser" class="mr-1">検索</b-button>
                         <b-button  variant="outline-primary" @click="resetSearchForm">クリア</b-button>
@@ -56,8 +56,14 @@
                     :items="users"
                     :fields="fields">
                     <template #cell(update)="row">
-                        <!-- <b-button size="sm" @click="clickUpdateUser(row.item.userId)">更新/削除</b-button> -->
-                        <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新/削除</b-link> 
+                        <span v-if="row.item.deleted == 0 ">
+                            <span v-if="row.item.email == $store.state.loginData.username">
+                                <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新</b-link>                 
+                            </span>
+                            <span v-else>
+                                <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新/削除</b-link>
+                            </span>
+                        </span>
                     </template>
                 </b-table>
             </div>
@@ -113,16 +119,14 @@ export default {
         return {
             striped: true,
             noCollapse: true,
-            searchForm: {
-                loginUser: '',
-                name: '',
-                //work: '',
-                role: '',
-                roleLevel: '',
-                date: ''
+            searchForm: {      
+                sei: '',
+                mei: '',
+                status: '0',
+                deleted:false,
             },
-            roles: [],
-            roleLevels: [],
+            statusList: [],
+           //S roleLevels: [],
             users: [],
             fields: [],
             message: '',
@@ -143,23 +147,9 @@ export default {
     //     })
     // },
     created: async function() {
-        let resDtRole = commonMethods.loadCommonArea('role');
-        if (!resDtRole) {
-            // console.log('this.referRoleAll(\'Role start !\');')
-            await this.referRoleAll();
-            // console.log('this.referRoleAll(\'Role end !\');')
-        } else {
-            this.setRoles(resDtRole);
-        }
 
-        let resDtRoleLevel = commonMethods.loadCommonArea('roleLevel');
-        if (!resDtRoleLevel) {
-            // console.log('this.referNameCollectionMany(\'RoleLevel start !\');')
-            await this.referNameCollectionMany('RoleLevel');
-            // console.log('this.referNameCollectionMany(\'RoleLevel end !\');')
-        } else {
-            this.setRoleLevels(resDtRoleLevel);
-        }
+       //await this.referStatusAll(); using below method instead to set status list (hardcoding)
+       this.setStatus();
 
         this.currentMenuName = commonMethods.getCurrentMenu();
         // console.log('created: currentMenuName=' + this.currentMenuName);
@@ -179,42 +169,17 @@ export default {
         }
     },
     methods: {
-        setRoles(resDt) {
-            for(let i in resDt) { 
-                    this.roles.push({'value': resDt[i].roleId, 'text': resDt[i].roleName});
-            }
-            this.roles.push({ value: 0, text: '無し' });
-            this.roles.push({ value: '', text: '' });
-        },
+        setStatus(){
+            this.statusList.push({'value': '0', 'text': 'すべて'});
+            this.statusList.push({'value': '1', 'text': '申請（iphone）'});
+            this.statusList.push({'value': '2', 'text': '承認（管理者）'});
+            this.statusList.push({'value': '3', 'text': '承諾（iphone）'});
+            this.statusList.push({'value': '7', 'text': '承認拒否（管理者）'});
+            this.statusList.push({'value': '8', 'text': '承諾拒否（iphone）'});
+            this.statusList.push({'value': '9', 'text': '削除（管理者）'});
 
-        setRoleLevels(resDt) {
-            for(let i in resDt) { 
-                this.roleLevels.push({'value': resDt[i].codeNumeric, 'text': resDt[i].nameShort});
-            }
-            this.roleLevels.push({ value: '', text: '' });
         },
-
-        async referRoleAll() {
-            let axiosConfigObject = {
-                headers: {
-                Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
-                'Content-Type': 'application/json',
-                }
-            }
-            await axios.get(apiUrls.referRoleAll, axiosConfigObject)
-            .then(response => {
-                if(response.data.resultCode == '000') {
-                    commonMethods.saveCommonArea('role', response.data.resDt);
-                    this.setRoles(response.data.resDt);
-                } else {
-                    this.message = commonMethods.getResponseMessage(response);
-                }
-            })
-            .catch(error => {
-                this.message = commonMethods.getErrorMessage(error);
-            })
-        },
-
+     
        async referNameCollectionMany(nameSectionValue) {
             let axiosConfigObject = {
                 headers: {
@@ -245,14 +210,22 @@ export default {
             this.users = [];
             this.fields =[];
             this.searchedUser = false;
+            this.isShowUserTable = false;
+            
+            if (this.searchForm.deleted == true){ 
+                this.searchForm.deleted = '1';
+            }else{
+                this.searchForm.deleted = '0'; 
+            }
+    
             // console.log('this.searchForm.role=\'' + this.searchForm.role + '\'');
             let payload = {
-                ...this.searchForm.loginUser && {loginUser: this.searchForm.loginUser},
-                ...this.searchForm.name && {name: this.searchForm.name},
-                ...this.searchForm.role !== '' && {roleId: this.searchForm.role},
-                ...this.searchForm.roleLevel && {roleLevel: this.searchForm.roleLevel},
-                ...this.searchForm.date && {targetDate: this.searchForm.date.replaceAll('-','/')}
-            }
+                companyId: this.$store.state.loginData.companyId,
+                ...this.searchForm.sei && {sei: this.searchForm.sei},
+                ...this.searchForm.mei && {mei: this.searchForm.mei},
+                ...this.searchForm.status !== '' && {status: this.searchForm.status},
+                ...this.searchForm.deleted !== '' && {deleted: this.searchForm.deleted},
+             }
             let axiosConfigObject = {
                 headers: {
                     Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
@@ -263,12 +236,19 @@ export default {
 
             axios.get(apiUrls.referUserMany, axiosConfigObject)
             .then(response => {
+                if (this.searchForm.deleted == '1'){ 
+                    this.searchForm.deleted = true;
+                }else{
+                    this.searchForm.deleted = false;
+                }
                 this.users = response.data.resDt
                 this.fields = this.createFields(response.data.resDtTitle);//, [0,1,2,3,4,5,6,7,8,9,10,11]);
                 if (response.data.resultCode != '000') {
                     this.message = commonMethods.getResponseMessage(response);
                 } else {
-                    this.isShowUserTable = true;
+                    if (this.users.length > 0){
+                        this.isShowUserTable = true;
+                    }            
                     this.searchedUser = true;
                 }
             })
@@ -293,19 +273,48 @@ export default {
             })
             // this.$store.state.searchForm = this.searchForm;
         },
-        // userSelected(item) {
-        //     if (item) {
-        //         console.log('userSelected item.length=' +  item.length);
-        //         if(item[0]) {
-        //             console.log('userSelected item[0].userId=' +  item[0].userId);
-        //             this.selectedRowUserId = item[0].userId;
-        //         } 
-        //     }
-        //     if(this.$refs.tableRefUser.selectedRows.length) {
-        //         this.selectedRowIndex = this.$refs.tableRefUser.selectedRows.length - 1;
-        //         console.log('userSelected this.selectedRowIndex=' +  this.selectedRowIndex);
-        //     }
-        // },
+      
+
+     /*   clickDeleteUser(userId){
+         if (confirm('削除しますか？')) {
+                let payload = {
+                    tranId:        '',
+                    resultCode:    null,
+                    resultMessage: null,
+                    user:          null,
+                    terminal:      null,
+                    reqDateTime:   null,
+                    resDateTime:   null,
+                    reqHd: {
+                        companyId: this.$store.state.loginData.companyId, 
+                        userId:  userId
+                    }
+                }
+                let axiosConfigObject = {
+                    headers: {
+                        Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    data:    payload
+                }
+
+                axios.delete(apiUrls.removeUser, axiosConfigObject)
+                .then((response) => {
+                    if(response.data.resultCode != '000') {
+                        this.message = commonMethods.getResponseMessage(response);
+                        this.searchUser();
+                    } else {
+                        alert(response.data.resultMessage)
+                        this.$store.state.responseData = ''
+                        //this.$router.push('users')
+                        //commonMethods.clickMenuBack();
+                    }
+                })
+                .catch(error => {
+                    this.message = commonMethods.getErrorMessage(error);
+                })
+            }
+        }, */
 
         registerUser() {
             // this.$store.state.searchForm = this.searchForm
@@ -317,16 +326,17 @@ export default {
             commonMethods.clickMenuForward(this.$route.path, 'userregister');
         },
 
-        async clickUpdateUser(item) {
-            this.selectedRowUserId = item;
+        async clickUpdateUser(userId) {
+            this.selectedRowUserId = userId;
             commonMethods.saveCommonArea(this.currentMenuName + '_selectedRowUserId', this.selectedRowUserId);
-            await this.updateUser(item)
+            await this.updateUser(userId)
         },
 
-        async updateUser(item) {
+        async updateUser(userId) {
             // this.$store.state.searchForm = this.searchForm
             let payload = {
-                userId: item
+                companyId: this.$store.state.loginData.companyId, 
+                userId: userId
             }
             let axiosConfigObject = {
                 headers: {
@@ -342,7 +352,7 @@ export default {
                     this.message = commonMethods.getResponseMessage(response);
                 }
                 else {
-                    response.data.resHd.userId = item
+                    response.data.resHd.userId = userId
                     this.$store.state.responseData = response.data
                     if (this.searchedUser == true) {
                         commonMethods.saveCommonArea(this.currentMenuName + "_searchForm", this.searchForm);
@@ -357,13 +367,13 @@ export default {
         },
 
         resetSearchForm() {
-            this.searchForm = {
-                loginUser: '',
-                name: '',
-                work: '',
-                role: '',
-                date: ''
+            this.searchForm = {      
+                sei: '',
+                mei: '',
+                status: '0',
+                deleted:false,
             }
+            
             this.searchedUser = false;
             // this.$store.state.searchForm = this.searchForm
         },

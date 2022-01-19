@@ -10,30 +10,28 @@
                 <b-button-group vertical>
                     <!-- 製品工程進捗登録 -->
                     <!--b-button @click="clickMenuForward('/process')" class="mb-3">{{findRouteTitle('/process')}}</b-button-->
-                    <b-button id="construction" @click="clickMenuForward('/construction')" class="mb-3">{{findRouteTitle('/construction')}}</b-button>
+                    <b-button id="selfUpdate" @click="clickMenuForward('/kojinupdate')" class="mb-3">{{findRouteTitle('/kojinupdate')}}</b-button>
                 </b-button-group>
             </b-col>
             <b-col class="col-md-3">
                 <b-button-group vertical>
                     <!-- 工事月別日報一覧 -->
-                    <b-button id="constructionreports" @click="clickMenuForward('/constructionreports')" class="mb-3">{{findRouteTitle('/constructionreports')}}</b-button>
-                    <!-- 工区別進捗表示 -->
-                    <b-button id="constructionorders" @click="clickMenuForward('/constructionorders')" class="mb-3">{{findRouteTitle('/constructionorders')}}</b-button>
+                    <b-button id="companyadmin" @click="clickMenuForward('/companyandadmin')" class="mb-3">{{findRouteTitle('/companyandadmin')}}</b-button>
                 </b-button-group>
              </b-col>
            
-            <b-tooltip :disabled.sync="disabledTooltip" target="users" triggers="hover" placement="bottom" variant="primary">
+            <b-tooltip :disabled.sync="disabledTooltip" target="selfUpdate" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        システムを利用するユーザを登録/更新/削除します。
+                        個人情報を更新します。
                     </font>
                 </div>
             </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="construction" triggers="hover" placement="bottom" variant="primary">
+            <b-tooltip :disabled.sync="disabledTooltip" target="companyadmin" triggers="hover" placement="bottom" variant="primary">
                 <div class="text-left">
                     <font size=5>
-                        工事情報を更新/削除し、工事の選択により<br>
-                        プライベート工事情報を更新/削除します。
+                        企業情報を更新/更新/削除し、企業の選択により<br>
+                        管理者情報を更新/削除します。
                     </font>
                 </div>
             </b-tooltip>

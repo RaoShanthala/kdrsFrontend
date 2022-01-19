@@ -20,20 +20,20 @@
                             <div class="form-group">
                                 <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
                                     <b-input-group-prepend is-text><b-icon icon="person-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin" required></b-form-input>
+                                    <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
                                 </b-input-group>
                             </div>
                             <div class="form-group">
                                 <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
                                     <b-input-group-prepend is-text><b-icon icon="lock-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin" required></b-form-input>
+                                    <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
                                 </b-input-group>
                             </div>
 
                             <div class="form-group">
                                 <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
                                     <b-input-group-prepend is-text><b-icon icon="building"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="企業コード" v-model="companyCode" type="text" @keyup.enter="enterLogin" required></b-form-input>
+                                    <b-form-input placeholder="企業コード" v-model="companyCode" type="text" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
                                 </b-input-group>
                             </div>
               
@@ -61,21 +61,6 @@
                 <div class="col-lg-3 col-md-2"></div>
             </div>
         </div>
-
-        <div v-if="this.modalShow">
-            <b-modal hide-footer>
-                <b-form>
-                         <label for="aggUnitCode">単位コード</label>
-                            <b-form-input id="aggUnitCode" v-model="aggUnitCode" />
-                        <div style="float: right">
-                            <b-button class="mr-1" @click="addNewDataAggUnit">登録 </b-button>
-                            <b-button class="mr-1" @click="closeTypeModal">取消</b-button>
-                        </div>
-                </b-form>
-            </b-modal>
-        </div>
-       
-
 
         
  </div>
@@ -151,8 +136,8 @@ export default {
         }
     },
     methods: {
-        enterLogin(bvModalEvt) {
-            this.clickLogin(bvModalEvt) ;
+        enterLogin() {
+            this.clickLogin() ;
         },
         validateEmail() {
             this.message='';
@@ -160,19 +145,15 @@ export default {
                 this.message= 'Please enter a valid email address';
             } */
         },
-        async showDialog(bvModalEvt){
-            bvModalEvt.preventDefault();
-            alert ("bvModalEvt");
-            this.modalShow = true;
-            alert (this.modalShow);
-        },
-        async clickLogin(bvModalEvt) {
+        
+        async clickLogin() {
+            this.$store.userAdminFlag = '';
             await this.login();
             if (this.$store.state.loginData.id != '') {
-                let superadmin = this.$store.state.loginData.authorities.includes("1_superadmin");
-                let admin = this.$store.state.loginData.authorities.includes("2_admin");
-                let user = this.$store.state.loginData.authorities.includes("3_user");
-                if (this.$store.state.loginData.authorities.length == 1){
+                let superadmin = this.$store.state.loginData.authorities.includes("1_システム管理者");
+                let admin = this.$store.state.loginData.authorities.includes("2_管理者");
+                let user = this.$store.state.loginData.authorities.includes("3_ユーザ");
+                 if (this.$store.state.loginData.authorities.length == 1){
                     this.createMenuInfo();
                     await this.referNameCollectionMany();
                     commonMethods.saveCommonArea('modeTest', false) 
@@ -184,9 +165,9 @@ export default {
                    }else{
                        this.$router.push({path: '/usermenu'});
                    }
-                }else if (this.$store.state.loginData.authorities.length === 2 && user && admin) {
-                    alert ("Both user and admin")
-                    await this.showDialog(bvModalEvt);                                    
+                }else if (this.$store.state.loginData.authorities.length == 2 && user && admin) {
+                    this.$store.userAdminFlag = "userAdmin"; 
+                    this.$router.push({path: '/usermenu'});                                                    
                 }
               
             }
@@ -210,10 +191,7 @@ export default {
             .then(response => {
                 response.data.password = hashed_password
                 this.$store.state.loginData = response.data
-                   
-                 alert (this.$store.state.loginData.id);
-                 alert (this.$store.state.loginData.authorities);
-                 alert (this.$store.state.loginData.companyCode);
+           
                 /*
                 requestParams.httpRequestHeaders = {
                     Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
@@ -245,10 +223,8 @@ export default {
                 authority:       [],
                 accessToken: ''
             }
-            this.$store.rolesResDt = [];
-            this.$store.rolesResDt = null;
-            this.$store.roleLevelsResDt = [];
-            this.$store.roleLevelsResDt = null;
+             this.$store.userAdminFlag = '';
+           
         },
 
      async referNameCollectionMany() {

@@ -14,6 +14,7 @@ const store = new Vuex.Store({
             authorities:   [],
             accessToken: ''
         },
+        userAdminFlag : '',
         searchForm:     '',
         updateUser:     '',
         responseData:   '',
