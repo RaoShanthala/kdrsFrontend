@@ -50,8 +50,8 @@
                         </div>
                            
 
-                        <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken && !this.modalShow" >
-                            <b-alert show variant="danger">{{this.aggUnitCode}}</b-alert>
+                        <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken" >
+                          
                             <b-button @click="logout">ログアウト</b-button>
                                 <b-table :items="[this.$store.state.loginData]" :fields="fields"></b-table>
                             <b-button @click="clickMenu" variant="info">メニュー</b-button>
@@ -127,12 +127,7 @@ export default {
                     ],
             message: '',
             isShowAccessToken: false,
-            
-            modalShow: false,
-
-            aggUnitCode: "test",
-
-            
+            aggUnitCode: "test",           
         }
     },
     methods: {
@@ -158,8 +153,7 @@ export default {
                     await this.referNameCollectionMany();
                     commonMethods.saveCommonArea('modeTest', false) 
                    if (superadmin){
-                       alert ("SuperAdmin");
-                       this.$router.push({path: '/superadminmenu'});
+                        this.$router.push({path: '/superadminmenu'});
                    }else if (admin){
                        this.$router.push({path: '/adminmenu'});
                    }else{

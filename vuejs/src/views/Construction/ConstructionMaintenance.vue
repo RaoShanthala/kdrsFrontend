@@ -93,9 +93,12 @@
                                               <b-form-group  label="プライベート工事名称" class="mr-3">
                                                 <b-form-input id="constNameSearch" v-model="constNameSearch"/>
                                                </b-form-group>
-                                               <b-form-group label="ユーザー名称" class="mr-3">
-                                                <b-form-input id="userNameSearch" v-model="userNameSearch"/>
-                                               </b-form-group>
+                                               <b-form-group label="姓" class="mr-３">
+                                                    <b-form-input id="seiSearch" v-model="seiSearch"/>
+                                                </b-form-group>
+                                                <b-form-group label="名" class="mr-2">
+                                                    <b-form-input id="meiSearch" v-model="meiSearch"/>
+                                                </b-form-group>
                                                <b-form-group class="mt-4 mr-1">
                                                     <div style="margin-top: 0.4rem;">
                                                         <b-button @click="searchConstruction" class="mr-1">検索</b-button>
@@ -243,7 +246,8 @@ export default {
             currentMenuName:'',
 
             constNameSearch:'',
-            userNameSearch: '',
+            seiSearch: '',
+            meiSearch: '',
             isPrivConstructionPresent: false,
             constMessage : '',
             constAllMessage : '',
@@ -312,7 +316,8 @@ export default {
             this.constAllOptions = [];
             this.addConstIdList=[];
             this.constAllMessage = '';
-            this.constNameSearch = '';
+            this.seiSearch = '';
+            this.meiSearch = '';
             this.userNameSearch = '';
         },
 
@@ -346,13 +351,17 @@ export default {
             
             if (searchType == 1){
               payload = {
+                companyId: this.$store.state.loginData.companyId,  
                 constId: this.privConstSearchForm.constId,
                 searchType: searchType
              }
             }else{
                payload = {
+                companyId: this.$store.state.loginData.companyId, 
+                sei : this.seiSearch,
+                mei: this.meiSearch,  
                 privConstName: this.constNameSearch,  
-                userName:  this.userNameSearch,
+               // userName:  this.userNameSearch,
                 searchType: searchType
              }
             }
@@ -411,6 +420,7 @@ export default {
                     reqDateTime: null,
                     resDateTime: null,
                     reqHd: {
+                        companyId: this.$store.state.loginData.companyId, 
                         constId: this.privConstSearchForm.constId, 
                         action: 2,       
                     },
@@ -458,6 +468,7 @@ export default {
                     reqDateTime: null,
                     resDateTime: null,
                     reqHd: {
+                        companyId: this.$store.state.loginData.companyId,
                         constId: this.privConstSearchForm.constId, 
                         action: 1,       
                     },
@@ -492,7 +503,9 @@ export default {
         clearSearchForm(){
            console.log ("clearForm  11");
             this.constNameSearch = '';
-            this.userNameSearch = '';
+            this.seiSearch = '';
+            this.meiSearch = '';
+           // this.userNameSearch = '';
             this.constAllOptions=[];
             this.addConstIdList=[];
             this.isPrivConstructionPresent=false;

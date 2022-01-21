@@ -267,6 +267,7 @@ export default {
            // alert ("deleteFlag == " + deleteFlag);
             let payload;
             payload = {
+                companyId: this.$store.state.loginData.companyId,
                 constId: this.searchForm.constId,  
                 startDate:  this.searchForm.startDate,
                 endDate: endDateFormat,

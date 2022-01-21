@@ -337,6 +337,7 @@ export default {
             let payload;
             
             payload = {
+                companyId: this.$store.state.loginData.companyId,
                 ...this.constSearchForm.constCode    && { constCode:   this.constSearchForm.constCode },
                 ...this.constSearchForm.constName    && { constName:   this.constSearchForm.constName },
                 ...this.constSearchForm.targetState && {targetState: + this.constSearchForm.targetState},
@@ -427,6 +428,7 @@ export default {
                         reqDateTime: null,
                         resDateTime: null,
                         reqHd: {
+                            companyId: this.$store.state.loginData.companyId,
                             constCode: this.newConstCode,
                             constName: this.newConstName,
                             startDate: this.newStartDate,
@@ -478,6 +480,7 @@ export default {
                     reqDateTime: null,
                     resDateTime: null,
                     reqHd: {
+                        companyId: this.$store.state.loginData.companyId,
                         constId: this.selectedConstId,
                         constCode: this.newConstCode,
                         constName: this.newConstName,
@@ -529,6 +532,7 @@ export default {
                     reqDateTime:   null,
                     resDateTime:   null,
                     reqHd: {
+                        companyId: this.$store.state.loginData.companyId,
                         constId:      this.selectedConstId
                     }
                 }
