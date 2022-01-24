@@ -56,13 +56,16 @@
                     :items="users"
                     :fields="fields">
                     <template #cell(update)="row">
-                        <span v-if="row.item.deleted == 0 ">
+                        <!--span v-if="row.item.deleted == 0 ">
                             <span v-if="row.item.email == $store.state.loginData.username">
                                 <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新</b-link>                 
                             </span>
                             <span v-else>
                                 <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新/削除</b-link>
                             </span>
+                        </span-->
+                        <span v-if="row.item.deleted == 0 && row.item.email != $store.state.loginData.username">           
+                            <b-link  class="button"  v-on:click="clickUpdateUser(row.item.userId)">更新/削除</b-link>                           
                         </span>
                     </template>
                 </b-table>
