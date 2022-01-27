@@ -27,34 +27,27 @@ export default {
         async importPdf() {
             alert ("Entered");
             this.message = '';
-           
             let axiosConfigObject = {
                 headers: {
                     Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
                     'Content-Type': 'application/json',
-                    },
-                }
+                },
+            }
             await axios.get(apiUrls.referPDFDownload, axiosConfigObject)
-            .then(response => {
-                
+            .then(response => {            
                 if(response.data.resultCode != '000') {
                     this.message = response.data.resultMessage;
                     alert('エラーが発生しました。');
                 }else{
                     this.message = "Downloaded file";
                     alert('Downloaded file。');
-                }
-                
+                }        
             })
             .catch(error => {
                 this.message = commonMethods.getErrorMessage(error);
-            })
-            
+            })           
         },
-
        
-
-        
     }
 }
 </script>

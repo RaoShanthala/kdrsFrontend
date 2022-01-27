@@ -14,6 +14,12 @@ const urls = {
 
         referPDFDownload:  host + '/PDF/CreatePdf',
 
+        referCompanyMany:  host + '/Company/ReferCompanyMany',
+        referCompanyOne:   host + '/Company/ReferCompanyOne',
+        registerCompany:   host + '/Company/RegisterCompany',
+        modifyCompany:     host + '/Company/ModifyCompany',
+        removeCompany:     host + '/Company/RemoveCompany',
+
         referConstructionList:  host + '/Construction/ReferConstructionList',
         registerConstruction:   host + '/Construction/RegisterConstruction',
         updateConstruction:     host + '/Construction/UpdateConstruction',

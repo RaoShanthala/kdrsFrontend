@@ -1,102 +1,100 @@
 <template>
     <div>
         <div class="container-fluid">
-        <b-card bg-variant="light">
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="姓" label-for="input-sei" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-sei" v-model="view.sei" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5">
-                    <b-form-group label="名" label-for="input-mei" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-mei" v-model="view.mei" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="セイ" label-for="input-sei_kana" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-sei_kana" v-model="view.seiKana" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5">
-                    <b-form-group label="メイ" label-for="input-mei_kana" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-mei_kana" v-model="view.meiKana" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="メールアドレス" label-for="input-email" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-email" type="email" v-model="view.email" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5" >
-                    <b-form-group label="ユーザ" label-for="input-email" label-cols-sm="3" label-align-sm="right">
-                        <div class="col-sm-2">
-                         <input class="form-control" type="checkbox"  v-model="view.userAuth" id="chkbox">
-                        </div>
-                    </b-form-group>
-                    <b-form-group label="管理者" label-for="input-email" label-cols-sm="3" label-align-sm="right">
-                        <div class="col-sm-2">
-                         <input  class="form-control" type="checkbox"  v-model="view.adminAuth" id="chkbox">
-                        </div>
-                    </b-form-group>             
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="パスワード" label-for="input-password" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-password" type="password" v-model="view.password" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="パスワード（確認）" label-for="inpu-password-confirm" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-password-confirm" type="password" v-model="view.passwordConfirm" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="電話番号" label-for="input-phone" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-phone"  v-model="view.phone" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5">
-                    <b-form-group label="都道府県" label-for="input-prefacture" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-prefacture"  v-model="view.prefacture" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-            <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="市区町村" label-for="input-city" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-city"  v-model="view.city" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5">
-                    <b-form-group label="丁番地" label-for="input-street-number" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-street-number"  v-model="view.streetNumber" />
-                    </b-form-group>
-                </b-col>
-            </b-row>
-             <b-row>
-                <b-col class="col-md-5">
-                    <b-form-group label="建物名" label-for="input-building-name" label-cols-sm="3" label-align-sm="right">
-                        <b-form-input id="input-building-name"  v-model="view.buildingName" />
-                    </b-form-group>
-                </b-col>
-                <b-col class="col-md-5">
-                </b-col>
-            </b-row>
-        </b-card>   
+            <b-card bg-variant="light">
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="姓" label-for="input-sei" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-sei" v-model="view.sei" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5">
+                        <b-form-group label="名" label-for="input-mei" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-mei" v-model="view.mei" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="セイ" label-for="input-sei_kana" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-sei_kana" v-model="view.seiKana" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5">
+                        <b-form-group label="メイ" label-for="input-mei_kana" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-mei_kana" v-model="view.meiKana" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="メールアドレス" label-for="input-email" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-email" type="email" v-model="view.email" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5" >
+                        <b-form-group label="ユーザ" label-for="input-email" label-cols-sm="3" label-align-sm="right">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="checkbox"  v-model="view.userAuth" id="chkbox">
+                            </div>
+                        </b-form-group>
+                        <b-form-group label="管理者" label-for="input-email" label-cols-sm="3" label-align-sm="right">
+                            <div class="col-sm-2">
+                                <input  class="form-control" type="checkbox"  v-model="view.adminAuth" id="chkbox">
+                            </div>
+                        </b-form-group>             
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="パスワード" label-for="input-password" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-password" type="password" v-model="view.password" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="パスワード（確認）" label-for="inpu-password-confirm" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-password-confirm" type="password" v-model="view.passwordConfirm" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="電話番号" label-for="input-phone" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-phone"  v-model="view.phone" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5">
+                        <b-form-group label="都道府県" label-for="input-prefacture" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-prefacture"  v-model="view.prefacture" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="市区町村" label-for="input-city" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-city"  v-model="view.city" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5">
+                        <b-form-group label="丁番地" label-for="input-street-number" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-street-number"  v-model="view.streetNumber" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col class="col-md-5">
+                        <b-form-group label="建物名" label-for="input-building-name" label-cols-sm="3" label-align-sm="right">
+                            <b-form-input id="input-building-name"  v-model="view.buildingName" />
+                        </b-form-group>
+                    </b-col>
+                    <b-col class="col-md-5">
+                    </b-col>
+                </b-row>
+            </b-card>   
         </div>
-
         <b-alert v-if="message" show variant="danger">{{ message }}</b-alert>
-
         <div class="text-right mt-1">
             <b-button @click="registerUser">登録</b-button>
         </div>
@@ -218,9 +216,7 @@ export default {
                         Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
                         'Content-Type': 'application/json',
                     }
-                }
-
-                
+                }               
                 axios.post(apiUrls.registUser, payload, axiosConfigObject)
                 .then((response) => {
                     if(response.data.resultCode != '000') {

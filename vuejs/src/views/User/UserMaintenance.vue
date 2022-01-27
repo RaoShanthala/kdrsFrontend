@@ -1,8 +1,7 @@
 <template>
     <div>
         <b-card bg-variant="light">
-            <b-row>
-                    
+            <b-row>                    
             </b-row>    
             <b-row>
                 <b-col class="col-md-10">
@@ -25,17 +24,16 @@
                         </b-form-group>
                         <b-form-group label="削除済" class="mr-2">
                             <b-form-checkbox v-model="searchForm.deleted"/>
-                        </b-form-group>
-                       
+                        </b-form-group>                       
                         <div id="flexButton">
-                        <b-button @click="searchUser" class="mr-1">検索</b-button>
-                        <b-button  variant="outline-primary" @click="resetSearchForm">クリア</b-button>
+                            <b-button @click="searchUser" class="mr-1">検索</b-button>
+                            <b-button  variant="outline-primary" @click="resetSearchForm">クリア</b-button>
                         </div>
                     </b-form>
                 </b-col>
                 <b-col class="col-md-2">
                     <div class="text-right mt-4">
-                    <b-button @click="registerUser" class="mr-1">新規</b-button>
+                        <b-button @click="registerUser" class="mr-1">新規</b-button>
                     </div>
                 </b-col>
             </b-row>
@@ -152,7 +150,7 @@ export default {
     created: async function() {
 
        //await this.referStatusAll(); using below method instead to set status list (hardcoding)
-       this.setStatus();
+        this.setStatus();
 
         this.currentMenuName = commonMethods.getCurrentMenu();
         // console.log('created: currentMenuName=' + this.currentMenuName);
@@ -348,7 +346,6 @@ export default {
                 },
                 params:  payload
             }
-
             await axios.get(apiUrls.referUserOne, axiosConfigObject)
             .then(response => {
                 if(response.data.resultCode != '000') {
@@ -375,8 +372,7 @@ export default {
                 mei: '',
                 status: '0',
                 deleted:false,
-            }
-            
+            }        
             this.searchedUser = false;
             // this.$store.state.searchForm = this.searchForm
         },

@@ -1,114 +1,83 @@
  <template>
- <div class="container">
-        
+    <div class="container">        
         <div class="row">
-            <div class="col-lg-3 col-md-2"></div>
-            
-            
+            <div class="col-lg-3 col-md-2"></div>                        
             <div class="col-lg-6 col-md-8">
-               <!--div class="col-lg-12 super-admin-link">
-                   <a href="#" @click="gotoSuperUserLogin" class="link-primary">スーパーユーザーログイン</a>       
-                </div-->
-        
-                <!--div class="col-lg-12 login-title">
-                    管理者・ユーザー
-                </div-->
-
                 <div class="col-lg-12 login-form">
-                    <div class="col-lg-12 login-form">
-                        <b-form>
-                            <div class="form-group">
-                                <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
-                                    <b-input-group-prepend is-text><b-icon icon="person-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
-                                </b-input-group>
-                            </div>
-                            <div class="form-group">
-                                <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
-                                    <b-input-group-prepend is-text><b-icon icon="lock-fill"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
-                                </b-input-group>
-                            </div>
-
-                            <div class="form-group">
-                                <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
-                                    <b-input-group-prepend is-text><b-icon icon="building"></b-icon></b-input-group-prepend>
-                                    <b-form-input placeholder="企業コード" v-model="companyCode" type="text" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
-                                </b-input-group>
-                            </div>
-              
-
-                        </b-form>
-                        <div class=" mb-2 mr-sm-2 mb-sm-0">
-                            <b-button @click="clickLogin" @keyup.ctrl.enter="ctrlEnterLogin" v-if="!this.$store.state.loginData.accessToken">送信</b-button>
+                    <b-form>
+                        <div class="form-group">
+                            <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
+                                <b-input-group-prepend is-text><b-icon icon="person-fill"></b-icon></b-input-group-prepend>
+                                <b-form-input placeholder="メールアドレス" v-model="email" type="email" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
+                            </b-input-group>
                         </div>
-                        <br> 
-                        <div  class="mb-2 mr-sm-2 mb-sm-0" v-if="message">
-                          <div>  
+                        <div class="form-group">
+                            <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
+                                <b-input-group-prepend is-text><b-icon icon="lock-fill"></b-icon></b-input-group-prepend>
+                                <b-form-input placeholder="パスワード" v-model="password" type="password" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
+                            </b-input-group>
+                        </div>
+                        <div class="form-group">
+                            <b-input-group v-if="!this.$store.state.loginData.accessToken" class="mb-2 mr-sm-2 mb-sm-0">
+                                <b-input-group-prepend is-text><b-icon icon="building"></b-icon></b-input-group-prepend>
+                                <b-form-input placeholder="企業コード" v-model="companyCode" type="text" @keyup.enter="enterLogin" autocomplete="off" required></b-form-input>
+                            </b-input-group>
+                        </div>             
+                    </b-form>
+                    <div class=" mb-2 mr-sm-2 mb-sm-0">
+                        <b-button @click="clickLogin" @keyup.ctrl.enter="ctrlEnterLogin" v-if="!this.$store.state.loginData.accessToken">送信</b-button>
+                    </div>
+                    <br> 
+                    <div  class="mb-2 mr-sm-2 mb-sm-0" v-if="message">
+                        <div>  
                            <b-alert show variant="danger">{{message}}</b-alert>
-                          </div> 
-                        </div>
-                           
-
-                        <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken" >
-                          
-                            <b-button @click="logout">ログアウト</b-button>
-                                <b-table :items="[this.$store.state.loginData]" :fields="fields"></b-table>
-                            <b-button @click="clickMenu" variant="info">メニュー</b-button>
-                        </div>
+                        </div> 
+                    </div>      
+                    <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken" >
+                        <b-button @click="logout">ログアウト</b-button>
+                        <b-table :items="[this.$store.state.loginData]" :fields="fields"></b-table>
+                        <b-button @click="clickMenu" variant="info">メニュー</b-button>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-2"></div>
             </div>
+            <div class="col-lg-3 col-md-2"></div>
         </div>
-
-        
- </div>
- </template>
-
-   
+    </div>
+ </template>   
       
 <style scoped>
 
- #message {
+#message {
     margin-top: 1rem;
 }
 table {
     margin-top: 1rem;
 }
-
 .login-form {
     margin-top: 25px;
     text-align: left;
 }
-
-
-
 .form-group {
     margin-bottom: 40px;
     outline: 0px;
 }
-
 label {
     margin-bottom: 0px;
 }
-
 .form-control-label {
     font-size: 10px;
     color: #6C6C6C;
     font-weight: bold;
     letter-spacing: 1px;
 }
-
-
 </style>
+
 <script>
 import axios from 'axios'
 import apiUrls from '../common/apiUrls'
 import security from '../common/security'
 import commonMethods from '../common/commonMethods'
 
-//import bcrypt from 'bcryptjs'
 export default {
     data() {
         return {
@@ -148,22 +117,21 @@ export default {
                 let superadmin = this.$store.state.loginData.authorities.includes("1_システム管理者");
                 let admin = this.$store.state.loginData.authorities.includes("2_管理者");
                 let user = this.$store.state.loginData.authorities.includes("3_ユーザ");
-                 if (this.$store.state.loginData.authorities.length == 1){
+                if (this.$store.state.loginData.authorities.length == 1){
                     this.createMenuInfo();
                     await this.referNameCollectionMany();
                     commonMethods.saveCommonArea('modeTest', false) 
-                   if (superadmin){
+                    if (superadmin){
                         this.$router.push({path: '/superadminmenu'});
-                   }else if (admin){
-                       this.$router.push({path: '/adminmenu'});
-                   }else{
-                       this.$router.push({path: '/usermenu'});
-                   }
+                    }else if (admin){
+                        this.$router.push({path: '/adminmenu'});
+                    }else{
+                        this.$router.push({path: '/usermenu'});
+                    }
                 }else if (this.$store.state.loginData.authorities.length == 2 && user && admin) {
                     this.$store.userAdminFlag = "userAdmin"; 
                     this.$router.push({path: '/usermenu'});                                                    
-                }
-              
+                }          
             }
         },
         ctrlEnterLogin() {
@@ -185,13 +153,6 @@ export default {
             .then(response => {
                 response.data.password = hashed_password
                 this.$store.state.loginData = response.data
-           
-                /*
-                requestParams.httpRequestHeaders = {
-                    Authorization:  'Bearer ' +  this.$store.state.loginData.accessToken,
-                    'Content-Type': 'application/json',
-                    //'Access-Control-Allow-Origin': '*'
-                }*/
             })
             .catch(error => {
                 //console.log('error.response.data.code=' + error.response.data.code);
@@ -217,11 +178,10 @@ export default {
                 authority:       [],
                 accessToken: ''
             }
-             this.$store.userAdminFlag = '';
-           
+             this.$store.userAdminFlag = '';       
         },
 
-     async referNameCollectionMany() {
+        async referNameCollectionMany() {
             var reqDt = [];
             reqDt.push({nameSection: 'ProgressBackColorScreen'});
             reqDt.push({nameSection: 'VisibleMenuItem'});

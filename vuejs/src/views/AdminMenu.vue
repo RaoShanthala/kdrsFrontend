@@ -1,132 +1,74 @@
 <template>
-  <div>
-    <div class="text-right" style="height: 5px">
+    <div>
+        <div class="text-right" style="height: 5px">
             <b-form-checkbox v-model="enabledTooltip">説明</b-form-checkbox>
             <div v-if="this.$store.userAdminFlag == 'userAdmin'" >
                 <span style="text-decoration:underline; font-weight:bold;"> 
                     <a class="btn-primary" @click="gotoUserMenu"> ユーザメニュー </a>
                 </span>
             </div>
-    </div>
-    <div class="menu-container">
-        <b-row>
-            
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 製品工程進捗登録 -->
-                    <b-button id="selfUpdate" @click="clickMenuForward('/kojinupdate')" class="mb-3">{{findRouteTitle('/kojinupdate')}}</b-button>
-                </b-button-group>
-        
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 工事月別日報一覧 -->
-                    <b-button id="constructionreports" @click="clickMenuForward('/constructionreports')" class="mb-3">{{findRouteTitle('/constructionreports')}}</b-button>
-                    <!-- 工区別進捗表示 -->
-                    <b-button id="constructionorders" @click="clickMenuForward('/constructionorders')" class="mb-3">{{findRouteTitle('/constructionorders')}}</b-button>
-                </b-button-group>
-             </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 工事メンテ -->
-                    <b-button id="construction" @click="clickMenuForward('/construction')" class="mb-3">{{findRouteTitle('/construction')}}</b-button>
-                    <!-- ユーザメンテ -->
-                    <b-button id="users" @click="clickMenuForward('/users')" class="mb-3">{{findRouteTitle('/users')}}</b-button>
-                 </b-button-group>
-            </b-col>
-            <b-tooltip :disabled.sync="disabledTooltip" target="selfUpdate" triggers="hover" placement="bottom" variant="primary">
-                <div class="text-left">
-                    <font size=5>
-                        個人情報を更新します。
-                    </font>
-                </div>
-            </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="users" triggers="hover" placement="bottom" variant="primary">
-                <div class="text-left">
-                    <font size=5>
-                        システムを利用するユーザを登録/更新/削除します。
-                    </font>
-                </div>
-            </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="construction" triggers="hover" placement="bottom" variant="primary">
-                <div class="text-left">
-                    <font size=5>
-                        工事情報を更新/削除し、工事の選択により<br>
-                        プライベート工事情報を更新/削除します。
-                    </font>
-                </div>
-            </b-tooltip>
-            <b-tooltip :disabled.sync="disabledTooltip" target="constructionreports" triggers="hover" placement="bottom" variant="primary">
-                <div class="text-left">
-                    <font size=5>
-                        工事別の月別日報一覧。
-                    </font>
-                </div>
-            </b-tooltip>
-             <b-tooltip :disabled.sync="disabledTooltip" target="constructionorders" triggers="hover" placement="bottom" variant="primary">
-                <div class="text-left">
-                    <font size=5>
-                        工事別の月別作業一覧。
-                    </font>
-                </div>
-            </b-tooltip>
-        </b-row>
-
-        <b-row>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- Tekla用工程完了データ作成 -->
-                    <!--b-button @click="clickMenuForward('/exporttekla')" class="mb-3">{{findRouteTitle('/exporttekla')}}</b-button-->
-                </b-button-group>
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 製品工程予定登録 -->
-                    <!--b-button @click="clickMenuForward('/prodprocplanregister')" class="mb-3">{{findRouteTitle('/prodprocplanregister')}}</b-button-->
-                </b-button-group>
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 進捗予実表示 -->
-                    <!--b-button @click="clickMenuForward('/projectstatusplanactual')" class="mb-3">{{findRouteTitle('/projectstatusplanactual')}}</b-button-->
-                </b-button-group>
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 標準製品工程メンテ -->
-                    <!--b-button v-show="showStdProduct" @click="clickMenuForward('/stdproduct')" class="mb-3">{{findRouteTitle('/stdproduct')}}</b-button-->
-                    <!-- 標準集計名称メンテ -->
-                    <!--b-button v-show="showStdAggregate" @click="clickMenuForward('/stdaggregate')" class="mb-3">{{findRouteTitle('/stdaggregate')}}</b-button-->
-                </b-button-group>
-            </b-col>
-        </b-row>
-        <b-row>
-            <b-col class="col-md-3">
-                <!-- <b-button-group vertical>
-                </b-button-group> -->
-            </b-col>
-            <b-col class="col-md-3">
-                <!-- <b-button-group vertical>
-                </b-button-group> -->
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 集計別進捗表示  -->
-                    <!--b-button @click="clickMenuForward('/projectaggstatus')" class="mb-3 mt-4">{{findRouteTitle('/projectaggstatus')}}</b-button-->
-                    <!-- 進捗登録実績表示 -->
-                    <!--b-button @click="clickMenuForward('/projprogressresult')" class="mb-3">{{findRouteTitle('/projprogressresult')}}</b-button-->
-                </b-button-group>
-            </b-col>
-            <b-col class="col-md-3">
-                <b-button-group vertical>
-                    <!-- 集計製品分類メンテ -->
-                    <!--b-button v-show="showAggProduct" @click="clickMenuForward('/aggprod')" class="mb-3 mt-4">{{findRouteTitle('/aggprod')}}</b-button-->
-                    <!-- 集計単位関係メンテ -->
-                    <!--b-button v-show="showAggregate" @click="clickMenuForward('/aggregate')" class="mb-3">{{findRouteTitle('/aggregate')}}</b-button-->
-                </b-button-group>
-            </b-col>
-        </b-row>
-
+        </div>
+        <div class="menu-container">
+            <b-row>           
+                <b-col class="col-md-3">
+                    <b-button-group vertical>
+                        <!-- 製品工程進捗登録 -->
+                        <b-button id="selfUpdate" @click="clickMenuForward('/kojinupdate')" class="mb-3">{{findRouteTitle('/kojinupdate')}}</b-button>
+                    </b-button-group>
+                </b-col>
+                <b-col class="col-md-3">
+                    <b-button-group vertical>
+                        <!-- 工事月別日報一覧 -->
+                        <b-button id="constructionreports" @click="clickMenuForward('/constructionreports')" class="mb-3">{{findRouteTitle('/constructionreports')}}</b-button>
+                        <!-- 工区別進捗表示 -->
+                        <b-button id="constructionorders" @click="clickMenuForward('/constructionorders')" class="mb-3">{{findRouteTitle('/constructionorders')}}</b-button>
+                    </b-button-group>
+                </b-col>
+                <b-col class="col-md-3">
+                    <b-button-group vertical>
+                        <!-- 工事メンテ -->
+                        <b-button id="construction" @click="clickMenuForward('/construction')" class="mb-3">{{findRouteTitle('/construction')}}</b-button>
+                        <!-- ユーザメンテ -->
+                        <b-button id="users" @click="clickMenuForward('/users')" class="mb-3">{{findRouteTitle('/users')}}</b-button>
+                    </b-button-group>
+                </b-col>
+                <b-tooltip :disabled.sync="disabledTooltip" target="selfUpdate" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            個人情報を更新します。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="users" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            システムを利用するユーザを登録/更新/削除します。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="construction" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            工事情報を更新/削除し、工事の選択により<br>
+                            プライベート工事情報を更新/削除します。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="constructionreports" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            工事別の月別日報一覧。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="constructionorders" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            工事別の月別作業一覧。
+                        </font>
+                    </div>
+                </b-tooltip>
+            </b-row>
         <!--b-card v-show = "isShowTest" class="mt-4">
             <b-row>
                 <br>
@@ -147,8 +89,8 @@
                 </b-col>
             </b-row>
         </b-card-->
-    </div>  
- </div>
+        </div>  
+    </div>
 </template>
 
 <style scoped>
@@ -180,13 +122,13 @@ export default {
         }
     },
     watch: {
-            enabledTooltip: function() {
-                this.disabledTooltip = !this.enabledTooltip;
-            }
+        enabledTooltip: function() {
+            this.disabledTooltip = !this.enabledTooltip;
+        }
     },
     created: async function() {
         this.menuInfoByName = commonMethods.loadCommonArea('menuInfoByName');
-       let enabledTooltip = commonMethods.loadCommonArea('enabledTooltip');
+        let enabledTooltip = commonMethods.loadCommonArea('enabledTooltip');
         if (enabledTooltip != null) {
             this.enabledTooltip = enabledTooltip;
         }
@@ -240,22 +182,22 @@ export default {
 
                 // 次の処理は不要
                 //this.$router.push({path: menuPath});
-            });
-        },
-        findRouteTitle(path) {
-            return this.$router.options.routes.find(e => e.path === path).meta.title;
-        },
-        clickMenuForward(menuForwardPath) {
-            //console.log('Menu.clickForwardMenu! menuForwardPath=' + menuForwardPath);
-            //this.$store.dispatch('pushMenuPath', this.$route.path);
-            ////window.history.pushState(null, null, '/menu');
-            //this.$router.push({path: menuForwardPath});
-            commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
-        },
+        });
+    },
+    findRouteTitle(path) {
+        return this.$router.options.routes.find(e => e.path === path).meta.title;
+    },
+    clickMenuForward(menuForwardPath) {
+        //console.log('Menu.clickForwardMenu! menuForwardPath=' + menuForwardPath);
+        //this.$store.dispatch('pushMenuPath', this.$route.path);
+        ////window.history.pushState(null, null, '/menu');
+        //this.$router.push({path: menuForwardPath});
+        commonMethods.clickMenuForward(this.$route.path, menuForwardPath);
+    },
 
-        gotoUserMenu(){
-           this.$router.push({path: '/usermenu'});
-        },
+    gotoUserMenu(){
+        this.$router.push({path: '/usermenu'});
+    },
 
        /* async referNameCollectionMany(nameSectionValue) {
             let axiosConfigObject = {
