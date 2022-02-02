@@ -24,6 +24,7 @@ import ConstructionMonthOrder    from '../views/Construction/ConstructionMonthOr
 import CompanyAndAdmin from '../views/CompanyAndCompanyAdmin/CompanyAdminMaintenance.vue'
 import CompanyRegister from '../views/CompanyAndCompanyAdmin/CompanyRegister.vue'
 import CompanyUpdate from '../views/CompanyAndCompanyAdmin/CompanyUpdate.vue'
+import AdminRegister from '../views/CompanyAndCompanyAdmin/AdminUserRegister.vue'
 
 //個人情報メンテ
 import KojinUpdate from '../views/User/KojinUpdate.vue'
@@ -50,6 +51,7 @@ const routes = [
     {path: '/companyandadmin',          name: 'CompanyAndAdmin',            meta: {title: '企業と企業管理者メンテ',     prevPath: '/menu'}, component: CompanyAndAdmin},
     {path: '/companyregister',          name: 'CompanyRegister',            meta: {title: '企業新規登録画面',         prevPath: '/companyandadmin'}, component: CompanyRegister},
     {path: '/companyupdate',            name: 'CompanyUpdate',              meta: {title: '企業更新/削除画面',        prevPath: '/companyandadmin'}, component: CompanyUpdate},
+    {path: '/adminregister',            name: 'AdminRegister',              meta: {title: '管理者新規登録画面',       prevPath: '/companyandadmin'}, component: AdminRegister},
 
     {path: '/users',                    name: 'Users',                      meta: {title: 'ユーザメンテ',              prevPath: '/menu'}, component: Users},
     {path: '/userupdate',               name: 'UserUpdate',                 meta: {title: 'ユーザ更新/削除画面',        prevPath: '/users'}, component: UserUpdate},

@@ -20,6 +20,10 @@ const urls = {
         modifyCompany:     host + '/Company/ModifyCompany',
         removeCompany:     host + '/Company/RemoveCompany',
 
+        referAdminMany:    host + '/Admin/ReferAdminMany',
+        registerAdmin:     host + '/Admin/RegisterAdmin',
+        removeAdmin:       host + '/Admin/RemoveAdmin',
+
         referConstructionList:  host + '/Construction/ReferConstructionList',
         registerConstruction:   host + '/Construction/RegisterConstruction',
         updateConstruction:     host + '/Construction/UpdateConstruction',

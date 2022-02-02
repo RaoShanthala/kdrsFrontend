@@ -171,9 +171,9 @@ export default {
        
         updateUser() { 
             if (confirm('更新しますか？')) {
-                if(this.view.password !== this.view.passwordConfirm) {
+              /*  if(this.view.password !== this.view.passwordConfirm) {
                     alert('パスワードとパスワード（確認）が一致していません。')
-                }
+                }else{ */
                 //基本リクエストを作成する
                 let payload = {
                     transId: '',
@@ -218,6 +218,7 @@ export default {
                 .catch(error => {
                     this.message = commonMethods.getErrorMessage(error);
                 })
+               // }  
             }
         }
 
