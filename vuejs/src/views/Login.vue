@@ -33,11 +33,11 @@
                            <b-alert show variant="danger">{{message}}</b-alert>
                         </div> 
                     </div>      
-                    <div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken" >
+                    <!--div v-if="this.isShowAccessToken && this.$store.state.loginData.accessToken" >
                         <b-button @click="logout">ログアウト</b-button>
                         <b-table :items="[this.$store.state.loginData]" :fields="fields"></b-table>
                         <b-button @click="clickMenu" variant="info">メニュー</b-button>
-                    </div>
+                    </div-->
                 </div>
             </div>
             <div class="col-lg-3 col-md-2"></div>

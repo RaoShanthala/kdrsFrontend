@@ -152,7 +152,6 @@ export default {
             },
         
             construction: {},
-    
             message: '',
             //time: this.getTime(),
             table_height: window.innerHeight - 360 + 'px',
@@ -165,7 +164,7 @@ export default {
         }
     },
    
-   created: function() {
+   created: async function() {
         if(!this.$store.state.loginData.accessToken) {
             this.$router.push('/')
         }
@@ -174,6 +173,7 @@ export default {
         if (this.$store.state.responseData) {
             this.construction = this.$store.state.responseData
         } 
+        
     },
 
     async mounted() {
@@ -185,6 +185,7 @@ export default {
     },
                         
     methods: {
+       
         emittedConstSearchButton(value) {
             this.constSearchButtonCount = value;
             this.message = '';
@@ -280,7 +281,7 @@ export default {
                     'Content-Type': 'application/json',
                     },
                 params:  payload}
-            await axios.get(apiUrls.referNippoIchiranList, axiosConfigObject)
+            await axios.get(apiUrls.referConstNippoIchiranList, axiosConfigObject)
             .then(response => {
                 this.ichiranData = response.data.resDt;
                 

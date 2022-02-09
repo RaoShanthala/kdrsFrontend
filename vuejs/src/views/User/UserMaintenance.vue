@@ -374,6 +374,8 @@ export default {
                 deleted:false,
             }        
             this.searchedUser = false;
+            this.users = [];
+            this.fields = [];
             // this.$store.state.searchForm = this.searchForm
         },
 

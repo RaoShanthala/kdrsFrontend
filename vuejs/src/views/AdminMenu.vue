@@ -22,6 +22,11 @@
                         <b-button id="constructionreports" @click="clickMenuForward('/constructionreports')" class="mb-3">{{findRouteTitle('/constructionreports')}}</b-button>
                         <!-- 工区別進捗表示 -->
                         <b-button id="constructionorders" @click="clickMenuForward('/constructionorders')" class="mb-3">{{findRouteTitle('/constructionorders')}}</b-button>
+                        <!-- ユーザ月別日報一覧 -->
+                        <b-button id="userreports" @click="clickMenuForward('/userreports')" class="mb-3">{{findRouteTitle('/userreports')}}</b-button>
+                        <!-- ユーザ別進捗表示 -->
+                        <b-button id="userorders" @click="clickMenuForward('/userorders')" class="mb-3">{{findRouteTitle('/userorders')}}</b-button>
+
                     </b-button-group>
                 </b-col>
                 <b-col class="col-md-3">
@@ -65,6 +70,20 @@
                     <div class="text-left">
                         <font size=5>
                             工事別の月別作業一覧。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="userreports" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            ユーザ別の月別日報一覧。
+                        </font>
+                    </div>
+                </b-tooltip>
+                <b-tooltip :disabled.sync="disabledTooltip" target="userorders" triggers="hover" placement="bottom" variant="primary">
+                    <div class="text-left">
+                        <font size=5>
+                            ユーザ別の月別作業一覧。
                         </font>
                     </div>
                 </b-tooltip>
