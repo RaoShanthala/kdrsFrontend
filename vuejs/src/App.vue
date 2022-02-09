@@ -16,9 +16,10 @@
                             @click="clickMenuBack"
                             >戻る
                         </b-button>
+                        
                         <b-button
                             variant="info"
-                            v-if="$route.name == 'Menu' ||  $route.name =='SuperadminMenu'"
+                            v-if="$route.name == 'Menu'"
                             @click="clicklogout"
                             >Logout
                         </b-button>

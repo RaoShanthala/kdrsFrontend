@@ -14,6 +14,9 @@ import ImportPDF from '../views/ImportPDF.vue'
 import Users    from '../views/User/UserMaintenance.vue'
 import UserUpdate   from '../views/User/UserUpdate.vue'
 import UserRegister from '../views/User/UserRegister.vue'
+import UserMonthReport    from '../views/User/UserMonthReport.vue'
+import UserMonthOrder    from '../views/User/UserMonthOrder.vue'
+
 
 //工事メンテ画面
 import Construction    from '../views/Construction/ConstructionMaintenance.vue'
@@ -39,8 +42,8 @@ Vue.use(VueRouter)
 const routes = [
     {path: '/',                         name: 'Login',                      meta: {title: 'ログイン',                 prevPath: ''},      component: Login},
     {path: '/adminmenu',                name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: AdminMenu},
-    {path: '/usermenu',                name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: UserMenu},
-    {path: '/superadminmenu',           name: 'SuperadminMenu',             meta: {title: 'メニュー',                 prevPath: ''},      component: SuperadminMenu},
+    {path: '/usermenu',                 name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: UserMenu},
+    {path: '/superadminmenu',           name: 'Menu',                       meta: {title: 'メニュー',                 prevPath: ''},      component: SuperadminMenu},
     {path: '/importPDF',                name: 'ImportPDF',                  meta: {title: 'PDFデータ作成',            prevPath: '/menu'}, component: ImportPDF},
 
     {path: '/construction',             name: 'Construction',               meta: {title: '工事メンテ',               prevPath: '/menu'}, component: Construction}, 
@@ -49,10 +52,12 @@ const routes = [
     
 
     {path: '/companyandadmin',          name: 'CompanyAndAdmin',            meta: {title: '企業と企業管理者メンテ',     prevPath: '/menu'}, component: CompanyAndAdmin},
-    {path: '/companyregister',          name: 'CompanyRegister',            meta: {title: '企業新規登録画面',         prevPath: '/companyandadmin'}, component: CompanyRegister},
-    {path: '/companyupdate',            name: 'CompanyUpdate',              meta: {title: '企業更新/削除画面',        prevPath: '/companyandadmin'}, component: CompanyUpdate},
-    {path: '/adminregister',            name: 'AdminRegister',              meta: {title: '管理者新規登録画面',       prevPath: '/companyandadmin'}, component: AdminRegister},
-
+    {path: '/companyregister',          name: 'CompanyRegister',            meta: {title: '企業新規登録画面',          prevPath: '/companyandadmin'}, component: CompanyRegister},
+    {path: '/companyupdate',            name: 'CompanyUpdate',              meta: {title: '企業更新/削除画面',         prevPath: '/companyandadmin'}, component: CompanyUpdate},
+    {path: '/adminregister',            name: 'AdminRegister',              meta: {title: '管理者新規登録画面',         prevPath: '/companyandadmin'}, component: AdminRegister},
+    {path: '/userreports',              name: 'UserReports',                meta: {title: 'ユーザ月別日報一覧',         prevPath: '/menu'}, component: UserMonthReport},
+    {path: '/userorders',               name: 'UserOrders',                 meta: {title: 'ユーザ月別作業一覧',         prevPath: '//menu'}, component: UserMonthOrder}, 
+   
     {path: '/users',                    name: 'Users',                      meta: {title: 'ユーザメンテ',              prevPath: '/menu'}, component: Users},
     {path: '/userupdate',               name: 'UserUpdate',                 meta: {title: 'ユーザ更新/削除画面',        prevPath: '/users'}, component: UserUpdate},
     {path: '/userregister',             name: 'UserRegister',               meta: {title: 'ユーザ新規登録画面',         prevPath: '/users'}, component: UserRegister},

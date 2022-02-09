@@ -1,11 +1,13 @@
+//let host = 'http://ec2-18-223-106-146.us-east-2.compute.amazonaws.com:8080'
 let host = 'http://localhost:8080'
-//let host = 'https://localhost:8443'
+
 
 const urls = {
 
         signIn:            host + '/api/auth/signin',
         referUserMany:     host + '/UserMaintenance/ReferUserMany',
         referUserOne:      host + '/UserMaintenance/ReferUserOne',
+        referIppanUserMany: host + '/UserMaintenance/ReferIppanUserMany',
         registUser:        host + '/UserMaintenance/RegistUer',
         modifyUser:        host + '/UserMaintenance/ModifyUer',
         removeUser:        host + '/UserMaintenance/RemoveUer',
@@ -30,9 +32,13 @@ const urls = {
         deleteConstruction:     host + '/Construction/DeleteConstruction',
         addConstIds:            host + '/Construction/AddConstIds',
         deleteConstIds:         host + '/Construction/DeleteConstIds',
+        referConstList:         host + '/Construction/GetConstList',
 
-        referNippoIchiranList:  host + '/Construction/ReferConstructionMonthReportMany' ,
-        referSagyoIchiranList:  host + '/Construction/ReferConstructionMonthOrderMany' ,
+        referConstNippoIchiranList:  host + '/Construction/ReferConstructionMonthReportMany' ,
+        referConstSagyoIchiranList:  host + '/Construction/ReferConstructionMonthOrderMany' ,
+
+        referUserNippoIchiranList:  host + '/User/ReferUserMonthReportMany' ,
+        referUserSagyoIchiranList:  host + '/User/ReferUserMonthOrderMany' ,
 
         referPrivConstList:     host + '/Construction/ReferPrivConstructionList',
 }
