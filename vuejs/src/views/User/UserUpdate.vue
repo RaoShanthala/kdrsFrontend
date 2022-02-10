@@ -186,7 +186,7 @@ export default {
           //  let responseData = Object.assign({}, this.responseData)
             var authorityType = '';
             if (confirm('更新しますか？')) {
-                if(this.view.password !== this.view.passwordConfirm) {
+                if(this.view.password != '' && this.view.password !== this.view.passwordConfirm) {
                     alert('パスワードとパスワード（確認）が一致していません。')
                 }else if(this.view.userAuth == false && this.view.adminAuth == false){
                     alert('ユーザまたは管理者チェックボクス選んでください。')
